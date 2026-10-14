@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#42235f">
+  <meta name="description" content="El paso del tiempo: una experiencia interactiva sobre la infancia, la adultez, la vejez y las formas de acompañar.">
+  <title>El paso del tiempo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Nunito:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="intro-active current-scope">
+  <a class="skip-link" href="#experience">Saltar a la experiencia</a>
+  <main id="experience" class="experience" tabindex="-1">
+    <header class="topbar" aria-label="Progreso de la experiencia">
+      <button class="brand" type="button" data-action="restart" aria-label="Volver al inicio">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 42 42"><path d="M21 5a16 16 0 1 0 16 16"/><path d="M21 11v11l7 4"/><circle cx="21" cy="5" r="2.5"/></svg>
+        </span>
+        <span>El paso del tiempo</span>
+      </button>
+      <div class="journey" aria-hidden="true">
+        <span class="journey-line"><i id="progressFill"></i></span>
+        <div class="journey-labels">
+          <span data-step="childhood">Niñez</span>
+          <span data-step="adulthood">Adultez</span>
+          <span data-step="oldage">Vejez</span>
+          <span data-step="reflection">Reflexión</span>
+        </div>
+      </div>
+      <button class="sound-toggle" id="soundToggle" type="button" aria-label="Activar sonidos" aria-pressed="false">
+        <svg class="sound-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15 9a4 4 0 0 1 0 6M18 6a8 8 0 0 1 0 12"/></svg>
+        <svg class="sound-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="m16 10 5 5m0-5-5 5"/></svg>
+      </button>
+    </header>
+
+    <section class="scene scene-intro is-active" data-scene="intro" aria-labelledby="intro-title">
+      <div class="intro-stage" id="intro3d" role="img" aria-label="Tablero tridimensional de corcho con marco naranja y un hilo de cabuya del que cuelgan tres fotografías: niñez, adultez joven y vejez."></div>
+      <div class="intro-veil" aria-hidden="true"></div>
+      <div class="intro-copy">
+        <p class="intro-label">El paso del tiempo</p>
+        <h1 id="intro-title">¿Te has detenido a pensar cómo cambia la vida con <span>el paso del tiempo?</span></h1>
+        <button class="primary-button intro-start" id="startExperience" type="button">iniciar experiencias</button>
+      </div>
+    </section>
+
+    <section class="scene life-scene spatial-scene childhood" data-scene="childhood" aria-labelledby="childhood-title" hidden>
+      <div class="three-stage" id="childhood3d" role="application" aria-label="Escena 3D de una mesa infantil. Arrastra el fondo para girarla, elige un color, activa la crayola y dibuja sobre la hoja."></div>
+      <div class="scene-copy scene-hud">
+        <p class="chapter">01 <span></span> Niñez</p>
+        <h2 id="childhood-title">El tiempo parecía <em>no terminar nunca.</em></h2>
+        <p>Elige un color, toma la crayola y pinta el recuerdo con tus propios trazos.</p>
+        <div class="instruction" id="childInstruction"><span>1</span> Elige un color</div>
+        <div class="reflection-card" id="childReflection" aria-live="polite">
+          <span class="quote-mark">“</span><p>Cuando éramos niños, el tiempo podía sentirse infinito.</p>
+        </div>
+        <button class="continue-button" type="button" data-go="adulthood" disabled>Continuar <span>→</span></button>
+      </div>
+      <div class="vertical-palette palette" role="group" aria-label="Elige un color para la crayola">
+        <span class="palette-label">Color</span>
+        <button class="crayon crayon-yellow" type="button" data-color="#F5BD38" aria-label="Elegir amarillo" aria-pressed="false"><i></i><span>Amarillo</span></button>
+        <button class="crayon crayon-green" type="button" data-color="#63A76E" aria-label="Elegir verde" aria-pressed="false"><i></i><span>Verde</span></button>
+        <button class="crayon crayon-brown" type="button" data-color="#A96342" aria-label="Elegir café" aria-pressed="false"><i></i><span>Café</span></button>
+      </div>
+      <div class="scene-gesture"><span class="drag-glyph">↔</span><span>Arrastra el fondo para explorar</span></div>
+      <div class="paint-meter" aria-live="polite"><span>Recuerdo coloreado</span><div><i id="paintProgress"></i></div><b id="paintPercent">0%</b></div>
+      <button class="sr-only" id="activateCrayonKeyboard" type="button">Activar crayola</button>
+    </section>
+
+    <section class="scene life-scene spatial-scene adulthood" data-scene="adulthood" aria-labelledby="adult-title" hidden>
+      <div class="three-stage" id="adulthood3d" role="application" aria-label="Escena 3D low poly de un escritorio de adultez. Arrastra para observarla desde otros lados."></div>
+      <div class="scene-copy scene-hud">
+        <p class="chapter">02 <span></span> Adultez</p>
+        <h2 id="adult-title">De pronto, el tiempo <em>empezó a faltar.</em></h2>
+        <p>Los días se llenaron de asuntos urgentes. Completa los pendientes para poder seguir.</p>
+        <div class="instruction"><span>✓</span> Completa tus pendientes <b id="taskCounter">0 / 3</b></div>
+        <div class="reflection-card" id="adultReflection" aria-live="polite">
+          <span class="quote-mark">“</span><p>En la adultez aprendemos a llenar el tiempo de pendientes.</p>
+        </div>
+        <button class="continue-button" type="button" data-go="oldage" disabled>Continuar <span>→</span></button>
+      </div>
+      <div class="task-sheet task-panel">
+          <div class="sheet-heading"><span>HOY</span><time>martes</time></div>
+          <h3>Mis pendientes</h3>
+          <div class="task-list" role="group" aria-label="Lista de pendientes">
+            <button type="button" class="task-item"><span class="checkbox">✓</span><span>Entregar trabajo</span><small>09:00</small></button>
+            <button type="button" class="task-item"><span class="checkbox">✓</span><span>Responder mensajes</span><small>11:30</small></button>
+            <button type="button" class="task-item"><span class="checkbox">✓</span><span>Resolver pendiente</span><small>14:00</small></button>
+          </div>
+          <div class="task-progress"><i id="taskProgress"></i></div>
+      </div>
+      <div class="scene-gesture"><span class="drag-glyph">↔</span><span>Arrastra para ver otros lados</span></div>
+    </section>
+
+    <section class="scene life-scene spatial-scene oldage" data-scene="oldage" aria-labelledby="old-title" hidden>
+      <div class="three-stage" id="oldage3d" role="application" aria-label="Escena 3D low poly cálida de la vejez. Arrastra para observarla desde otros lados."></div>
+      <div class="scene-copy scene-hud">
+        <p class="chapter">03 <span></span> Vejez</p>
+        <h2 id="old-title">El tiempo toma <em>otro ritmo.</em></h2>
+        <p>No todo ocurre como antes, pero cada gesto guarda una historia. Acércate con calma.</p>
+        <div class="instruction" id="oldInstruction"><span>↗</span> Intenta tomar el lápiz</div>
+        <div class="reflection-card" id="oldReflection" aria-live="polite">
+          <span class="quote-mark">“</span><p>El tiempo cambia muchas cosas. Los recuerdos y los vínculos permanecen.</p>
+        </div>
+        <button class="continue-button" type="button" data-go="reflection" disabled>Continuar <span>→</span></button>
+      </div>
+      <button class="old-pencil old-pencil-control" id="oldPencil" type="button" aria-label="Intentar tomar el lápiz"><span></span><i></i><b>Tomar el lápiz</b></button>
+      <div class="scene-gesture"><span class="drag-glyph">↔</span><span>Arrastra para ver otros lados</span></div>
+    </section>
+
+    <section class="scene reflection" data-scene="reflection" aria-labelledby="reflection-title" hidden>
+      <div class="reflection-art" aria-hidden="true">
+        <div class="big-circle"></div><span class="orbit o1"></span><span class="orbit o2"></span>
+        <div class="hands"><span class="hand-young"></span><span class="hand-old"></span><i>✦</i></div>
+      </div>
+      <div class="reflection-copy">
+        <p class="eyebrow">El tiempo compartido</p>
+        <h2 id="reflection-title">Hay momentos que duran porque alguien <em>decidió estar.</em></h2>
+        <p>Para muchas personas mayores, una conversación, una visita o una actividad compartida puede transformar un día entero.</p>
+        <div class="question-box">
+          <p>¿Te gustaría conocer cómo puedes aportar?</p>
+          <div class="choice-row">
+            <button class="primary-button" type="button" data-go="contribute">Sí, quiero conocer <span>→</span></button>
+            <button class="text-button" type="button" data-go="closing">Ahora no</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="scene contribution" data-scene="contribute" aria-labelledby="contribute-title" hidden>
+      <div class="contribution-head">
+        <p class="eyebrow">Tu tiempo puede tomar muchas formas</p>
+        <h2 id="contribute-title">Pequeños gestos, <em>grandes momentos.</em></h2>
+        <p>No existe una única manera de acompañar. Encuentra la que se parezca más a ti.</p>
+      </div>
+      <div class="contribution-grid">
+        <article class="contribution-card card-time">
+          <div class="card-number">01</div><div class="card-icon" aria-hidden="true">☼</div>
+          <p class="commitment">Compromiso flexible</p><h3>Comparte tu tiempo</h3>
+          <p>Una conversación, una caminata o una tarde de juegos pueden convertirse en un recuerdo valioso.</p>
+          <div class="impact"><span>Impacto</span><strong>Crear compañía y alegría</strong></div>
+          <button class="learn-more" type="button" data-topic="tiempo">Conocer más <span>↗</span></button>
+        </article>
+        <article class="contribution-card card-company">
+          <div class="card-number">02</div><div class="card-icon" aria-hidden="true">∞</div>
+          <p class="commitment">Compromiso constante</p><h3>Acompaña un proceso</h3>
+          <p>Súmate como voluntario a una causa y construye un vínculo que crece con cada encuentro.</p>
+          <div class="impact"><span>Impacto</span><strong>Fortalecer vínculos duraderos</strong></div>
+          <button class="learn-more" type="button" data-topic="acompañar">Conocer más <span>↗</span></button>
+        </article>
+        <article class="contribution-card card-give">
+          <div class="card-number">03</div><div class="card-icon" aria-hidden="true">♥</div>
+          <p class="commitment">Aporte puntual</p><h3>Haz un aporte</h3>
+          <p>Dona materiales para actividades, alimentos o un aporte económico a una organización cercana.</p>
+          <div class="impact"><span>Impacto</span><strong>Hacer posibles más encuentros</strong></div>
+          <button class="learn-more" type="button" data-topic="aporte">Conocer más <span>↗</span></button>
+        </article>
+      </div>
+      <button class="primary-button center-button" type="button" data-go="closing">Continuar al cierre <span>→</span></button>
+    </section>
+
+    <section class="scene closing" data-scene="closing" aria-labelledby="closing-title" hidden>
+      <div class="closing-rings" aria-hidden="true"><span></span><span></span><span></span></div>
+      <div class="closing-copy">
+        <span class="closing-symbol" aria-hidden="true">✦</span>
+        <p class="eyebrow">Llegamos al final de este recorrido</p>
+        <h2 id="closing-title">Gracias por regalarnos unos minutos de <em>tu tiempo.</em></h2>
+        <p>Acompañar también es una forma de transformar la manera en que vivimos el tiempo.</p>
+        <div class="closing-actions">
+          <button class="primary-button" type="button" data-action="restart">↻ &nbsp; Repetir experiencia</button>
+          <button class="secondary-button" type="button" data-go="contribute">Ver formas de aportar</button>
+          <button class="text-button" type="button" data-action="exit">Salir de la experiencia</button>
+        </div>
+      </div>
+      <p class="closing-foot">El tiempo que damos también permanece.</p>
+    </section>
+  </main>
+
+  <div id="transitionVeil" class="transition-veil" aria-hidden="true"></div>
+  <div id="handCursor" class="hand-cursor" aria-hidden="true">
+    <svg class="hand-open" viewBox="0 0 40 44"><path d="M10 25 7 21c-2-3-5-1-4 2l6 13c2 5 6 7 12 7 7 0 12-5 12-12V17c0-4-5-4-5 0v7-14c0-4-5-4-5 0v13-17c0-4-5-4-5 0v17-13c0-4-5-4-5 0v15Z"/></svg>
+    <svg class="hand-closed" viewBox="0 0 40 44"><path d="M9 22c-6-6-9-1-6 3l6 11c2 5 7 7 13 7 7 0 12-4 12-12v-9c0-4-5-5-6-1 0-6-5-7-6-2 0-6-5-7-6-2-1-5-6-4-6 0v9Z"/></svg>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <dialog id="infoDialog" class="info-dialog">
+    <button class="dialog-close" type="button" aria-label="Cerrar">×</button>
+    <div id="dialogContent"></div>
+  </dialog>
+  <script src="node_modules/three/build/three.min.js"></script>
+  <script src="node_modules/gsap/dist/gsap.min.js"></script>
+  <script src="js/interface.js"></script>
+  <script src="js/intro-textures.js"></script>
+  <script src="js/intro-camera.js"></script>
+  <script src="js/intro-scene.js"></script>
+  <script src="js/scene-transition.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

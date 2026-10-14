@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#F2BB31">
+  <meta name="description" content="El paso del tiempo: una experiencia interactiva sobre los recuerdos y nuestra relación con el tiempo.">
+  <title>El paso del tiempo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=DM+Sans:wght@400;500;600;700&family=Nunito:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="intro-active">
+  <a class="skip-link" href="#experience">Saltar a la experiencia</a>
+  <main id="experience" class="experience" tabindex="-1">
+    <section class="scene scene-intro" data-scene="intro" aria-labelledby="intro-title">
+      <div class="intro-stage" id="intro3d" role="img" aria-label="Tablero tridimensional de corcho con marco naranja y un hilo de cabuya del que cuelgan tres fotografías: niñez, adultez joven y vejez."></div>
+      <div class="intro-veil" aria-hidden="true"></div>
+      <div class="intro-copy">
+        <p class="intro-label">El paso del tiempo</p>
+        <h1 id="intro-title">¿Te has detenido a pensar cómo cambia la vida con <span>el paso del tiempo?</span></h1>
+        <button class="primary-button intro-start" id="startExperience" type="button">iniciar experiencia</button>
+      </div>
+    </section>
+
+    <section class="scene childhood-room" data-scene="childhood" aria-labelledby="childhood-title" hidden>
+      <h2 class="sr-only" id="childhood-title">Niñez</h2>
+      <div class="three-stage" id="childhood3d" role="application" aria-label="Habitación infantil 3D. Elige un color. Mantén el clic izquierdo sobre la crayola y arrástrala hasta el dibujo para colorear. Suelta para devolverla. Arrastra el resto del escenario para girar la cámara."></div>
+      <div class="color-panel" role="group" aria-label="Elige un color para la crayola">
+        <button class="color-choice" type="button" data-color="#60AE29" style="--swatch:#60AE29" aria-pressed="true"><i aria-hidden="true"></i><span>Verde</span></button>
+        <button class="color-choice" type="button" data-color="#F2BB31" style="--swatch:#F2BB31" aria-pressed="false"><i aria-hidden="true"></i><span>Amarillo</span></button>
+        <button class="color-choice" type="button" data-color="#bf5527" style="--swatch:#bf5527" aria-pressed="false"><i aria-hidden="true"></i><span>Café</span></button>
+      </div>
+      <button class="sound-toggle round-control" id="soundToggle" type="button" aria-label="Silenciar sonido" aria-pressed="true">
+        <svg class="sound-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15 9a4 4 0 0 1 0 6M18 6a8 8 0 0 1 0 12"/></svg>
+        <svg class="sound-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="m16 10 5 5m0-5-5 5"/></svg>
+      </button>
+      <div class="childhood-message" id="childhoodMessage" role="status" aria-live="polite" hidden><p>Cuando somos niños el tiempo parece infinito</p></div>
+      <button class="next-memory round-control" id="continueArrow" type="button" aria-label="Continuar a la adultez" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16m-7-7 7 7-7 7"/></svg></button>
+    </section>
+
+    <section class="scene adulthood-room" data-scene="adulthood" aria-labelledby="adulthood-title" hidden>
+      <h2 class="sr-only" id="adulthood-title">Juventud y adultez joven</h2>
+      <div class="three-stage" id="adulthood3d" role="application" aria-label="Escritorio de noche iluminado por un monitor. Mantén el clic izquierdo sobre el lapicero y tacha cada pendiente de la hoja con un trazo horizontal. Suelta para devolverlo. El termo y el reloj también responden al clic. Arrastra el resto del escenario para girar la cámara."></div>
+      <button class="sound-toggle round-control" id="adulthoodSoundToggle" type="button" aria-label="Silenciar sonido" aria-pressed="true">
+        <svg class="sound-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15 9a4 4 0 0 1 0 6M18 6a8 8 0 0 1 0 12"/></svg>
+        <svg class="sound-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="m16 10 5 5m0-5-5 5"/></svg>
+      </button>
+      <div class="childhood-message adulthood-message" id="adulthoodMessage" role="status" aria-live="polite" hidden><p>Cuando crecemos, el tiempo parece ir más rápido que nosotros.</p></div>
+      <button class="next-memory round-control" id="adulthoodArrow" type="button" aria-label="Volver al tablero de fotografías" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16m-7-7 7 7-7 7"/></svg></button>
+    </section>
+  </main>
+  <div id="transitionVeil" class="transition-veil" aria-hidden="true"></div>
+  <div id="handCursor" class="hand-cursor" aria-hidden="true">
+    <svg class="hand-open" viewBox="0 0 40 44"><path d="M10 25 7 21c-2-3-5-1-4 2l6 13c2 5 6 7 12 7 7 0 12-5 12-12V17c0-4-5-4-5 0v7-14c0-4-5-4-5 0v13-17c0-4-5-4-5 0v17-13c0-4-5-4-5 0v15Z"/></svg>
+    <svg class="hand-closed" viewBox="0 0 40 44"><path d="M9 22c-6-6-9-1-6 3l6 11c2 5 7 7 13 7 7 0 12-4 12-12v-9c0-4-5-5-6-1 0-6-5-7-6-2 0-6-5-7-6-2-1-5-6-4-6 0v9Z"/></svg>
+  </div>
+  <script src="node_modules/three/build/three.min.js"></script>
+  <script src="node_modules/gsap/dist/gsap.min.js"></script>
+  <script src="js/project-config.js"></script>
+  <script src="js/interface.js"></script>
+  <script src="js/intro-textures.js"></script>
+  <script src="js/intro-camera.js"></script>
+  <script src="js/intro-scene.js"></script>
+  <script src="js/childhood-props.js"></script>
+  <script src="js/painting-system.js"></script>
+  <script src="js/audio-system.js"></script>
+  <script src="js/childhood-camera.js"></script>
+  <script src="js/object-interactions.js"></script>
+  <script src="js/childhood-scene.js"></script>
+  <script src="js/adulthood-props.js"></script>
+  <script src="js/monitor-light.js"></script>
+  <script src="js/checklist-system.js"></script>
+  <script src="js/adulthood-camera.js"></script>
+  <script src="js/adulthood-interactions.js"></script>
+  <script src="js/adulthood-scene.js"></script>
+  <script src="js/scene-transition.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

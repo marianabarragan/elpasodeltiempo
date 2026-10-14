@@ -1,0 +1,13 @@
+{
+  "name": "el-paso-del-tiempo",
+  "private": true,
+  "scripts": {
+    "start": "node scripts/serve.cjs",
+    "check": "node scripts/check.cjs",
+    "test:browser": "node tests/browser.cjs"
+  },
+  "dependencies": {
+    "gsap": "^3.15.0",
+    "three": "^0.160.0"
+  }
+}

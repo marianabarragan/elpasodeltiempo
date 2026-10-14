@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^npm install gsap$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}
