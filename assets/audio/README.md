@@ -37,3 +37,16 @@ audio: {
 ```
 
 La escena usa una instancia propia de `AudioSystem` (`TimeExperience.adulthoodAudio`). La música suena en bucle solo mientras la escena 2 está activa y se detiene y rebobina al volver al tablero. El botón circular superior derecho de esta escena la silencia o la reactiva. Los efectos se reproducen una vez por clic mediante `AudioSystem.playEffect(nombre)` y respetan el mismo estado de silencio. Cualquier valor `null` se omite sin solicitar archivos.
+
+## Escenario 3: vejez
+
+En `js/project-config.js`, dentro de `Config.oldage.audio`:
+
+```javascript
+audio: {
+  musicSrc: 'assets/audio/oldage-music.mp3',   // música instrumental ambiental en bucle
+  waterSrc: 'assets/audio/watering.mp3'        // opcional: suena al empezar cada riego
+}
+```
+
+La escena usa su propia instancia de `AudioSystem` (`TimeExperience.oldageAudio`). La música suena por defecto al entrar, se repite en bucle y se detiene al salir del escenario. El botón circular superior derecho la silencia o la reactiva.

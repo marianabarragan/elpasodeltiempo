@@ -50,6 +50,23 @@
       <div class="childhood-message adulthood-message" id="adulthoodMessage" role="status" aria-live="polite" hidden><p>Cuando crecemos, el tiempo parece ir más rápido que nosotros.</p></div>
       <button class="next-memory round-control" id="adulthoodArrow" type="button" aria-label="Volver al tablero de fotografías" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16m-7-7 7 7-7 7"/></svg></button>
     </section>
+
+    <section class="scene oldage-room" data-scene="oldage" aria-labelledby="oldage-title" hidden>
+      <h2 class="sr-only" id="oldage-title">Vejez</h2>
+      <div class="three-stage" id="oldage3d" role="application" aria-label="Mesa junto a una ventana, vista con la visión borrosa. Primero haz clic en las gafas para ponértelas. Después elige una de las dos macetas, haz clic en la regadera y mantén el clic sobre ella para regar la planta. Arrastra el resto del escenario para girar la cámara."></div>
+      <div class="oldage-progress" id="oldageProgress" role="progressbar" aria-label="Riego" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden><span></span></div>
+      <button class="sound-toggle round-control" id="oldageSoundToggle" type="button" aria-label="Silenciar sonido" aria-pressed="true">
+        <svg class="sound-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15 9a4 4 0 0 1 0 6M18 6a8 8 0 0 1 0 12"/></svg>
+        <svg class="sound-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="m16 10 5 5m0-5-5 5"/></svg>
+      </button>
+      <div class="childhood-message oldage-message" id="oldageMessage" role="status" aria-live="polite" hidden><p>Con los años, aprendemos que los pequeños momentos también hacen grande la vida.</p></div>
+      <button class="next-memory round-control" id="oldageArrow" type="button" aria-label="Continuar a la reflexión final" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16m-7-7 7 7-7 7"/></svg></button>
+    </section>
+
+    <!-- Cierre: el contenido se construye desde js/closing-content.js (js/closing-screens.js). -->
+    <section class="scene closing-screen closing-reflection" data-scene="closing-reflection" hidden></section>
+    <section class="scene closing-screen closing-contribute" data-scene="closing-contribute" hidden></section>
+    <section class="scene closing-screen closing-thanks" data-scene="closing-thanks" hidden></section>
   </main>
   <div id="transitionVeil" class="transition-veil" aria-hidden="true"></div>
   <div id="handCursor" class="hand-cursor" aria-hidden="true">
@@ -75,6 +92,13 @@
   <script src="js/adulthood-camera.js"></script>
   <script src="js/adulthood-interactions.js"></script>
   <script src="js/adulthood-scene.js"></script>
+  <script src="js/oldage-props.js"></script>
+  <script src="js/oldage-vision.js"></script>
+  <script src="js/oldage-camera.js"></script>
+  <script src="js/oldage-interactions.js"></script>
+  <script src="js/oldage-scene.js"></script>
+  <script src="js/closing-content.js"></script>
+  <script src="js/closing-screens.js"></script>
   <script src="js/scene-transition.js"></script>
   <script src="script.js"></script>
 </body>

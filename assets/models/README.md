@@ -98,3 +98,34 @@ La interacción (`js/adulthood-interactions.js`) solo usa estos identificadores 
 - **Hoja**: `mesh` debe tener UV estándar (0–1 cubre la hoja entera, parte superior hacia `-Z` local). Su `material.map` lo asigna `ChecklistSystem`; `width × height` (2.9 × 3.7) definen la correspondencia con el lienzo. Mantén `alphaTest` si conservas los agujeros del cuaderno.
 - **Monitor**: `monitorScreen.anchor` define el origen y la dirección del haz trapezoidal. Para que un `.glb` reciba la luz de la pantalla, llama a `scene.monitorLight.apply(modelo)`; `build()` ya se aplica a todo el grupo. Marca con `userData.ignoreScreenLight = true` las superficies emisivas (pantallas).
 - **Reloj**: `clock.setPower(on)` debe actualizar la pantalla; con un `.glb`, asigna la `CanvasTexture` del reloj al material de su pantalla.
+
+## Escenario 3: vejez
+
+Los props provisionales se generan en `js/oldage-props.js`. Rutas propuestas (metadatos en `TimeExperience.OldAgeProps.MODEL_SLOTS`):
+
+```text
+assets/models/oldage/glasses.glb
+assets/models/oldage/pot-1.glb
+assets/models/oldage/pot-2.glb
+assets/models/oldage/plant-1.glb
+assets/models/oldage/plant-2.glb
+assets/models/oldage/watering-can.glb
+assets/models/oldage/radio.glb
+assets/models/oldage/coffee-cup.glb
+assets/models/oldage/glasses-case.glb
+assets/models/oldage/blanket.glb
+assets/models/oldage/picture-frame.glb
+assets/models/oldage/table.glb
+assets/models/oldage/room.glb
+```
+
+Cada prop es un par `{ root, visual }`. Para sustituir uno, en `build()` añade la escena del `.glb` a su `visual` en lugar de las geometrías provisionales; `settle()` lo apoya sobre la mesa con su `THREE.Box3`. Las interacciones (`js/oldage-interactions.js`) solo usan los identificadores `glasses`, `pot1`, `pot2`, `wateringCan`, `radio` y `coffeeCup`. El brillo se genera a partir de las mallas que haya en `visual`, así que también funciona con los modelos nuevos.
+
+Convenciones que conservan las animaciones:
+
+- **Gafas**: lentes hacia `+Z`, puente en el origen y varillas hacia `-Z`. Las varillas se despliegan si se llaman `glasses-temple-left` y `glasses-temple-right`. Marca las lentes con `userData.lens = true` (no reciben contorno).
+- **Plantas**: `plant1` y `plant2` son hijos del `visual` de su maceta, a la altura de la tierra, y viajan con ella. Su grupo `plantN-sway` se mece al regar; cada hoja o tallo con `userData.leaf = true` añade su propio movimiento.
+- **Regadera**: boquilla hacia `-X` y un `Object3D` llamado `watering-can-spout` en la punta (origen de las gotas y referencia para colocarla sobre la maceta).
+- **Radio**: un grupo `radio-antenna` opcional se balancea en la interacción oculta.
+
+`OldAgeScene` llama a `Config.oldage.propsFactory` o, si es `null`, a `OldAgeProps.build()`. La fábrica debe ser **síncrona** (precarga los `.glb` antes) y devolver `{ group, tableTopY, models, interactive, curiosities, rest, center, pots, glasses, wateringCan, radio, coffeeCup, metadata, dispose() }`, con la misma forma que el prototipo.

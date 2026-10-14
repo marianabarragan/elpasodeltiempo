@@ -5,12 +5,13 @@
   const MEMORY_GLOW = 'radial-gradient(circle at 50% 46%, #fff8eb 0%, #ffe7bd 42%, #f6bd7c 100%)';
 
   class SceneTransition {
-    constructor({ intro, enterChildhood, prepareChildhood, enterAdulthood, requestScene, showBoard, afterEnter, beforeStart }) {
+    constructor({ intro, enterChildhood, prepareChildhood, enterAdulthood, enterOldAge, requestScene, showBoard, afterEnter, beforeStart }) {
       this.intro = intro;
       this.enterChildhood = enterChildhood;
       this.prepareChildhood = prepareChildhood;
       this.enterAdulthood = enterAdulthood;
-      // Stages without a built scene yet (vejez) only zoom in and request their scene.
+      this.enterOldAge = enterOldAge;
+      // Stages without a built scene only zoom in and request their scene.
       this.requestScene = requestScene;
       this.showBoard = showBoard;
       this.afterEnter = afterEnter;
@@ -127,7 +128,7 @@
     enterPhoto(stage = 'childhood') {
       if (this.state !== 'ready' || app.runtime.transitioning || !this.intro.isPhotoUnlocked(stage)) return false;
       if (!['childhood', 'adulthood', 'oldage'].includes(stage)) return false;
-      const enterScene = { childhood: this.enterChildhood, adulthood: this.enterAdulthood }[stage];
+      const enterScene = { childhood: this.enterChildhood, adulthood: this.enterAdulthood, oldage: this.enterOldAge }[stage];
       this.state = 'entering';
       this.running = true;
       this.photoPress = null;

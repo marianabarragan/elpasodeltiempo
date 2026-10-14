@@ -1,0 +1,78 @@
+# Despliegue de «El paso del tiempo» en GitHub Pages.
+# Publica la misma página que sirve `npm start` en local: index.html, styles.css, script.js,
+# js/, assets/ y las dos librerías que index.html carga desde node_modules (Three.js y GSAP),
+# conservando sus rutas relativas.
+#
+# Requisito único en GitHub: Settings → Pages → Build and deployment → Source: «GitHub Actions».
+
+name: Desplegar en GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Un solo despliegue a la vez; no cancela uno que ya esté publicando.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar dependencias (versiones fijadas en package-lock.json)
+        run: npm ci
+
+      - name: Comprobar la sintaxis de los módulos
+        run: npm run check
+
+      - name: Reunir los archivos del sitio
+        run: |
+          mkdir -p _site/node_modules/three/build _site/node_modules/gsap/dist
+          cp index.html styles.css script.js _site/
+          cp -r js assets _site/
+          # Mismas rutas que usa index.html: node_modules/three/build/three.min.js y node_modules/gsap/dist/gsap.min.js
+          cp node_modules/three/build/three.min.js _site/node_modules/three/build/
+          cp node_modules/gsap/dist/gsap.min.js _site/node_modules/gsap/dist/
+          # Sin procesamiento Jekyll: los archivos se sirven tal cual.
+          touch _site/.nojekyll
+          # Verifica que existe cada script y hoja de estilos local que pide index.html.
+          missing=0
+          for ref in $(grep -oE '(src|href)="[^"#:]+"' index.html | sed -E 's/^(src|href)="//; s/"$//'); do
+            if [ ! -f "_site/$ref" ]; then echo "Falta en el sitio: $ref"; missing=1; fi
+          done
+          exit $missing
+
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Subir el sitio
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publicar
+        id: deployment
+        uses: actions/deploy-pages@v4

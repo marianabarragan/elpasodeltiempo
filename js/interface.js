@@ -3,7 +3,7 @@
   const app = window.TimeExperience = window.TimeExperience || {};
   const cursor = document.getElementById('handCursor');
   const experience = document.getElementById('experience');
-  app.runtime = { transitioning: false, phase: 'intro', allowedScenes: new Set(['intro', 'childhood', 'adulthood']) };
+  app.runtime = { transitioning: false, phase: 'intro', allowedScenes: new Set(['intro', 'childhood', 'adulthood', 'oldage', 'closing']) };
 
   document.documentElement.classList.add('hand-cursor-enabled');
   window.addEventListener('pointermove', event => {

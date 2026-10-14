@@ -15,6 +15,12 @@
   const adultSound = document.getElementById('adulthoodSoundToggle');
   const adultConfig = app.Config.adulthood;
   let adultMessageShown = false, adultArrowShown = false;
+  const oldSection = document.querySelector('[data-scene="oldage"]');
+  const oldMessage = document.getElementById('oldageMessage');
+  const oldArrow = document.getElementById('oldageArrow');
+  const oldSound = document.getElementById('oldageSoundToggle');
+  const oldConfig = app.Config.oldage;
+  let oldMessageShown = false, oldArrowShown = false;
 
   app.audio = new app.AudioSystem({
     ...app.Config.assets.audio,
@@ -34,7 +40,18 @@
       adultSound.setAttribute('aria-label', enabled ? 'Silenciar sonido' : 'Activar sonido');
     }
   });
+  // Scenario 3: looping ambient music (Config.oldage.audio.musicSrc) and an optional water effect.
+  app.oldageAudio = new app.AudioSystem({
+    musicSrc: oldConfig.audio.musicSrc,
+    effects: { water: oldConfig.audio.waterSrc },
+    onStateChange(state) {
+      const enabled = state.enabled && !state.blocked;
+      oldSound.setAttribute('aria-pressed', String(enabled));
+      oldSound.setAttribute('aria-label', enabled ? 'Silenciar sonido' : 'Activar sonido');
+    }
+  });
   adultMessage.querySelector('p').textContent = adultConfig.message;
+  oldMessage.querySelector('p').textContent = oldConfig.message;
   app.scenes = new Map();
   const intro = new app.IntroScene(document.getElementById('intro3d'), { photoSources: app.Config.assets.photos });
   app.scenes.set('intro', intro);
@@ -71,8 +88,10 @@
   function showBoard() {
     app.scenes.get('childhood')?.exit();
     app.scenes.get('adulthood')?.exit();
+    app.scenes.get('oldage')?.exit();
     childSection.hidden = true;
     adultSection.hidden = true;
+    oldSection.hidden = true;
     introSection.hidden = false;
     document.body.classList.add('intro-active');
   }
@@ -98,6 +117,30 @@
     document.body.classList.remove('intro-active');
     prepareAdulthood().enter();
   }
+  // Scenario 3 completes after glasses + chosen pot + full watering: phrase first, then the arrow.
+  function completeOldAge() {
+    if (oldMessageShown) return;
+    oldMessageShown = true;
+    oldMessage.hidden = false;
+    gsap.timeline()
+      .fromTo(oldMessage, { autoAlpha: 0, y: -9 }, { autoAlpha: 1, y: 0, duration: reduced ? .1 : .85, delay: reduced ? 0 : .4, ease: 'power2.out' })
+      .call(() => { oldArrowShown = true; oldArrow.hidden = false; }, null, reduced ? '>' : '+=1.3')
+      .fromTo(oldArrow, { autoAlpha: 0, scale: .9 }, { autoAlpha: 1, scale: 1, duration: reduced ? .1 : .55, ease: 'power2.out' });
+  }
+  function prepareOldAge() {
+    if (!app.scenes.has('oldage')) {
+      app.scenes.set('oldage', new app.OldAgeScene(document.getElementById('oldage3d'), {
+        audio: app.oldageAudio, progressBar: document.getElementById('oldageProgress'), onComplete: completeOldAge
+      }));
+    }
+    return app.scenes.get('oldage');
+  }
+  function enterOldAge() {
+    introSection.hidden = true;
+    oldSection.hidden = false;
+    document.body.classList.remove('intro-active');
+    prepareOldAge().enter();
+  }
   function requestScene(stage) {
     // Future scene entry (vejez): called only after the unlocked photograph fills the frame.
     window.dispatchEvent(new CustomEvent('experience:request-scene', {
@@ -105,7 +148,7 @@
     }));
   }
   app.introTransition = new app.SceneTransition({
-    intro, prepareChildhood, enterChildhood, enterAdulthood, requestScene, showBoard,
+    intro, prepareChildhood, enterChildhood, enterAdulthood, enterOldAge, requestScene, showBoard,
     beforeStart: () => app.audio.unlock(),
     afterEnter: stage => app.scenes.get(stage).ready()
   });
@@ -125,6 +168,7 @@
     app.adulthoodAudio.toggle();
     app.scenes.get('adulthood')?.interact();
   });
+  oldSound.addEventListener('click', () => app.oldageAudio.toggle());
 
   app.transitions = {
     returnToBoard() {
@@ -149,8 +193,55 @@
     },
     toOldAge() {
       return app.introTransition.enterPhoto('oldage');
+    },
+    leaveOldAge() {
+      const oldage = app.scenes.get('oldage');
+      if (!oldage?.active || app.runtime.transitioning || !oldArrowShown) return false;
+      const memory = oldage.getMemory();
+      if (!memory.complete) return false;
+      app.oldageMemory = memory;
+      window.dispatchEvent(new CustomEvent('experience:scene-complete', { detail: { from: 'oldage', memory } }));
+      // SALIDA DEL ESCENARIO 3 → reflexión final (no vuelve al tablero). La escena se
+      // desvanece y, al ocultarse, detiene su render y su música.
+      return app.closing.enter(oldSection, () => oldage.exit());
     }
   };
+
+  // Cierre: reflexión → formas de aportar → agradecimiento (js/closing-screens.js).
+  const veil = document.getElementById('transitionVeil');
+  // «Repetir experiencia»: reinicia internamente todo el recorrido (escenas, progreso, candados)
+  // y muestra la pantalla introductoria original, sin recargar la página.
+  function restartExperience() {
+    if (app.runtime.transitioning) return;
+    app.Interface.setLocked(true);
+    gsap.timeline()
+      .to(veil, { opacity: 1, duration: reduced ? .12 : .8, ease: 'power2.inOut' })
+      .call(() => {
+        app.reset();
+        gsap.set(veil, { opacity: 1 });
+        app.Interface.setLocked(true);
+      })
+      .to(veil, { opacity: 0, duration: reduced ? .12 : .8, ease: 'power2.inOut', onComplete: () => app.Interface.setLocked(false) });
+  }
+  // «Salir de la experiencia»: usa el destino configurado en Config.closing (onExit o exitUrl).
+  // Sin destino, vuelve con seguridad a la pantalla inicial sin iniciar ninguna escena.
+  function exitExperience() {
+    const { exitUrl, onExit } = app.Config.closing;
+    if (typeof onExit === 'function') { onExit(); return; }
+    if (typeof exitUrl === 'string' && exitUrl.trim()) { location.assign(exitUrl); return; }
+    restartExperience();
+  }
+  app.closing = new app.ClosingFlow({
+    sections: {
+      reflection: document.querySelector('[data-scene="closing-reflection"]'),
+      contribute: document.querySelector('[data-scene="closing-contribute"]'),
+      thanks: document.querySelector('[data-scene="closing-thanks"]')
+    },
+    onRepeat: restartExperience,
+    onExit: exitExperience
+  });
+  app.transitions.restartExperience = restartExperience;
+  app.transitions.exitExperience = exitExperience;
   arrow.addEventListener('click', () => {
     if (!app.transitions.returnToBoard()) return;
     gsap.fromTo(arrow, { scale: .91 }, { scale: 1, duration: .3, ease: 'power2.out', overwrite: true });
@@ -161,8 +252,21 @@
     gsap.fromTo(adultArrow, { scale: .91 }, { scale: 1, duration: .3, ease: 'power2.out', overwrite: true });
   });
 
+  oldArrow.addEventListener('click', () => {
+    if (!app.transitions.leaveOldAge()) return;
+    gsap.fromTo(oldArrow, { scale: .91 }, { scale: 1, duration: .3, ease: 'power2.out', overwrite: true });
+  });
+
   // Reset is a technical API, not an extra button in this phase's interface.
   app.reset = () => {
+    app.closing.reset();
+    app.scenes.get('oldage')?.exit();
+    app.scenes.get('oldage')?.reset();
+    oldMessageShown = oldArrowShown = false;
+    gsap.killTweensOf([oldMessage, oldArrow]);
+    oldMessage.hidden = oldArrow.hidden = true;
+    oldSection.hidden = true;
+    app.oldageMemory = null;
     app.scenes.get('childhood')?.exit();
     app.scenes.get('adulthood')?.exit();
     app.scenes.get('adulthood')?.reset();
@@ -182,8 +286,9 @@
     app.introTransition.reset();
     intro.resize();
   };
-  window.addEventListener('pagehide', () => { app.audio.exit(); app.adulthoodAudio.exit(); });
+  window.addEventListener('pagehide', () => { app.audio.exit(); app.adulthoodAudio.exit(); app.oldageAudio.exit(); });
   window.addEventListener('pageshow', event => {
+    if (event.persisted && app.scenes.get('oldage')?.active && !app.runtime.transitioning) app.oldageAudio.enter();
     if (event.persisted && app.scenes.get('childhood')?.active && !app.runtime.transitioning) app.audio.enter();
     if (event.persisted && app.scenes.get('adulthood')?.active && !app.runtime.transitioning) app.adulthoodAudio.enter();
   });
@@ -198,5 +303,13 @@
     enterAdulthood();
     app.Interface.setPhase('adulthood');
     prepareAdulthood().ready();
+  } else if (inspect === 'closing') {
+    introSection.hidden = true;
+    document.body.classList.remove('intro-active');
+    app.closing.go('reflection');
+  } else if (inspect === 'oldage') {
+    enterOldAge();
+    app.Interface.setPhase('oldage');
+    prepareOldAge().ready();
   }
 })();
