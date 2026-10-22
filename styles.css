@@ -15,7 +15,7 @@ button:focus-visible { outline: 3px solid #00B2DA; outline-offset: 5px; }
 .skip-link { position: fixed; top: -100px; left: 1rem; z-index: 100; background: white; color: var(--purple); padding: .8rem 1rem; border-radius: 10px; }
 .skip-link:focus { top: 1rem; }
 
-/* Inicio: se conserva el tablero y la jerarquía de la entrega anterior. */
+/* Inicio: tablero de fotografías (detrás) y portada con la pregunta (delante). */
 .scene-intro { display: grid; place-items: center; background: #f1e4d1; isolation: isolate; }
 .intro-stage {
   /* Desenfoque medio ≈40 % (escala 0–20 px, donde 20 px ya no permite reconocer las fotos). */
@@ -28,16 +28,42 @@ button:focus-visible { outline: 3px solid #00B2DA; outline-offset: 5px; }
 .intro-stage.is-photo-interaction-ready { pointer-events: auto; }
 .intro-stage canvas { display: block; width: 100%; height: 100%; }
 .intro-veil { position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(0deg,rgba(255,247,231,.66),rgba(255,247,231,.78) 45%,rgba(255,247,231,.2)); }
+/* Portada con la pregunta: cubre el tablero con el fondo verde partido en diagonal, el reloj de
+   arena 3D a la izquierda (js/intro-hourglass.js) y el texto a la derecha, como en la ilustración
+   de referencia. «Iniciar» la desvanece (js/scene-transition.js) y aparece el tablero.
+   --u escala la portada con la ventana: 1 % del ancho, sin pasar de lo que permite el alto. */
 .intro-copy {
-  width: min(92vw, 1010px); position: relative; z-index: 2;
-  min-height: min(70vh, 650px); padding: 25px 0 15px;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+  --cover-dark: #b3d383; --cover-light: #cee59d; --cover-green: #387c07; --cover-plum: #6d0863;
+  --cover-button: #fdb201; --cover-button-rim: #ffc501; --cover-rule: #2b8c42;
+  --u: min(1vw, 1.9vh);
+  --hourglass-width: 46%; --text-x: 62.8%; --text-y: 41.7%;
+  position: absolute; inset: 0; z-index: 2; overflow: hidden; background: var(--cover-light);
 }
-.intro-label { font-family: var(--sans); font-size: clamp(.78rem, 1.2vw, 1rem); font-weight: 500; letter-spacing: .12em; color: var(--purple); margin: 0 0 28px; }
-.scene-intro h1 { max-width: 1010px; margin: 0; font-family: var(--heading); font-size: clamp(2.3rem, 4.1vw, 4.4rem); line-height: 1.16; letter-spacing: -.025em; font-weight: 800; text-wrap: balance; color: #43265f; text-shadow: 0 2px 18px rgba(255,248,232,.35); }
-.scene-intro h1 span { color: #a33f25; }
-.intro-start { margin-top: clamp(45px, 8vh, 90px); padding: 17px 34px; min-width: 240px; border: 0; border-radius: 14px; font-family: var(--sans); font-weight: 600; font-size: 1rem; color: white; background: #43265f; box-shadow: 0 10px 22px rgba(67,38,95,.16); transition: transform .25s, box-shadow .25s; }
-.intro-start:not(:disabled):hover { transform: translateY(-3px); box-shadow: 0 16px 34px rgba(67,38,95,.25); }
+.intro-copy::before { content: ""; position: absolute; inset: 0; background: var(--cover-dark); clip-path: polygon(0 0, 31.4% 0, 46.9% 100%, 0 100%); }
+.intro-hourglass { position: absolute; left: 0; top: 0; width: var(--hourglass-width); height: 100%; }
+.intro-hourglass canvas { display: block; width: 100%; height: 100%; }
+.intro-text {
+  position: absolute; left: var(--text-x); top: var(--text-y); transform: translate(-50%, -50%);
+  width: max-content; max-width: 92vw; display: flex; flex-direction: column; align-items: center; text-align: center;
+}
+.intro-label { margin: 0 0 calc(var(--u) * 3.4); font-family: var(--sans); font-size: max(.72rem, calc(var(--u) * 1.6)); font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--cover-plum); }
+.scene-intro h1 { margin: 0; font-family: var(--heading); font-size: max(1.1rem, calc(var(--u) * 2.5)); line-height: 1.45; letter-spacing: -.01em; font-weight: 800; text-transform: uppercase; color: var(--cover-green); }
+.scene-intro h1 .intro-line { display: block; }
+.scene-intro h1 .intro-highlight { color: var(--cover-plum); }
+.intro-start {
+  margin-top: calc(var(--u) * 3); padding: calc(var(--u) * .95) calc(var(--u) * 3); min-width: calc(var(--u) * 15.3);
+  border: 0; border-radius: 999px; font-family: var(--sans); font-weight: 700; font-size: max(.85rem, calc(var(--u) * 2)); line-height: 1.2;
+  letter-spacing: .05em; text-transform: uppercase; color: var(--cover-plum); background: var(--cover-button);
+  box-shadow: calc(var(--u) * -.33) calc(var(--u) * .33) 0 var(--cover-button-rim); transition: transform .25s, box-shadow .25s;
+}
+.intro-start:not(:disabled):hover { transform: translateY(-2px); box-shadow: calc(var(--u) * -.33) calc(var(--u) * .33) 0 var(--cover-button-rim), 0 12px 24px rgba(109,8,99,.16); }
+.intro-rule { position: absolute; left: 3.1%; right: 2.8%; top: 93.9%; height: 2px; background: var(--cover-rule); }
+/* Ventanas altas o casi cuadradas: el reloj arriba, el texto debajo y la diagonal en horizontal. */
+@media (max-aspect-ratio: 5/4) {
+  .intro-copy { --u: min(1.9vw, 1.05vh); --hourglass-width: 100%; --text-x: 50%; --text-y: 75%; }
+  .intro-copy::before { clip-path: polygon(0 0, 100% 0, 100% 42%, 0 58%); }
+  .intro-hourglass { height: 58%; top: 1%; }
+}
 .transition-veil { position: fixed; inset: 0; z-index: 80; background: #fff3da; opacity: 0; pointer-events: none; }
 .is-transitioning .transition-veil { pointer-events: auto; }
 
@@ -45,16 +71,6 @@ button:focus-visible { outline: 3px solid #00B2DA; outline-offset: 5px; }
 .childhood-room { background: #fff2d8; }
 .three-stage { position: absolute; inset: 0; width: 100%; height: 100%; }
 .three-canvas { display: block; width: 100%; height: 100%; touch-action: none; }
-.color-panel {
-  position: absolute; z-index: 4; left: clamp(18px, 2.5vw, 42px); top: 50%; transform: translateY(-50%);
-  display: flex; flex-direction: column; gap: 12px; padding: 14px 12px;
-  border-radius: 24px; background: rgba(255,255,255,.93); box-shadow: 0 9px 25px rgba(98,67,30,.12);
-}
-.color-choice { display: flex; align-items: center; gap: 13px; min-width: 133px; padding: 8px 10px; border: 1px solid transparent; border-radius: 16px; background: transparent; color: #594331; font-weight: 600; font-size: .9rem; transition: background .18s, border-color .18s; }
-.color-choice i { display: block; flex: 0 0 31px; width: 31px; height: 31px; border-radius: 50%; background: var(--swatch); box-shadow: inset 0 0 0 2px rgba(0,0,0,.06); }
-.color-choice[aria-pressed="true"] { background: #f3efdf; border-color: #d8ceaf; }
-.color-choice[aria-pressed="true"] i { outline: 2px solid #715842; outline-offset: 3px; }
-.color-choice:hover { background: #f5f1e7; }
 .round-control { position: absolute; z-index: 4; display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; border: 1px solid rgba(125,82,35,.14); color: #624227; background: white; box-shadow: 0 6px 20px rgba(91,57,24,.12); transition: background .2s; }
 .round-control:hover { background: #fff7e4; }
 .round-control svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
@@ -66,6 +82,44 @@ button:focus-visible { outline: 3px solid #00B2DA; outline-offset: 5px; }
 .next-memory:hover { background: #f6ca55; }
 .next-memory svg { width: 28px; height: 28px; }
 .childhood-message { position: absolute; z-index: 3; left: 50%; top: clamp(22px, 4vh, 44px); transform: translateX(-50%); width: max-content; max-width: min(65vw, 590px); padding: 19px 28px; background: white; border-radius: 12px; box-shadow: 0 8px 22px rgba(91,57,24,.13); pointer-events: none; text-align: center; }
+/* Niñez: barra de progreso, arriba y horizontal durante toda la interacción. */
+.childhood-progress {
+  --progress: 0;
+  position: absolute; z-index: 4; top: 26px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: row; align-items: center; gap: 12px;
+  padding: 10px 16px; border-radius: 22px; background: rgba(255,255,255,.88);
+  box-shadow: 0 8px 22px rgba(91,57,24,.12); pointer-events: none;
+}
+.childhood-progress__track { position: relative; width: min(42vw, 420px); height: 14px; border-radius: 999px; background: #efe6d2; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(98,66,39,.1); }
+.childhood-progress__fill {
+  position: absolute; inset: 0; border-radius: inherit;
+  background: linear-gradient(90deg, #F2BB31, #60AE29); transform-origin: 0 50%; transform: scaleX(var(--progress));
+}
+/* Four marks split the bar into the five 20 % milestones. */
+.childhood-progress__track i { position: absolute; top: 0; bottom: 0; width: 2px; background: rgba(255,255,255,.85); }
+.childhood-progress__track i:nth-of-type(1) { left: 20%; }
+.childhood-progress__track i:nth-of-type(2) { left: 40%; }
+.childhood-progress__track i:nth-of-type(3) { left: 60%; }
+.childhood-progress__track i:nth-of-type(4) { left: 80%; }
+.childhood-progress__value { font-family: var(--sans); font-weight: 700; font-size: .78rem; color: #624227; font-variant-numeric: tabular-nums; }
+.childhood-room .childhood-message { top: 92px; }
+
+/* Paleta desplegable de la crayola: 4 × 4, una fila por familia tonal. */
+.crayon-palette { position: absolute; z-index: 5; padding: 14px 14px 16px; border-radius: 20px; background: #fffdf7; box-shadow: 0 14px 34px rgba(91,57,24,.2); border: 1px solid rgba(98,66,39,.1); }
+.crayon-palette__title { margin: 0 0 10px; font-family: var(--heading); font-weight: 800; font-size: .95rem; color: #624227; text-align: center; }
+.crayon-palette__grid { display: grid; gap: 8px; }
+.crayon-palette__row { display: grid; grid-template-columns: repeat(4, 44px); gap: 8px; }
+.crayon-palette__swatch {
+  width: 44px; height: 34px; padding: 0; border-radius: 9px; border: 0; background: var(--swatch);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.08), 0 2px 4px rgba(91,57,24,.12); transition: transform .14s ease, box-shadow .14s ease;
+}
+.crayon-palette__swatch:hover, .crayon-palette__swatch:focus-visible { transform: translateY(-2px) scale(1.12); box-shadow: inset 0 0 0 1px rgba(0,0,0,.08), 0 0 0 3px #fffdf7, 0 0 0 5px #624227; outline: none; }
+.crayon-palette__swatch[aria-pressed="true"] { box-shadow: inset 0 0 0 1px rgba(0,0,0,.08), 0 0 0 3px #fffdf7, 0 0 0 5px #60AE29; }
+
+/* Flecha de la niñez: más grande que el botón de sonido y en un tono que contrasta con el piso. */
+.childhood-room .next-memory { width: 74px; height: 74px; top: calc(50% - 37px); background: #2e319c; color: #fff; border: 3px solid #fff; box-shadow: 0 10px 26px rgba(46,49,156,.35); }
+.childhood-room .next-memory:hover { background: #3c40b8; }
+.childhood-room .next-memory svg { width: 32px; height: 32px; stroke-width: 2.2; }
 .childhood-message p { margin: 0; font-family: var(--heading); font-size: clamp(1.05rem, 1.5vw, 1.4rem); font-weight: 700; line-height: 1.35; }
 
 /* Juventud: mismos controles y recuadro narrativo que la niñez, con la paleta del escenario. */
@@ -75,6 +129,13 @@ button:focus-visible { outline: 3px solid #00B2DA; outline-offset: 5px; }
 .adulthood-room .next-memory { background: #c7cf96; color: #4a3520; }
 .adulthood-room .next-memory:hover { background: #d3dba6; }
 .adulthood-message p { color: #4a3520; }
+/* Escenario 2: barra de progreso arriba (mismo diseño que la niñez, en los tonos del escenario)
+   y la frase debajo de ella. */
+.adulthood-progress .childhood-progress__track { background: #efe6d2; }
+.adulthood-progress .childhood-progress__fill { background: linear-gradient(90deg, #c7cf96, #837858); }
+.adulthood-room .childhood-message { top: 92px; }
+/* Escenario 2: mientras se sostiene el lapicero, su punta hace de puntero. */
+body.is-holding-pen .hand-cursor.is-visible { opacity: 0; }
 
 /* Vejez: misma estructura de controles, con la paleta del escenario 3. */
 .oldage-room { background: #c4d58f; }
@@ -84,6 +145,13 @@ button:focus-visible { outline: 3px solid #00B2DA; outline-offset: 5px; }
 .oldage-room .next-memory:hover { background: #d9ea6c; }
 .oldage-message { background: #fffbef; border: 2px solid #fadd87; max-width: min(70vw, 640px); }
 .oldage-message p { color: #5a323a; }
+/* Escenario 3: barra de progreso arriba (mismo diseño que la niñez, en la paleta de la vejez)
+   y la frase debajo de ella. */
+.oldage-scene-progress { background: rgba(255,251,239,.92); box-shadow: 0 8px 22px rgba(90,50,58,.14); }
+.oldage-scene-progress .childhood-progress__track { background: #f3ead0; box-shadow: inset 0 0 0 1px rgba(90,50,58,.12); }
+.oldage-scene-progress .childhood-progress__fill { background: linear-gradient(90deg, #fadd87, #cee24c); }
+.oldage-scene-progress .childhood-progress__value { color: #5a323a; }
+.oldage-room .childhood-message { top: 92px; }
 .oldage-progress {
   position: absolute; z-index: 3; width: 18px; height: 120px; margin: -60px 0 0 0;
   padding: 3px; border-radius: 12px; background: #fffbef; border: 2px solid #5a323a;
@@ -226,19 +294,7 @@ button:focus-visible { outline: 3px solid #00B2DA; outline-offset: 5px; }
 .hand-cursor .hand-closed, .hand-cursor.is-closed .hand-open { display: none; }
 .hand-cursor.is-closed .hand-closed { display: block; }
 @media (pointer: fine) { .hand-cursor-enabled, .hand-cursor-enabled * { cursor: none !important; } }
-@media (max-height: 650px) and (min-width: 700px) {
-  .intro-copy { min-height: 75vh; }
-  .intro-label { margin-bottom: 18px; }
-  .scene-intro h1 { font-size: clamp(2.1rem, 3.6vw, 3.5rem); }
-  .intro-start { margin-top: 35px; padding: 14px 30px; }
-  .color-panel { gap: 6px; padding: 10px; }
-}
-@media (max-width: 1100px) { .color-panel { left: 14px; padding: 10px 7px; } .color-choice { gap: 10px; min-width: 118px; padding: 7px; font-size: .82rem; } .color-choice i { flex-basis: 27px; width: 27px; height: 27px; } }
 @media (max-width: 700px) {
-  .intro-copy { width: 90vw; min-height: 78vh; }
-  .scene-intro h1 { font-size: clamp(1.9rem, 6vw, 2.8rem); }
-  .intro-start { min-width: 210px; margin-top: 40px; }
-  .color-panel { left: 12px; top: auto; bottom: 18px; transform: none; gap: 3px; }
   .sound-toggle { top: 16px; right: 16px; }
   .next-memory { right: 16px; width: 48px; height: 48px; top: calc(50% - 24px); }
   .childhood-message { max-width: 66vw; padding: 12px 18px; }

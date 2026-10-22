@@ -3,6 +3,9 @@
   const app = window.TimeExperience;
   const MASK_LAYER = 1;
   const POT_HOVER = { lift: .3, tilt: .14 };
+  // Complementary objects: the cup rises a little, the radio grows slightly in place.
+  const CUP_HOVER = { lift: .12, scale: 1.05 };
+  const RADIO_HOVER = 1.045;
 
   // Soft outline drawn behind an object (back faces pushed out along the normals).
   // It is built from whatever meshes the prop's `visual` holds, so .glb models get it too.
@@ -27,16 +30,19 @@
   /**
    * Scenario 3 (old age): a table by the window, seen through deteriorated sight.
    * Visual props come from OldAgeProps.build() (or Config.oldage.propsFactory),
-   * the narrative order from OldAgeActivity and pointer logic from OldAgeInteractions.
+   * the narrative order from OldAgeActivity, pointer logic from OldAgeInteractions and the
+   * scene's progress bar from OldAgeProgress.
    * This class owns every visual response: glow, hover, movements, water and blur.
    */
   class OldAgeScene {
-    constructor(container, { audio, progressBar, onComplete } = {}) {
+    // progressBar: the small watering gauge beside the can; sceneProgress: the scene's bar.
+    constructor(container, { audio, progressBar, sceneProgress, onComplete } = {}) {
       this.container = container;
       this.audio = audio;
       this.progressBar = progressBar;
       this.progressFill = progressBar?.querySelector('span');
       this.onComplete = onComplete;
+      this.finished = false;
       this.active = false;
       this.reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
       const config = app.Config.oldage;
@@ -79,8 +85,10 @@
 
       this.vision = new app.OldAgeVision(this.renderer, { maxBlurPx: config.vision.maxBlurPx, maskLayer: MASK_LAYER });
       this.visionState = { amount: config.vision.initialAmount, focus: 0 };
-      this.cameraRig = new app.OldAgeCamera(new THREE.Vector3(.1, this.props.tableTopY + 2.2, .35));
+      // Focus a little above the objects: close framing of the table with the window behind.
+      this.cameraRig = new app.OldAgeCamera(new THREE.Vector3(.1, this.props.tableTopY + 2.9, .35));
       this.activity = new app.OldAgeActivity({ wateringSeconds: config.wateringSeconds });
+      this.progress = new app.OldAgeProgress({ element: sceneProgress, onComplete: () => this.finish() });
       this.interactions = new app.OldAgeInteractions(this);
       this.observer = new ResizeObserver(() => this.resize());
       this.observer.observe(container);
@@ -100,8 +108,11 @@
       sun.position.set(-7, 15, -9);
       sun.target.position.set(.5, top, 1);
       sun.castShadow = true;
-      sun.shadow.mapSize.set(2048, 2048);
-      Object.assign(sun.shadow.camera, { left: -12, right: 12, top: 12, bottom: -12, near: .5, far: 50 });
+      // The shadow covers all the table that can be on screen (wide or tall windows, any camera
+      // angle), so the table reads as one even surface with no hard-edged lit patches. The map
+      // keeps about the same detail per unit as before.
+      sun.shadow.mapSize.set(3584, 2304);
+      Object.assign(sun.shadow.camera, { left: -22, right: 22, top: 15, bottom: -13, near: .5, far: 50 });
       sun.shadow.bias = -.0004; sun.shadow.normalBias = .03;
       const fill = new THREE.DirectionalLight(palette.sky, .55);
       fill.position.set(8, 9, 12);
@@ -113,11 +124,12 @@
     }
 
     // One glow per interactive id. Pots glow without their plant (the plant is its own prop).
+    // The cup and the radio get one too, lit only if they are the last thing missing.
     buildGlows() {
       const palette = app.OldAgeProps.PALETTE;
-      const thickness = { glasses: .045, pot1: .07, pot2: .07, wateringCan: .065 };
+      const thickness = { glasses: .045, pot1: .07, pot2: .07, wateringCan: .065, radio: .06, coffeeCup: .04 };
       const glows = {};
-      Object.entries(this.props.interactive).forEach(([id, item]) => {
+      Object.entries({ ...this.props.interactive, ...this.props.curiosities }).forEach(([id, item]) => {
         const material = new THREE.ShaderMaterial({
           vertexShader: GLOW_VERTEX, fragmentShader: GLOW_FRAGMENT,
           uniforms: { uColor: { value: new THREE.Color(palette.butter).lerp(new THREE.Color('#ffffff'), .35) }, uOpacity: { value: 0 }, uThickness: { value: thickness[id] } },
@@ -202,9 +214,11 @@
       this.tick = requestAnimationFrame(this.frame);
     }
 
-    // Soft, slow blinking (≈2.6 s per cycle) on the objects that invite the next action.
+    // Soft, slow blinking (≈2.6 s per cycle) on the objects that invite the next action, one
+    // step at a time. After the watering, if neither the cup nor the radio has been touched,
+    // those two glow so the last 20 % can be found; once one of them answers, both stop.
     updateGlows(dt) {
-      const glowing = this.activity.glowing;
+      const glowing = this.activity.complete && !this.progress.has('extra') ? ['radio', 'coffeeCup'] : this.activity.glowing;
       const pulse = .5 + .5 * Math.sin(this.time * 2.4);
       Object.entries(this.glows).forEach(([id, glow]) => {
         const target = glowing.includes(id) ? 1 : 0;
@@ -226,11 +240,20 @@
       const can = this.props.wateringCan.visual;
       const scale = name === 'wateringCan' && step === 'can' ? 1.06 : 1;
       gsap.to(can.scale, { x: scale, y: scale, z: scale, duration: .3, ease: 'power2.out', overwrite: 'auto' });
+      // Complementary objects (only offered by the interactions once the glasses are on).
+      const cup = this.props.coffeeCup.visual, cupOn = name === 'coffeeCup';
+      gsap.to(cup.position, { y: cupOn ? CUP_HOVER.lift : 0, duration: .3, ease: 'power2.out', overwrite: 'auto' });
+      const cupScale = cupOn ? CUP_HOVER.scale : 1;
+      gsap.to(cup.scale, { x: cupScale, y: cupScale, z: cupScale, duration: .3, ease: 'power2.out', overwrite: 'auto' });
+      const radioScale = name === 'radio' ? RADIO_HOVER : 1;
+      gsap.to(this.props.radio.visual.scale, { x: radioScale, y: radioScale, z: radioScale, duration: .3, ease: 'power2.out', overwrite: 'auto' });
     }
 
-    // ---------- Hidden curiosities (click only) ----------
+    // ---------- Complementary interactions: radio and coffee cup ----------
     // Radio: a little rock on its base while the antenna swings. Cup: a slow turn on the saucer.
+    // The first click on either one adds the 'extra' milestone (only once for both).
     poke(name) {
+      this.progress.mark('extra');
       if (name === 'radio') {
         const { visual, antenna } = this.props.radio;
         if (gsap.isTweening(visual.rotation)) return;
@@ -258,7 +281,7 @@
     wearGlasses(done) {
       const glasses = this.props.glasses;
       gsap.to(this.visionState, { focus: 0, duration: .3, overwrite: 'auto' });
-      // Picked up from the book: the table copy leaves while the first-person copy rises.
+      // Picked up from the table: the table copy leaves while the first-person copy rises.
       gsap.timeline()
         .to(glasses.visual.position, { y: .45, duration: .3, ease: 'power2.out' })
         .to(glasses.visual.scale, { x: .001, y: .001, z: .001, duration: .25, ease: 'power2.in' }, .12)
@@ -275,6 +298,7 @@
           // Fully sharp; the frame is no longer visible anywhere on screen.
           this.visionState.amount = 0;
           camera.zoom = 1;
+          this.progress.mark('glasses');
           done?.();
         }
       });
@@ -297,6 +321,7 @@
         },
         onComplete: () => {
           gsap.fromTo(visual.scale, { y: .94 }, { y: 1, duration: .45, ease: 'elastic.out(1, .5)' });
+          this.progress.mark('pot');
           done?.();
         }
       });
@@ -356,6 +381,7 @@
       this.interactions.release();
       activity.set('returning');
       this.setProgress(1);
+      this.progress.mark('watering');
       const bar = this.progressBar;
       if (bar) gsap.to(bar, { autoAlpha: 0, duration: .45, delay: .25, ease: 'power2.out', onComplete: () => { bar.hidden = true; } });
       const can = this.props.wateringCan;
@@ -372,9 +398,16 @@
         },
         onComplete: () => {
           activity.set('complete');
-          this.onComplete?.();
+          this.finish();
         }
       });
+    }
+
+    // The scene ends (phrase, then arrow) once the bar is at 100 % and the can is back.
+    finish() {
+      if (this.finished || !this.progress.complete || !this.activity.complete) return;
+      this.finished = true;
+      this.onComplete?.();
     }
 
     // ---------- Progress bar (DOM, beside the can) ----------
@@ -481,6 +514,12 @@
       radio.visual.rotation.z = 0;
       if (radio.antenna?.userData.restZ !== undefined) radio.antenna.rotation.z = radio.antenna.userData.restZ;
       (coffeeCup.cup || coffeeCup.visual).rotation.set(0, 0, 0);
+      gsap.killTweensOf([coffeeCup.visual.position, coffeeCup.visual.scale, radio.visual.scale]);
+      coffeeCup.visual.position.set(0, 0, 0);
+      coffeeCup.visual.scale.set(1, 1, 1);
+      radio.visual.scale.set(1, 1, 1);
+      this.progress.reset();
+      this.finished = false;
       Object.values(this.glows).forEach(glow => { glow.value = 0; });
       this.water.drops.forEach(drop => { drop.alive = false; drop.mesh.visible = false; });
       Object.assign(this.sway, { amount: 0, target: 0 });
@@ -494,7 +533,7 @@
     }
 
     getMemory() {
-      return { complete: this.activity.complete, chosen: this.activity.chosen };
+      return { complete: this.finished, chosen: this.activity.chosen, progress: this.progress.value };
     }
 
     dispose() {

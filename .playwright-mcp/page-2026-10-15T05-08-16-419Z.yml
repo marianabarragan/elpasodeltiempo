@@ -1,0 +1,127 @@
+- application [ref=f80e1]:
+  - iframe [aria-hidden] [ref=f80e2]
+  - iframe [aria-hidden] [ref=f80e3]
+  - banner "Barra de menú" [ref=f80e504]:
+    - generic [ref=f80e7]:
+      - link "Página principal de Hojas de cálculo" [ref=f80e505] [cursor=pointer]:
+        - /url: https://docs.google.com/spreadsheets/u/0/?authuser=0&usp=sheets_web
+      - generic [ref=f80e16]:
+        - generic "EVALUACIÓN HEURISTICA - Pycon" [ref=f80e506]:
+          - generic [ref=f80e19]:
+            - generic: EVALUACIÓN HEURISTICA - Pycon
+            - textbox "Cambiar nombre" [ref=f80e507]: EVALUACIÓN HEURISTICA - Pycon
+          - generic [ref=f80e22]:
+            - button "Compartido de forma externa" [ref=f80e508] [cursor=pointer]
+            - checkbox "Destacar" [ref=f80e509] [cursor=pointer]
+            - button "Mover" [ref=f80e510] [cursor=pointer]
+            - 'button "Estado del documento: Guardando…." [ref=f80e511]':
+              - generic [ref=f80e512] [cursor=pointer]: Guardando…
+        - generic [ref=f80e39]:
+          - button "Última modificación hace unos segundos" [ref=f80e517] [cursor=pointer]
+          - button "Mostrar todos los comentarios" [ref=f80e518] [cursor=pointer]
+          - button "Únete a una llamada aquí o presenta esta pestaña en la llamada" [ref=f80e519] [cursor=pointer]
+          - generic [ref=f80e54]:
+            - button "Compartir. Cualquier persona con el enlace. Cualquier persona con el enlace puede acceder al elemento; no es necesario iniciar sesión." [ref=f80e520] [cursor=pointer]: Compartir
+            - button "Acciones rápidas para compartir" [ref=f80e521] [cursor=pointer]
+          - 'button "Cuenta de Google: MARIANA SOFIA BARRAGAN PERDOMO (mariana.barragan@uao.edu.co)" [ref=f80e522] [cursor=pointer]'
+    - generic [ref=f80e63]:
+      - menubar [ref=f80e65]:
+        - menuitem "Archivo" [ref=f80e523] [cursor=pointer]
+        - menuitem "Editar" [ref=f80e524] [cursor=pointer]
+        - menuitem "Ver" [ref=f80e525] [cursor=pointer]
+        - menuitem "Insertar" [ref=f80e526] [cursor=pointer]
+        - menuitem "Formato" [ref=f80e527] [cursor=pointer]
+        - menuitem "Datos" [ref=f80e528] [cursor=pointer]
+        - menuitem "Herramientas" [ref=f80e529] [cursor=pointer]
+        - menuitem "Extensiones" [ref=f80e530] [cursor=pointer]
+        - menuitem "Ayuda" [ref=f80e531] [cursor=pointer]
+      - generic [ref=f80e75]:
+        - generic [ref=f80e76]:
+          - toolbar "Buscar en el menú (Alt+/)" [ref=f80e532]:
+            - combobox "Menús" [ref=f80e533]
+          - toolbar "Principal" [ref=f80e534]:
+            - button "Deshacer (Ctrl+Z)" [ref=f80e535] [cursor=pointer]
+            - button "Rehacer (Ctrl+Y)" [ref=f80e536] [cursor=pointer]
+            - button "Imprimir (Ctrl+P)" [ref=f80e537] [cursor=pointer]
+            - button "Copiar formato" [ref=f80e538] [cursor=pointer]
+            - combobox "Zoom" [ref=f80e539] [cursor=pointer]:
+              - option "Lista de Zoom. Se ha seleccionado 100%." [selected] [ref=f80e540]:
+                - textbox "Zoom" [ref=f80e541]: 100%
+            - separator [disabled] [ref=f80e109]
+            - button "Formatear como moneda" [ref=f80e542] [cursor=pointer]:
+              - generic [ref=f80e111]: €
+            - button "Formatear como porcentaje" [ref=f80e543] [cursor=pointer]:
+              - generic [ref=f80e114]: "%"
+            - button "Reducir decimales" [ref=f80e544] [cursor=pointer]
+            - button "Aumentar decimales" [ref=f80e545] [cursor=pointer]
+            - button "Más formatos" [ref=f80e546] [cursor=pointer]:
+              - generic [ref=f80e127]: "123"
+            - separator [disabled] [ref=f80e130]
+            - listbox "Fuente" [ref=f80e547] [cursor=pointer]:
+              - option "Lista de Fuente. Se ha seleccionado Predeterminada (Arial)." [selected] [ref=f80e548]: Predeterminada (Arial)
+            - separator [disabled] [ref=f80e138]
+            - button "Reducir tamaño de fuente (Ctrl+Mayús+coma)" [ref=f80e549] [cursor=pointer]
+            - combobox "Tamaño de fuente" [ref=f80e550] [cursor=pointer]:
+              - option "Lista de Tamaño de fuente. Se ha seleccionado 10." [selected] [ref=f80e551]:
+                - textbox "Tamaño de fuente" [ref=f80e552]: "10"
+            - button "Aumentar tamaño de fuente (Ctrl+Mayús+punto)" [ref=f80e553] [cursor=pointer]
+            - separator [disabled] [ref=f80e154]
+            - button "Negrita (Ctrl+B)" [ref=f80e554] [cursor=pointer]
+            - button "Cursiva (Ctrl+I)" [ref=f80e555] [cursor=pointer]
+            - button "Tachar (Alt+Mayús+5)" [ref=f80e556] [cursor=pointer]
+            - button "Color del texto" [ref=f80e557] [cursor=pointer]
+            - separator [disabled] [ref=f80e177]
+            - button "Color de relleno" [ref=f80e558] [cursor=pointer]
+            - button "Bordes" [ref=f80e559] [cursor=pointer]
+            - button "Combinar celdas" [disabled] [ref=f80e560]
+            - button "Seleccionar el tipo de combinación" [disabled] [ref=f80e561]
+            - separator [disabled] [ref=f80e202]
+            - button "Alineación horizontal" [ref=f80e562] [cursor=pointer]
+            - button "Alineación vertical" [ref=f80e563] [cursor=pointer]
+            - button "Ajuste de texto" [ref=f80e564] [cursor=pointer]
+            - button "Rotación del texto" [ref=f80e565] [cursor=pointer]
+            - separator [disabled] [ref=f80e239]
+            - button "Inserta un enlace. (Ctrl+K)" [ref=f80e566] [cursor=pointer]
+            - button "Insertar comentario (Ctrl+Alt+M)" [ref=f80e567] [cursor=pointer]
+            - button "Insertar gráfico" [ref=f80e568] [cursor=pointer]
+            - button "Crear un filtro" [ref=f80e569] [cursor=pointer]
+            - button "Vistas de filtro" [ref=f80e570] [cursor=pointer]
+            - button "Funciones" [ref=f80e571] [cursor=pointer]
+        - toolbar "Modo y vista" [ref=f80e572]:
+          - button "Ocultar menús (Ctrl+Mayús+F)" [ref=f80e573] [cursor=pointer]
+    - generic:
+      - generic:
+        - button "Mostrar panel lateral":
+          - generic [ref=f80e444] [cursor=pointer]
+    - generic [ref=f80e283]:
+      - generic "Cuadro con nombre (Ctrl + J)" [ref=f80e574]:
+        - textbox [ref=f80e285]: H5
+        - button "Botón de menú de cuadro con nombre. Selecciona una de las opciones de menú para desplazarte a su intervalo con nombre correspondiente." [ref=f80e575] [cursor=pointer]
+      - textbox [ref=f80e303]
+  - generic [ref=f80e306]:
+    - generic [ref=f80e457]:
+      - generic [ref=f80e458]:
+        - progressbar [ref=f80e460]
+        - button "Convertir a tabla" [ref=f80e576] [cursor=pointer]
+      - generic [ref=f80e475]:
+        - button "Más sugerencias" [ref=f80e577] [cursor=pointer]
+        - tooltip [aria-hidden] [ref=f80e482]: Más sugerencias
+      - generic [ref=f80e484]:
+        - button "Rechazar la sugerencia" [ref=f80e578] [cursor=pointer]
+        - tooltip [aria-hidden] [ref=f80e491]: Rechazar la sugerencia
+    - navigation "Barra de pestañas de la hoja" [ref=f80e579]:
+      - toolbar [ref=f80e344]:
+        - button "Añadir hoja" [ref=f80e580] [cursor=pointer]
+        - button "Todas las hojas" [ref=f80e581] [cursor=pointer]
+      - toolbar [ref=f80e357]:
+        - button "Hoja 1" [ref=f80e582]
+      - toolbar [ref=f80e366]
+  - generic [ref=f80e367]:
+    - combobox [active]
+  - link "Activar la compatibilidad con lectores de pantalla" [ref=f80e583] [cursor=pointer]:
+    - /url: "#"
+  - textbox [ref=f80e369]
+  - region [ref=f80e370]: Para habilitar la compatibilidad con lectores de pantalla, pulsa Ctrl+Alt+Z. Para obtener información acerca de las combinaciones de teclas, pulsa Ctrl+barra diagonal.
+  - generic [ref=f80e371]: Banner oculto
+  - region
+  - generic [ref=f80e497]: Cuadro con nombre. Ctrl + J. Se ha seleccionado H4. Introduce un intervalo de celdas o un intervalo con nombre y pulsa la tecla Intro desplazarte a él.

@@ -1,0 +1,156 @@
+- generic [ref=f22e2]:
+  - button "Editar este formulario" [ref=f22e373] [cursor=pointer]
+  - generic [ref=f22e11]:
+    - generic [ref=f22e14]:
+      - generic [ref=f22e16]:
+        - generic [ref=f22e18]:
+          - heading "Registro de hallazgos - Evaluación heurística - Pycon - Mariana Barragán" [level=1] [ref=f22e374]
+          - generic [ref=f22e21]: Registra un hallazgo por envío. Evalúa la interfaz con los 10 principios heurísticos de Nielsen. Pycon.
+        - generic [ref=f22e23]:
+          - generic [ref=f22e24]:
+            - generic [ref=f22e27]:
+              - text: mariana.barragan@uao.edu.co
+              - link "Cambiar de cuenta" [ref=f22e375] [cursor=pointer]:
+                - /url: https://accounts.google.com/AccountChooser?continue=https://docs.google.com/forms/d/e/1FAIpQLSd071lc1pEA6bBLcu8bzz1ug010xrFM1Pu0qUAILUr2KXfjsw/viewform?authuser%3D0&service=wise
+            - status [ref=f22e376] [cursor=pointer]:
+              - generic [ref=f22e380]: Borrador guardado
+          - generic [ref=f22e32]: El nombre, el correo y la foto asociados a tu cuenta de Google se registrarán cuando subas archivos y envíes este formulario
+          - generic [aria-hidden] [ref=f22e34]: "* Indica que la pregunta es obligatoria"
+      - list [ref=f22e35]:
+        - listitem [ref=f22e36]:
+          - generic [ref=f22e38]:
+            - generic [ref=f22e40]:
+              - heading "Ubicación del problema (sección o pantalla) Pregunta obligatoria" [level=3] [ref=f22e381]:
+                - generic [ref=f22e42]: Ubicación del problema (sección o pantalla)
+                - generic "Pregunta obligatoria" [ref=f22e382]: "*"
+              - generic [ref=f22e44]: "Ej.: inicio, menú principal, ficha de producto, formulario de contacto."
+            - generic [ref=f22e49]:
+              - textbox "Ubicación del problema (sección o pantalla) Pregunta obligatoria" [ref=f22e383]
+              - generic [aria-hidden]: Tu respuesta
+        - listitem [ref=f22e52]:
+          - generic [ref=f22e54]:
+            - heading "Principio heurístico afectado Pregunta obligatoria" [level=3] [ref=f22e384]:
+              - generic [ref=f22e58]: Principio heurístico afectado
+              - generic "Pregunta obligatoria" [ref=f22e385]: "*"
+            - radiogroup "Principio heurístico afectado Pregunta obligatoria" [ref=f22e386]:
+              - generic [ref=f22e63]:
+                - generic [ref=f22e66]:
+                  - radio "1. Visibilidad del estado del sistema" [ref=f22e387] [cursor=pointer]
+                  - generic [ref=f22e71]: 1. Visibilidad del estado del sistema
+                - generic [ref=f22e76]:
+                  - radio "2. Relación entre el sistema y el mundo real" [ref=f22e388] [cursor=pointer]
+                  - generic [ref=f22e81]: 2. Relación entre el sistema y el mundo real
+                - generic [ref=f22e86]:
+                  - radio "3. Control y libertad del usuario" [ref=f22e389] [cursor=pointer]
+                  - generic [ref=f22e91]: 3. Control y libertad del usuario
+                - generic [ref=f22e96]:
+                  - radio "4. Consistencia y estándares" [ref=f22e390] [cursor=pointer]
+                  - generic [ref=f22e101]: 4. Consistencia y estándares
+                - generic [ref=f22e106]:
+                  - radio "5. Prevención de errores" [ref=f22e391] [cursor=pointer]
+                  - generic [ref=f22e111]: 5. Prevención de errores
+                - generic [ref=f22e116]:
+                  - radio "6. Reconocer antes que recordar" [ref=f22e392] [cursor=pointer]
+                  - generic [ref=f22e121]: 6. Reconocer antes que recordar
+                - generic [ref=f22e126]:
+                  - radio "7. Flexibilidad y eficiencia de uso" [ref=f22e393] [cursor=pointer]
+                  - generic [ref=f22e131]: 7. Flexibilidad y eficiencia de uso
+                - generic [ref=f22e136]:
+                  - radio "8. Diseño estético y minimalista" [ref=f22e394] [cursor=pointer]
+                  - generic [ref=f22e141]: 8. Diseño estético y minimalista
+                - generic [ref=f22e146]:
+                  - radio "9. Ayudar a reconocer, diagnosticar y recuperarse de errores" [ref=f22e395] [cursor=pointer]
+                  - generic [ref=f22e151]: 9. Ayudar a reconocer, diagnosticar y recuperarse de errores
+                - generic [ref=f22e156]:
+                  - radio "10. Ayuda y documentación" [ref=f22e396] [cursor=pointer]
+                  - generic [ref=f22e161]: 10. Ayuda y documentación
+        - listitem [ref=f22e164]:
+          - generic [ref=f22e166]:
+            - generic [ref=f22e168]:
+              - heading "¿Qué observaste? Pregunta obligatoria" [level=3] [ref=f22e397]:
+                - generic [ref=f22e170]: ¿Qué observaste?
+                - generic "Pregunta obligatoria" [ref=f22e398]: "*"
+              - generic [ref=f22e172]: "Describe lo que ocurrió de forma objetiva. Ej.: Al enviar el formulario no aparece ningún mensaje."
+            - generic [ref=f22e175]:
+              - generic [aria-hidden]: Tu respuesta
+              - textbox "¿Qué observaste? Pregunta obligatoria" [ref=f22e399]
+        - listitem [ref=f22e179]:
+          - generic [ref=f22e181]:
+            - generic [ref=f22e183]:
+              - heading "¿Por qué representa un problema? Pregunta obligatoria" [level=3] [ref=f22e400]:
+                - generic [ref=f22e185]: ¿Por qué representa un problema?
+                - generic "Pregunta obligatoria" [ref=f22e401]: "*"
+              - generic [ref=f22e187]: "Explica la consecuencia para el usuario. Ej.: No sabe si la información fue enviada."
+            - generic [ref=f22e190]:
+              - generic [aria-hidden]: Tu respuesta
+              - textbox "¿Por qué representa un problema? Pregunta obligatoria" [ref=f22e402]
+        - listitem [ref=f22e194]:
+          - generic [ref=f22e196]:
+            - generic [ref=f22e198]:
+              - heading "¿Qué solución propones? Pregunta obligatoria" [level=3] [ref=f22e403]:
+                - generic [ref=f22e200]: ¿Qué solución propones?
+                - generic "Pregunta obligatoria" [ref=f22e404]: "*"
+              - generic [ref=f22e202]: "Propón una mejora concreta. Ej.: Mostrar un mensaje de envío exitoso."
+            - generic [ref=f22e205]:
+              - generic [aria-hidden]: Tu respuesta
+              - textbox "¿Qué solución propones? Pregunta obligatoria" [ref=f22e405]
+        - listitem [ref=f22e209]:
+          - generic [ref=f22e211]:
+            - generic [ref=f22e213]:
+              - heading "Severidad Pregunta obligatoria" [level=3] [ref=f22e406]:
+                - generic [ref=f22e215]: Severidad
+                - generic "Pregunta obligatoria" [ref=f22e407]: "*"
+              - generic [ref=f22e217]: Considera frecuencia, impacto y persistencia al asignar la severidad.
+            - radiogroup "Severidad Pregunta obligatoria" [ref=f22e408]:
+              - generic [ref=f22e221]:
+                - generic [ref=f22e224]:
+                  - radio "0 — No es un problema" [ref=f22e409] [cursor=pointer]
+                  - generic [ref=f22e229]: 0 — No es un problema
+                - generic [ref=f22e234]:
+                  - radio "1 — Cosmético" [ref=f22e410] [cursor=pointer]
+                  - generic [ref=f22e239]: 1 — Cosmético
+                - generic [ref=f22e244]:
+                  - radio "2 — Menor" [ref=f22e411] [cursor=pointer]
+                  - generic [ref=f22e249]: 2 — Menor
+                - generic [ref=f22e254]:
+                  - radio "3 — Mayor" [ref=f22e412] [cursor=pointer]
+                  - generic [ref=f22e259]: 3 — Mayor
+                - generic [ref=f22e264]:
+                  - radio "4 — Catastrófico" [ref=f22e413] [cursor=pointer]
+                  - generic [ref=f22e269]: 4 — Catastrófico
+        - listitem [ref=f22e272]:
+          - generic [ref=f22e274]:
+            - generic [ref=f22e276]:
+              - heading "Evidencia visual (enlace a la captura) Pregunta obligatoria" [level=3] [ref=f22e414]:
+                - generic [ref=f22e278]: Evidencia visual (enlace a la captura)
+                - generic "Pregunta obligatoria" [ref=f22e415]: "*"
+              - generic [ref=f22e280]: Captura en drive
+            - generic [ref=f22e282]:
+              - generic [ref=f22e283]: "Sube 1 archivo compatible. Tamaño máximo: 10 MB."
+              - list "Archivos seleccionados" [ref=f22e416]:
+                - listitem [ref=f22e417]:
+                  - generic [ref=f22e418]:
+                    - button "Abrir el archivo" [active] [ref=f22e419]:
+                      - img "Imagen" [ref=f22e421]
+                      - generic [ref=f22e422]: ev01-comprar.jpg
+                    - button "Quitar archivo" [ref=f22e424] [cursor=pointer]
+      - generic [ref=f22e292]:
+        - generic [ref=f22e293]:
+          - button "Enviar" [ref=f22e429] [cursor=pointer]
+          - button "Borrar formulario" [ref=f22e430] [cursor=pointer]
+        - generic [ref=f22e304]: Nunca envíes contraseñas a través de Formularios de Google.
+    - generic [ref=f22e305]:
+      - generic [ref=f22e306]:
+        - text: Este formulario se creó en Universidad Autónoma de Occidente. -
+        - button "Contactar con el propietario del formulario" [ref=f22e431]
+        - paragraph [ref=f22e308]:
+          - text: ¿Parece sospechoso este formulario?
+          - link "Informe" [ref=f22e432] [cursor=pointer]:
+            - /url: https://docs.google.com/forms/u/0/d/e/1FAIpQLSd071lc1pEA6bBLcu8bzz1ug010xrFM1Pu0qUAILUr2KXfjsw/abuse
+      - link [ref=f22e433] [cursor=pointer]:
+        - /url: //www.google.com/forms/about/?utm_source=product&utm_medium=forms_logo&utm_campaign=forms
+        - img "Google" [ref=f22e434]
+        - text: Formularios
+  - generic [ref=f22e316]:
+    - button "ayuda y comentarios" [ref=f22e435] [cursor=pointer]
+    - tooltip [aria-hidden] [ref=f22e320]: Ayuda y comentarios

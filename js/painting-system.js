@@ -8,7 +8,12 @@
   const BRUSH_RADIUS = 20;
   const BRUSH_SIZE = BRUSH_RADIUS * 2 + 1;
   const STAMP_SPACING = 4.5;
-  const REGION_IDS = Object.freeze({ sun: 1, house: 2, tree: 3 });
+  // Independent paint regions. They are drawn joined, but each stroke only colours the
+  // region where it starts, so the colour never crosses from the roof into the walls, etc.
+  const REGION_IDS = Object.freeze({ sun: 1, walls: 2, roof: 3, trunk: 4, crown: 5 });
+  const REGION_COUNT = 5;
+  // Progress is measured per whole figure: house = walls + roof, tree = trunk + crown.
+  const FIGURES = Object.freeze({ sun: [1], house: [2, 3], tree: [4, 5] });
 
   function surface() {
     const result = document.createElement('canvas');
@@ -161,6 +166,7 @@
       this.height = HEIGHT;
       this.coverageAlpha = COVERAGE_ALPHA;
       this.regionIds = REGION_IDS;
+      this.figures = FIGURES;
       this.onProgress = typeof options.onProgress === 'function' ? options.onProgress : null;
       this.canvas = surface();
       this.paperCanvas = surface();
@@ -173,8 +179,9 @@
       // Region zero is the non-paintable paper. Arrays are exposed for inspection;
       // callers must treat them as read-only. Only alpha >= coverageAlpha counts.
       this.regionMask = new Uint8Array(WIDTH * HEIGHT);
-      this.regionTotals = new Uint32Array(4);
-      this.paintedCounts = new Uint32Array(4);
+      this.regionTotals = new Uint32Array(REGION_COUNT + 1);
+      this.paintedCounts = new Uint32Array(REGION_COUNT + 1);
+      this._strokeRegion = 0;
       this.coveredPixels = new Uint8Array(WIDTH * HEIGHT);
       this._paperGrain = new Uint8Array(WIDTH * HEIGHT);
       this._brushes = createBrushes();
@@ -221,8 +228,9 @@
     _makeMasks(drawing) {
       const maskCanvas = surface();
       const ctx = maskCanvas.getContext('2d', { willReadFrequently: true });
-      const regions = [null, [drawing.sun], [drawing.walls, drawing.roof], [drawing.trunk, drawing.crown]];
-      for (let id = 1; id <= 3; id++) {
+      // Later regions win where shapes overlap (roof over walls, crown over trunk).
+      const regions = [null, [drawing.sun], [drawing.walls], [drawing.roof], [drawing.trunk], [drawing.crown]];
+      for (let id = 1; id <= REGION_COUNT; id++) {
         ctx.clearRect(0, 0, WIDTH, HEIGHT);
         ctx.fillStyle = '#fff';
         regions[id].forEach(function (points) {
@@ -292,6 +300,14 @@
     }
 
     _stamp(x, y, rgb, dirty) {
+      // The stroke locks onto the first region its centre touches; until then nothing is painted.
+      if (!this._strokeRegion) {
+        const cx = Math.round(x), cy = Math.round(y);
+        if (cx < 0 || cy < 0 || cx >= WIDTH || cy >= HEIGHT) return;
+        this._strokeRegion = this.regionMask[cy * WIDTH + cx];
+        if (!this._strokeRegion) return;
+      }
+      const region = this._strokeRegion;
       const variant = this._stampIndex++ % this._brushes.length;
       const brush = this._brushes[variant];
       const left = Math.round(x) - BRUSH_RADIUS;
@@ -305,7 +321,7 @@
         for (let px = minX; px < maxX; px++) {
           const index = py * WIDTH + px;
           const id = this.regionMask[index];
-          if (!id) continue;
+          if (id !== region) continue;
           const sourceAlpha = Math.round(brush[(py - top) * BRUSH_SIZE + px - left] * this._paperGrain[index] / 255);
           if (sourceAlpha < 2) continue;
           const offset = index * 4;
@@ -379,20 +395,33 @@
       ctx.drawImage(this.outlineCanvas, x, y, width, height, x, y, width, height);
     }
 
+    // Percentages per whole figure (sun, house, tree) and the global coverage.
     getProgress() {
-      const total = this.regionTotals[1] + this.regionTotals[2] + this.regionTotals[3];
-      const painted = this.paintedCounts[1] + this.paintedCounts[2] + this.paintedCounts[3];
-      return {
-        global: total ? painted / total * 100 : 0,
-        sun: this.regionTotals[1] ? this.paintedCounts[1] / this.regionTotals[1] * 100 : 0,
-        house: this.regionTotals[2] ? this.paintedCounts[2] / this.regionTotals[2] * 100 : 0,
-        tree: this.regionTotals[3] ? this.paintedCounts[3] / this.regionTotals[3] * 100 : 0
+      const percent = ids => {
+        let total = 0, painted = 0;
+        ids.forEach(id => { total += this.regionTotals[id]; painted += this.paintedCounts[id]; });
+        return total ? painted / total * 100 : 0;
       };
+      const all = [];
+      for (let id = 1; id <= REGION_COUNT; id++) all.push(id);
+      return { global: percent(all), sun: percent(FIGURES.sun), house: percent(FIGURES.house), tree: percent(FIGURES.tree) };
     }
 
+    // A new stroke (button pressed) chooses its region again.
+    beginStroke() {
+      this.breakStroke();
+      this._strokeRegion = 0;
+    }
+
+    // Interrupts the line (e.g. the tip leaves the sheet) but keeps the stroke's region.
     breakStroke() {
       this._lastPoint = null;
       this._distanceToNextStamp = 0;
+    }
+
+    endStroke() {
+      this.breakStroke();
+      this._strokeRegion = 0;
     }
 
     reset() {
@@ -401,6 +430,7 @@
       this.coveredPixels.fill(0);
       this.paintedCounts.fill(0);
       this._stampIndex = 0;
+      this._strokeRegion = 0;
       this._paintContext.clearRect(0, 0, WIDTH, HEIGHT);
       this.breakStroke();
       this._compose(0, 0, WIDTH, HEIGHT);

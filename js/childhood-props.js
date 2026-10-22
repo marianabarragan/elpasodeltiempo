@@ -157,14 +157,21 @@
       return shape;
     }
 
-    const foamColors = [PALETTE.yellow, PALETTE.blue, PALETTE.lime, PALETTE.orange, PALETTE.green, PALETTE.brown];
-    const foamMaterials = foamColors.map(color => material(new THREE.Color(color).lerp(new THREE.Color('#fff3d4'), 0.30), { map: floorTexture }));
-    const tileColors = [
-      [0, 2, 1, 0, 4, 1],
-      [1, 3, 4, 2, 0, 2],
-      [2, 0, 1, 0, 3, 1],
-      [0, 4, 2, 1, 2, 0]
-    ];
+    // Soft pastel tones only (Config.childhood.floor), so the floor never competes with the
+    // drawing or the toys. Neighbouring pieces never share a colour.
+    const floorConfig = app.Config.childhood.floor;
+    const hsl = {};
+    const foamMaterials = floorConfig.colors.map(color => {
+      const tone = new THREE.Color(color);
+      tone.getHSL(hsl, THREE.SRGBColorSpace);
+      const lightness = hsl.l + (1 - hsl.l) * (floorConfig.lighten || 0);
+      tone.setHSL(hsl.h, hsl.s * (1 - floorConfig.desaturate), lightness, THREE.SRGBColorSpace);
+      // A little of its own colour as emission keeps each pastel close to its swatch under
+      // the warm golden-hour light (otherwise the blue turns greyish).
+      return material(tone, { map: floorTexture, emissive: tone, emissiveIntensity: .32 });
+    });
+    // With three tones, column + 2·row keeps both horizontal and vertical neighbours different.
+    const tileColor = (column, row) => modulo(column + (foamMaterials.length % 2 ? 2 : 1) * row, foamMaterials.length);
     const tileGeometries = [0, 1].map(parity => {
       const geometry = new THREE.ExtrudeGeometry(tileShape(parity, 0), {
         depth: 0.12, bevelEnabled: true, bevelThickness: 0.016,
@@ -183,17 +190,17 @@
       tileInstances.forEach(instance => { floor.remove(instance); instance.dispose(); });
       tileInstances = [];
       // Instancing preserves each piece's size, UVs, seams and bevels while the
-      // continued floor needs at most twelve draw calls, not one per new tile.
-      const batches = Array.from({ length: 12 }, () => []);
+      // continued floor needs only a few draw calls, not one per new tile.
+      const tones = foamMaterials.length;
+      const batches = Array.from({ length: 2 * tones }, () => []);
       for (let row = range.minRow; row <= range.maxRow; row++) {
         for (let column = range.minColumn; column <= range.maxColumn; column++) {
-          const color = tileColors[modulo(row, 4)][modulo(column, 6)];
-          batches[modulo(column + row, 2) * 6 + color].push([column, row]);
+          batches[modulo(column + row, 2) * tones + tileColor(column, row)].push([column, row]);
         }
       }
       batches.forEach((positions, batch) => {
         if (!positions.length) return;
-        const tiles = new THREE.InstancedMesh(tileGeometries[Math.floor(batch / 6)], foamMaterials[batch % 6], positions.length);
+        const tiles = new THREE.InstancedMesh(tileGeometries[Math.floor(batch / tones)], foamMaterials[batch % tones], positions.length);
         tiles.name = `foam-pieces-${batch}`;
         tiles.castShadow = tiles.receiveShadow = true;
         positions.forEach(([column, row], index) => {

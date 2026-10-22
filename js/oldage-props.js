@@ -27,16 +27,13 @@
     room: 'assets/models/oldage/room.glb',
     table: 'assets/models/oldage/table.glb',
     glasses: 'assets/models/oldage/glasses.glb',
-    glassesCase: 'assets/models/oldage/glasses-case.glb',
     pot1: 'assets/models/oldage/pot-1.glb',
     pot2: 'assets/models/oldage/pot-2.glb',
     plant1: 'assets/models/oldage/plant-1.glb',
     plant2: 'assets/models/oldage/plant-2.glb',
     wateringCan: 'assets/models/oldage/watering-can.glb',
     radio: 'assets/models/oldage/radio.glb',
-    coffeeCup: 'assets/models/oldage/coffee-cup.glb',
-    blanket: 'assets/models/oldage/blanket.glb',
-    picture: 'assets/models/oldage/picture-frame.glb'
+    coffeeCup: 'assets/models/oldage/coffee-cup.glb'
   });
 
   const TABLE_TOP = 3.2;
@@ -171,7 +168,7 @@
       root.updateMatrixWorld(true);
     }
 
-    // ---------- Room: floral wallpaper, window with greenery, framed drawing ----------
+    // ---------- Room: floral wallpaper and window with greenery ----------
     const room = prop('room');
     const wallpaper = canvasTexture(256, 256, (ctx, w, h) => {
       ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h);
@@ -249,26 +246,6 @@
     const rod = mesh(new THREE.CylinderGeometry(.07, .07, 9.6, 6), material(PALETTE.plum), windowGroup);
     rod.rotation.z = Math.PI / 2; rod.position.set(0, 3.0, .55);
 
-    // Framed child drawing on the wall: family and continuity.
-    const picture = prop('picture', room.visual);
-    picture.root.position.set(6.3, TABLE_TOP + 3.7, -5.32);
-    mesh(frontBox(2.5, 3.0, .16, .06), material(PALETTE.lime), picture.visual);
-    const inner = mesh(frontBox(2.1, 2.6, .18, .04), material(PALETTE.butter), picture.visual);
-    inner.position.z = .01;
-    const drawing = canvasTexture(160, 200, (ctx, w, h) => {
-      ctx.fillStyle = '#fffaf0'; ctx.fillRect(0, 0, w, h);
-      ctx.lineCap = 'round'; ctx.lineWidth = 4;
-      ctx.fillStyle = PALETTE.plum; ctx.beginPath(); ctx.ellipse(80, 90, 46, 58, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = css(PALETTE.butter, .3, PALETTE.clay); ctx.beginPath(); ctx.arc(80, 88, 32, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = PALETTE.clay; ctx.beginPath(); ctx.ellipse(80, 196, 48, 50, 0, Math.PI, 0); ctx.fill();
-      ctx.strokeStyle = PALETTE.plum; ctx.beginPath(); ctx.arc(80, 94, 13, .2, Math.PI - .2); ctx.stroke();
-      ctx.fillStyle = PALETTE.plum; [68, 92].forEach(x => { ctx.beginPath(); ctx.arc(x, 82, 3.5, 0, Math.PI * 2); ctx.fill(); });
-      ctx.fillStyle = PALETTE.clay; ctx.beginPath(); ctx.arc(108, 52, 9, 0, Math.PI * 2); ctx.fill();
-    });
-    const sketch = mesh(new THREE.PlaneGeometry(1.6, 2.1), material('#ffffff', { map: drawing, flatShading: false }), picture.visual);
-    sketch.position.z = .105; sketch.castShadow = false;
-    picture.root.rotation.z = -.03;
-
     // ---------- Table (wood planks) ----------
     const table = prop('table');
     const woodTexture = canvasTexture(512, 256, (ctx, w, h) => {
@@ -288,11 +265,16 @@
     });
     const wood = material(tone(PALETTE.clay, .05, '#ffffff'), { map: woodTexture });
     const woodDark = material(tone(PALETTE.clay, .38, PALETTE.plum));
-    const top = mesh(softBox(24, .5, 8.8, .3), wood, table.visual);
-    top.position.y = TABLE_TOP - .25; top.name = 'table-top';
-    const apron = mesh(new THREE.BoxGeometry(23, .8, 7.8), woodDark, table.visual);
-    apron.position.y = TABLE_TOP - .9;
-    [[-11, -3.5], [-11, 3.5], [11, -3.5], [11, 3.5]].forEach(([x, z]) => {
+    // Far wider and deeper than any viewport (ultra-wide, short or portrait windows included):
+    // from the wall to beyond the bottom and both sides of the frame, so only the table shows,
+    // never the floor. Its far parts stay off-screen at every camera angle.
+    const TABLE_WIDTH = 100, TABLE_BACK = -4.4, TABLE_FRONT = 40;
+    const top = mesh(softBox(TABLE_WIDTH, .5, TABLE_FRONT - TABLE_BACK, .3), wood, table.visual);
+    top.position.set(0, TABLE_TOP - .25, (TABLE_FRONT + TABLE_BACK) / 2); top.name = 'table-top';
+    const apron = mesh(new THREE.BoxGeometry(TABLE_WIDTH - 1, .8, TABLE_FRONT - TABLE_BACK - 1), woodDark, table.visual);
+    apron.position.set(0, TABLE_TOP - .9, (TABLE_FRONT + TABLE_BACK) / 2);
+    const legX = TABLE_WIDTH / 2 - 1, legBack = TABLE_BACK + .9, legFront = TABLE_FRONT - .9;
+    [[-legX, legBack], [-legX, legFront], [legX, legBack], [legX, legFront]].forEach(([x, z]) => {
       const leg = mesh(lathe([[.3, 0], [.22, .4], [.32, 1.0], [.24, TABLE_TOP - 1.2], [0, TABLE_TOP - 1.2]], 6), woodDark, table.visual);
       leg.position.set(x, 0, z);
     });
@@ -302,32 +284,7 @@
     const placematRing = mesh(new THREE.TorusGeometry(1.08, .045, 4, 14), material(tone(PALETTE.clay, .1)), table.visual);
     placematRing.rotation.x = -Math.PI / 2; placematRing.position.set(CENTER.x, TABLE_TOP + .055, CENTER.z);
 
-    // Folded plaid blanket, back right (ambient only).
-    const blanket = prop('blanket');
-    const plaid = canvasTexture(128, 128, (ctx, w, h) => {
-      ctx.fillStyle = css(PALETTE.butter, .45, '#ffffff'); ctx.fillRect(0, 0, w, h);
-      [[PALETTE.clay, .55], [PALETTE.lime, .4], [PALETTE.butter, .7]].forEach(([color, alpha], index) => {
-        ctx.fillStyle = color; ctx.globalAlpha = alpha;
-        for (let i = 0; i < 4; i++) {
-          ctx.fillRect(i * 32 + index * 9, 0, 9, h);
-          ctx.fillRect(0, i * 32 + index * 9, w, 9);
-        }
-      });
-      ctx.globalAlpha = 1;
-    }, [2, 1]);
-    const blanketMaterial = material('#ffffff', { map: plaid });
-    [0, 1, 2].forEach(layer => {
-      const fold = mesh(softBox(2.4 - layer * .06, .3, 1.7, .14), blanketMaterial, blanket.visual);
-      fold.position.y = .15 + layer * .28; fold.rotation.y = (layer - 1) * .05;
-    });
-
-    // ---------- Glasses on their case (first mandatory interaction) ----------
-    const glassesCase = prop('glassesCase');
-    const caseMaterial = material(tone(PALETTE.sky, .35, PALETTE.olive));
-    const caseBottom = mesh(softBox(2.3, .38, .95, .45), caseMaterial, glassesCase.visual);
-    caseBottom.position.y = .19;
-    const caseLid = mesh(softBox(2.24, .26, .9, .42), material(tone(PALETTE.sky, .22, PALETTE.olive)), glassesCase.visual);
-    caseLid.position.y = .48;
+    // ---------- Glasses, lying on the table (first mandatory interaction) ----------
     // Canonical pose: lenses facing +Z, bridge at the origin, temples extending to -Z.
     const glasses = prop('glasses');
     const frame = new THREE.Group();
@@ -358,7 +315,7 @@
     });
     const bridge = mesh(new THREE.TorusGeometry(.12, .05, 4, 6, Math.PI), frameDark, frame);
     bridge.position.y = .12;
-    // Standing on the case, leaning back a little, as in the reference.
+    // Resting on the folded temples and the bottom of the rims, leaning back a little.
     glasses.visual.rotation.set(-.35, 0, 0);
 
     // ---------- Pots and plants (free choice) ----------
@@ -475,7 +432,7 @@
     const handle = mesh(new THREE.TorusGeometry(.78, .11, 5, 12, Math.PI * 1.25), canMaterial, wateringCan.visual);
     handle.position.set(.42, 1.3, 0); handle.rotation.z = -.32;
 
-    // ---------- Curiosities: radio and coffee cup (hidden click interactions) ----------
+    // ---------- Complementary interactions: radio and coffee cup ----------
     const radio = prop('radio');
     const radioBody = mesh(frontBox(2.1, 1.5, 1.0, .28), material(PALETTE.clay), radio.visual);
     radioBody.position.y = .75;
@@ -525,17 +482,15 @@
     }
 
     // ---------- Placement on the table (composition of the reference) ----------
-    // Left → right: radio (back) and glasses on their case (front), snake plant,
-    // watering can (back centre), leafy plant; cup front right, blanket back right.
+    // Left → right: radio (back) and glasses directly on the table (front), snake plant,
+    // watering can (back centre), leafy plant; cup front right. No purely decorative prop
+    // sits among them, so the interactive objects read clearly.
     settle(radio.root, -6.4, -2.5, .2);
-    settle(glassesCase.root, -5.2, .9, .12);
-    const caseTop = new THREE.Box3().setFromObject(glassesCase.root).max.y;
-    settle(glasses.root, -5.2, .95, .12, caseTop, .004);
+    settle(glasses.root, -5.2, .95, .12, TABLE_TOP, .004);
     settle(pot1.root, -2.4, -.9);
     settle(wateringCan.root, 1.1, -2.4, -.15);
     settle(pot2.root, 4.3, -.8);
     settle(coffeeCup.root, 5.9, 2.0, -.5);
-    settle(blanket.root, 6.9, -2.6, .1);
     group.updateMatrixWorld(true);
 
     const interactive = { glasses, pot1, pot2, wateringCan };

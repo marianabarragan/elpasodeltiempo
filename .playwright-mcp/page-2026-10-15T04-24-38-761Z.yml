@@ -1,0 +1,230 @@
+- generic [ref=e1]:
+  - link "Saltar al contenido" [ref=e2] [cursor=pointer]:
+    - /url: "#contenido"
+  - banner:
+    - generic [ref=e694]:
+      - link "PyCon Colombia 2028, inicio" [ref=e695] [cursor=pointer]:
+        - /url: "#inicio"
+        - generic [ref=e698]: PyCon CO
+      - navigation "Menú principal" [ref=e699]:
+        - link "Keynotes" [ref=e700] [cursor=pointer]:
+          - /url: "#keynotes"
+        - link "Ponentes" [ref=e701] [cursor=pointer]:
+          - /url: "#ponentes"
+        - link "Agenda" [ref=e702] [cursor=pointer]:
+          - /url: "#/agenda"
+        - link "Patrocinadores" [ref=e703] [cursor=pointer]:
+          - /url: "#patrocinadores"
+        - link "Lugar" [ref=e704] [cursor=pointer]:
+          - /url: "#lugar"
+        - link "Código de conducta" [ref=e705] [cursor=pointer]:
+          - /url: "#/codigo-de-conducta"
+        - link "Comprar boleta" [ref=e706] [cursor=pointer]:
+          - /url: "#boletas"
+    - button "Cambiar idioma / Change language" [ref=e3] [cursor=pointer]:
+      - generic [ref=e5]: ES
+      - generic [ref=e6]: EN
+  - main [ref=e7]:
+    - generic [ref=e917]:
+      - navigation "Navegación" [ref=e918]:
+        - link "Inicio" [ref=e919] [cursor=pointer]:
+          - /url: "#inicio"
+      - generic [ref=e923]:
+        - generic [ref=e924]:
+          - generic [ref=e925]:
+            - paragraph [ref=e926]: Programa
+            - heading "Agenda PyCon Colombia 2028" [active] [level=1] [ref=e927]
+          - generic [ref=e928]:
+            - link "Mi agenda 1" [ref=e929] [cursor=pointer]:
+              - /url: "#/agenda/mi"
+              - generic [ref=e932]: Mi agenda
+              - generic [ref=e933]: "1"
+            - paragraph [ref=e934]:
+              - generic [ref=e937]: 14, 15 y 16 de julio 2028
+        - article [ref=e938]:
+          - paragraph [ref=e939]: Charla recomendada para ti
+          - generic [ref=e940]:
+            - generic [ref=e942]: AC
+            - generic [ref=e943]:
+              - heading [level=2] [ref=e944]:
+                - 'link "STUART: An Autonomous Hacker Agent Built in Python" [ref=e945] [cursor=pointer]':
+                  - /url: "#/agenda/evento/d1-2"
+              - paragraph [ref=e946]: Andres Calamaro Murillo · Sábado 15 · 10:15
+              - list [ref=e947]:
+                - listitem [ref=e948]: Seguridad
+                - listitem [ref=e949]: Inteligencia Artificial
+                - listitem [ref=e950]: Charla
+                - listitem [ref=e951]: Intermedio
+                - listitem [ref=e952]: Español
+            - generic [ref=e953]:
+              - link "Auditorio Fundadores" [ref=e954] [cursor=pointer]:
+                - /url: "#/agenda/evento/d1-2"
+              - link "Ver detalles" [ref=e958] [cursor=pointer]:
+                - /url: "#/agenda/evento/d1-2"
+              - 'button "Guardar en mi agenda: STUART: An Autonomous Hacker Agent Built in Python" [ref=e960] [cursor=pointer]'
+        - tablist "Programa" [ref=e963]:
+          - tab "Viernes 14" [selected] [ref=e964] [cursor=pointer]:
+            - generic [ref=e965]: Viernes
+            - generic [ref=e966]: "14"
+          - tab "Sábado 15" [ref=e967] [cursor=pointer]:
+            - generic [ref=e968]: Sábado
+            - generic [ref=e969]: "15"
+          - tab "Domingo 16" [ref=e970] [cursor=pointer]:
+            - generic [ref=e971]: Domingo
+            - generic [ref=e972]: "16"
+        - tabpanel [ref=e973]:
+          - generic [ref=e974]:
+            - heading "Día 1 · Viernes 14 de julio" [level=2] [ref=e975]
+            - paragraph [ref=e976]: 10 bloques en la agenda
+          - generic [ref=e977]:
+            - generic [ref=e978]:
+              - generic [ref=e982]: Buscar en la agenda
+              - searchbox "Buscar en la agenda" [ref=e983]
+            - button "Filtros" [ref=e984] [cursor=pointer]
+          - button "Todas (7)" [pressed] [ref=e989] [cursor=pointer]
+          - list [ref=e990]:
+            - listitem [ref=e991]:
+              - time [ref=e992]:
+                - text: 07:30
+                - generic [ref=e993]: 08:30
+              - generic [ref=e994]:
+                - heading [level=3] [ref=e995]:
+                  - link "Registro y bienvenida" [ref=e996] [cursor=pointer]:
+                    - /url: "#/agenda/evento/d0-0"
+                - link "Plazoleta de registro" [ref=e997] [cursor=pointer]:
+                  - /url: "#/agenda/evento/d0-0"
+            - listitem [ref=e1001]:
+              - time [ref=e1002]:
+                - text: 08:30
+                - generic [ref=e1003]: 09:30
+              - generic [ref=e1004]:
+                - heading [level=3] [ref=e1005]:
+                  - 'link "Keynote: Python para cuidar la Amazonía" [ref=e1006] [cursor=pointer]':
+                    - /url: "#/agenda/evento/d0-1"
+                - paragraph [ref=e1007]:
+                  - button "Valentina Restrepo" [ref=e1008] [cursor=pointer]
+                - list [ref=e1009]:
+                  - listitem [ref=e1010]: Ciencia
+                  - listitem [ref=e1011]: Keynote
+                  - listitem [ref=e1012]: Principiante
+                  - listitem [ref=e1013]: Español
+                - link "Auditorio Fundadores" [ref=e1014] [cursor=pointer]:
+                  - /url: "#/agenda/evento/d0-1"
+              - 'button "Guardar en mi agenda: Keynote: Python para cuidar la Amazonía" [ref=e1018] [cursor=pointer]'
+            - listitem [ref=e1021]:
+              - time [ref=e1022]:
+                - text: 10:00
+                - generic [ref=e1023]: 12:00
+              - generic [ref=e1024]:
+                - heading [level=3] [ref=e1025]:
+                  - 'link "Taller: Python desde cero" [ref=e1026] [cursor=pointer]':
+                    - /url: "#/agenda/evento/d0-2"
+                - list [ref=e1027]:
+                  - listitem [ref=e1028]: Comunidad
+                  - listitem [ref=e1029]: Taller
+                  - listitem [ref=e1030]: Principiante
+                  - listitem [ref=e1031]: Español
+                - link "Laboratorio 38" [ref=e1032] [cursor=pointer]:
+                  - /url: "#/agenda/evento/d0-2"
+              - 'button "Guardar en mi agenda: Taller: Python desde cero" [ref=e1036] [cursor=pointer]'
+            - listitem [ref=e1039]:
+              - time [ref=e1040]:
+                - text: 10:00
+                - generic [ref=e1041]: 12:00
+              - generic [ref=e1042]:
+                - heading [level=3] [ref=e1043]:
+                  - 'link "Taller: Data science con pandas" [ref=e1044] [cursor=pointer]':
+                    - /url: "#/agenda/evento/d0-3"
+                - paragraph [ref=e1045]:
+                  - button "Angelica Miller" [ref=e1046] [cursor=pointer]
+                - list [ref=e1047]:
+                  - listitem [ref=e1048]: Datos
+                  - listitem [ref=e1049]: Taller
+                  - listitem [ref=e1050]: Principiante
+                  - listitem [ref=e1051]: Español
+                - link "Sala Selva" [ref=e1052] [cursor=pointer]:
+                  - /url: "#/agenda/evento/d0-3"
+              - 'button "Guardar en mi agenda: Taller: Data science con pandas" [ref=e1056] [cursor=pointer]'
+            - listitem [ref=e1059]:
+              - time [ref=e1060]:
+                - text: 10:00
+                - generic [ref=e1061]: 12:00
+              - generic [ref=e1062]:
+                - heading [level=3] [ref=e1063]:
+                  - 'link "Taller: tu primera app con Django" [ref=e1064] [cursor=pointer]':
+                    - /url: "#/agenda/evento/d0-4"
+                - list [ref=e1065]:
+                  - listitem [ref=e1066]: Web
+                  - listitem [ref=e1067]: Taller
+                  - listitem [ref=e1068]: Principiante
+                  - listitem [ref=e1069]: Inglés
+                - link "Sala Río" [ref=e1070] [cursor=pointer]:
+                  - /url: "#/agenda/evento/d0-4"
+              - 'button "Guardar en mi agenda: Taller: tu primera app con Django" [ref=e1074] [cursor=pointer]'
+          - navigation "Páginas de la agenda" [ref=e1078]:
+            - generic [ref=e1079]:
+              - link "1" [ref=e1080] [cursor=pointer]:
+                - /url: "#/agenda?d=0&p=1"
+              - link "2" [ref=e1081] [cursor=pointer]:
+                - /url: "#/agenda?d=0&p=2"
+              - generic [ref=e1082]: Página 1 de 2
+            - link "Siguiente" [ref=e1083] [cursor=pointer]:
+              - /url: "#/agenda?d=0&p=2"
+  - contentinfo [ref=e642]:
+    - generic [ref=e643]:
+      - generic [ref=e644]:
+        - paragraph [ref=e645]: PyCon Colombia 2028
+        - paragraph [ref=e646]: Conferencia sin ánimo de lucro organizada por la comunidad Python de Colombia.
+        - link "info@pycon.co" [ref=e647] [cursor=pointer]:
+          - /url: mailto:info@pycon.co
+      - navigation "Ediciones anteriores" [ref=e648]:
+        - paragraph [ref=e649]: Ediciones anteriores
+        - list [ref=e650]:
+          - listitem [ref=e651]:
+            - link "2026" [ref=e652] [cursor=pointer]:
+              - /url: https://2026.pycon.co/
+          - listitem [ref=e653]:
+            - link "2025" [ref=e654] [cursor=pointer]:
+              - /url: https://2025.pycon.co/
+          - listitem [ref=e655]:
+            - link "2024" [ref=e656] [cursor=pointer]:
+              - /url: "#"
+          - listitem [ref=e657]:
+            - link "2023" [ref=e658] [cursor=pointer]:
+              - /url: "#"
+      - navigation "Enlaces" [ref=e659]:
+        - paragraph [ref=e660]: Enlaces
+        - list [ref=e661]:
+          - listitem [ref=e662]:
+            - link "Código de conducta" [ref=e663] [cursor=pointer]:
+              - /url: "#/codigo-de-conducta"
+          - listitem [ref=e664]:
+            - link "Agenda" [ref=e665] [cursor=pointer]:
+              - /url: "#/agenda"
+          - listitem [ref=e666]:
+            - link "Patrocinadores" [ref=e667] [cursor=pointer]:
+              - /url: "#patrocinadores"
+          - listitem [ref=e668]:
+            - link "FAQ" [ref=e669] [cursor=pointer]:
+              - /url: "#faq"
+      - generic [ref=e670]:
+        - paragraph [ref=e671]: Síguenos
+        - list [ref=e672]:
+          - listitem [ref=e673]:
+            - link "X / Twitter" [ref=e674] [cursor=pointer]:
+              - /url: https://x.com/pyconcolombia
+          - listitem [ref=e677]:
+            - link "Facebook" [ref=e678] [cursor=pointer]:
+              - /url: https://www.facebook.com/pyconcolombia/
+          - listitem [ref=e681]:
+            - link "LinkedIn" [ref=e682] [cursor=pointer]:
+              - /url: https://www.linkedin.com/company/pycon-colombia
+          - listitem [ref=e685]:
+            - link "YouTube" [ref=e686] [cursor=pointer]:
+              - /url: https://www.youtube.com/pyconcolombia
+          - listitem [ref=e689]:
+            - link "Instagram" [ref=e690] [cursor=pointer]:
+              - /url: "#"
+    - paragraph [ref=e693]: © 2028 PyCon Colombia · Hecho con 🐍 y 🌿 por voluntarios
+  - link "Volver arriba":
+    - /url: "#top"

@@ -6,7 +6,6 @@
   const message = document.getElementById('childhoodMessage');
   const arrow = document.getElementById('continueArrow');
   const sound = document.getElementById('soundToggle');
-  const colors = [...document.querySelectorAll('.color-choice')];
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   let messageShown = false, arrowShown = false;
   const adultSection = document.querySelector('[data-scene="adulthood"]');
@@ -55,27 +54,31 @@
   app.scenes = new Map();
   const intro = new app.IntroScene(document.getElementById('intro3d'), { photoSources: app.Config.assets.photos });
   app.scenes.set('intro', intro);
+  // Portada: reloj de arena 3D junto a la pregunta. Si el navegador no puede crear este segundo
+  // contexto WebGL, la portada y el resto de la experiencia siguen funcionando sin él.
+  try { app.introHourglass = new app.IntroHourglass(document.getElementById('introHourglass')); }
+  catch (error) { console.warn('No fue posible crear el reloj de arena 3D', error); }
 
-  function childhoodComplete(progress) {
-    return progress.global >= app.Config.progress.narrative &&
-      ['sun', 'house', 'tree'].every(key => progress[key] >= app.Config.progress.eachObject);
-  }
-  function updateProgress(progress) {
-    // Keep painting's coverage values unchanged; only combine the navigation gates.
-    if (!messageShown && progress.global >= app.Config.progress.narrative) {
-      messageShown = true;
-      message.hidden = false;
-      gsap.fromTo(message, { autoAlpha: 0, y: -9 }, { autoAlpha: 1, y: 0, duration: reduced ? .1 : .75, ease: 'power2.out' });
-    }
-    if (!arrowShown && childhoodComplete(progress)) {
-      arrowShown = true;
-      arrow.hidden = false;
-      gsap.fromTo(arrow, { autoAlpha: 0, scale: .9 }, { autoAlpha: 1, scale: 1, duration: reduced ? .1 : .55, ease: 'power2.out' });
-    }
+  // Scenario 1 completes when its progress bar reaches 100 % (five milestones): the phrase
+  // appears below the bar, then the arrow; after a few seconds the phrase fades away.
+  function completeChildhood() {
+    if (arrowShown) return;
+    messageShown = true;
+    message.hidden = false;
+    gsap.timeline()
+      .fromTo(message, { autoAlpha: 0, y: -9 }, { autoAlpha: 1, y: 0, duration: reduced ? .1 : .75, ease: 'power2.out' })
+      .call(() => { arrowShown = true; arrow.hidden = false; }, null, reduced ? '>' : '+=.6')
+      .fromTo(arrow, { autoAlpha: 0, scale: .85 }, { autoAlpha: 1, scale: 1, duration: reduced ? .1 : .55, ease: 'back.out(1.8)' })
+      .to(message, { autoAlpha: 0, y: -9, duration: reduced ? .1 : .8, ease: 'power2.in', onComplete: () => { message.hidden = true; } }, reduced ? '+=3' : '+=4');
   }
   function prepareChildhood() {
     if (!app.scenes.has('childhood')) {
-      app.scenes.set('childhood', new app.ChildhoodScene(document.getElementById('childhood3d'), { audio: app.audio, onProgress: updateProgress }));
+      app.scenes.set('childhood', new app.ChildhoodScene(document.getElementById('childhood3d'), {
+        audio: app.audio,
+        progressBar: document.getElementById('childhoodProgress'),
+        palette: document.getElementById('crayonPalette'),
+        onComplete: completeChildhood
+      }));
     }
     return app.scenes.get('childhood');
   }
@@ -95,19 +98,26 @@
     introSection.hidden = false;
     document.body.classList.add('intro-active');
   }
-  // Scenario 2 completes once the four tasks are crossed out: phrase first, then the arrow.
+  // Scenario 2 completes when its progress bar reaches 100 % (checklist + secondary props) and
+  // the sheet is back on the desk: the phrase appears, then the arrow, and as in scenario 1
+  // the phrase fades out slowly a few seconds later.
   function completeAdulthood() {
     if (adultMessageShown) return;
     adultMessageShown = true;
     adultMessage.hidden = false;
     gsap.timeline()
       .fromTo(adultMessage, { autoAlpha: 0, y: -9 }, { autoAlpha: 1, y: 0, duration: reduced ? .1 : .75, delay: reduced ? 0 : .45, ease: 'power2.out' })
-      .call(() => { adultArrowShown = true; adultArrow.hidden = false; }, null, reduced ? '>' : '+=1.1')
-      .fromTo(adultArrow, { autoAlpha: 0, scale: .9 }, { autoAlpha: 1, scale: 1, duration: reduced ? .1 : .55, ease: 'power2.out' });
+      .call(() => { adultArrowShown = true; adultArrow.hidden = false; }, null, reduced ? '>' : '+=.6')
+      .fromTo(adultArrow, { autoAlpha: 0, scale: .9 }, { autoAlpha: 1, scale: 1, duration: reduced ? .1 : .55, ease: 'power2.out' })
+      .to(adultMessage, { autoAlpha: 0, y: -9, duration: reduced ? .1 : 1.4, ease: 'power1.inOut', onComplete: () => { adultMessage.hidden = true; } }, reduced ? '+=3' : '+=4');
   }
   function prepareAdulthood() {
     if (!app.scenes.has('adulthood')) {
-      app.scenes.set('adulthood', new app.AdulthoodScene(document.getElementById('adulthood3d'), { audio: app.adulthoodAudio, onComplete: completeAdulthood }));
+      app.scenes.set('adulthood', new app.AdulthoodScene(document.getElementById('adulthood3d'), {
+        audio: app.adulthoodAudio,
+        progressBar: document.getElementById('adulthoodProgress'),
+        onComplete: completeAdulthood
+      }));
     }
     return app.scenes.get('adulthood');
   }
@@ -117,7 +127,8 @@
     document.body.classList.remove('intro-active');
     prepareAdulthood().enter();
   }
-  // Scenario 3 completes after glasses + chosen pot + full watering: phrase first, then the arrow.
+  // Scenario 3 completes when its bar reaches 100 % (glasses, chosen pot, full watering and the
+  // cup or the radio) and the can is back in place: phrase first, then the arrow.
   function completeOldAge() {
     if (oldMessageShown) return;
     oldMessageShown = true;
@@ -130,7 +141,10 @@
   function prepareOldAge() {
     if (!app.scenes.has('oldage')) {
       app.scenes.set('oldage', new app.OldAgeScene(document.getElementById('oldage3d'), {
-        audio: app.oldageAudio, progressBar: document.getElementById('oldageProgress'), onComplete: completeOldAge
+        audio: app.oldageAudio,
+        progressBar: document.getElementById('oldageProgress'),
+        sceneProgress: document.getElementById('oldageSceneProgress'),
+        onComplete: completeOldAge
       }));
     }
     return app.scenes.get('oldage');
@@ -153,13 +167,6 @@
     afterEnter: stage => app.scenes.get(stage).ready()
   });
 
-  colors.forEach(button => button.addEventListener('click', () => {
-    const childhood = app.scenes.get('childhood');
-    if (app.runtime.transitioning || !childhood?.active) return;
-    childhood.setColor(button.dataset.color);
-    childhood.interact();
-    colors.forEach(option => option.setAttribute('aria-pressed', String(option === button)));
-  }));
   sound.addEventListener('click', () => {
     app.audio.toggle();
     app.scenes.get('childhood')?.interact();
@@ -175,7 +182,7 @@
       const childhood = app.scenes.get('childhood');
       if (!childhood?.active || app.runtime.transitioning || !arrowShown) return false;
       const memory = childhood.getMemory();
-      if (!childhoodComplete(memory.progress)) return false;
+      if (!memory.complete) return false;
       app.memory = memory;
       return app.introTransition.returnToBoard({ unlockAdulthood: true });
     },
@@ -279,7 +286,6 @@
     gsap.killTweensOf([message, arrow]);
     message.hidden = arrow.hidden = true;
     app.scenes.get('childhood')?.reset();
-    colors.forEach(option => option.setAttribute('aria-pressed', String(option.dataset.color === app.Config.colors.green)));
     app.memory = null;
     childSection.hidden = true; introSection.hidden = false;
     document.body.classList.add('intro-active');

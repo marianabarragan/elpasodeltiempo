@@ -1,0 +1,150 @@
+- application [ref=f80e1]:
+  - iframe [aria-hidden] [ref=f80e2]
+  - iframe [aria-hidden] [ref=f80e3]
+  - banner [aria-hidden] [ref=f80e927]:
+    - generic [ref=f80e7]:
+      - link [ref=f80e928] [cursor=pointer]:
+        - /url: https://docs.google.com/spreadsheets/u/0/?authuser=0&usp=sheets_web
+      - generic [ref=f80e16]:
+        - generic [ref=f80e929]:
+          - generic [ref=f80e19]:
+            - generic: EVALUACIÓN HEURISTICA - Pycon
+            - textbox [ref=f80e930]: EVALUACIÓN HEURISTICA - Pycon
+          - generic [ref=f80e22]:
+            - button [ref=f80e931] [cursor=pointer]
+            - checkbox [ref=f80e932] [cursor=pointer]
+            - button [ref=f80e933] [cursor=pointer]
+            - button [ref=f80e934]:
+              - generic [ref=f80e935] [cursor=pointer]
+        - generic [ref=f80e39]:
+          - button [ref=f80e939] [cursor=pointer]
+          - button [ref=f80e940] [cursor=pointer]
+          - button [ref=f80e941] [cursor=pointer]
+          - generic [ref=f80e54]:
+            - button [ref=f80e942] [cursor=pointer]: Compartir
+            - button [ref=f80e943] [cursor=pointer]
+          - button [ref=f80e944] [cursor=pointer]
+    - generic [ref=f80e63]:
+      - menubar [ref=f80e65]:
+        - menuitem [ref=f80e945] [cursor=pointer]: Archivo
+        - menuitem [ref=f80e946] [cursor=pointer]: Editar
+        - menuitem [ref=f80e947] [cursor=pointer]: Ver
+        - menuitem [ref=f80e948] [cursor=pointer]: Insertar
+        - menuitem [ref=f80e949] [cursor=pointer]: Formato
+        - menuitem [ref=f80e950] [cursor=pointer]: Datos
+        - menuitem [ref=f80e951] [cursor=pointer]: Herramientas
+        - menuitem [ref=f80e952] [cursor=pointer]: Extensiones
+        - menuitem [ref=f80e953] [cursor=pointer]: Ayuda
+      - generic [ref=f80e75]:
+        - generic [ref=f80e76]:
+          - toolbar [ref=f80e954]:
+            - combobox [ref=f80e955]
+          - toolbar [ref=f80e956]:
+            - button [ref=f80e957] [cursor=pointer]
+            - button [ref=f80e958] [cursor=pointer]
+            - button [ref=f80e959] [cursor=pointer]
+            - button [ref=f80e960] [cursor=pointer]
+            - combobox [ref=f80e961] [cursor=pointer]:
+              - option [selected] [ref=f80e962]:
+                - textbox [ref=f80e963]: 100%
+            - separator [disabled] [ref=f80e109]
+            - button [ref=f80e964] [cursor=pointer]:
+              - generic [ref=f80e111]: €
+            - button [ref=f80e965] [cursor=pointer]:
+              - generic [ref=f80e114]: "%"
+            - button [ref=f80e966] [cursor=pointer]
+            - button [ref=f80e967] [cursor=pointer]
+            - button [ref=f80e968] [cursor=pointer]:
+              - generic [ref=f80e127]: "123"
+            - separator [disabled] [ref=f80e130]
+            - listbox [ref=f80e969] [cursor=pointer]:
+              - option [selected] [ref=f80e970]: Predeterminada (Arial)
+            - separator [disabled] [ref=f80e138]
+            - button [ref=f80e971] [cursor=pointer]
+            - combobox [ref=f80e972] [cursor=pointer]:
+              - option [selected] [ref=f80e973]:
+                - textbox [ref=f80e974]: "10"
+            - button [ref=f80e975] [cursor=pointer]
+            - separator [disabled] [ref=f80e154]
+            - button [ref=f80e976] [cursor=pointer]
+            - button [ref=f80e977] [cursor=pointer]
+            - button [ref=f80e978] [cursor=pointer]
+            - button [ref=f80e979] [cursor=pointer]
+            - separator [disabled] [ref=f80e177]
+            - button [ref=f80e980] [cursor=pointer]
+            - button [ref=f80e981] [cursor=pointer]
+            - button [disabled] [ref=f80e982]
+            - button [disabled] [ref=f80e983]
+            - separator [disabled] [ref=f80e202]
+            - button [ref=f80e984] [cursor=pointer]
+            - button [ref=f80e985] [cursor=pointer]
+            - button [ref=f80e986] [cursor=pointer]
+            - button [ref=f80e987] [cursor=pointer]
+            - separator [disabled] [ref=f80e239]
+            - button [ref=f80e988] [cursor=pointer]
+            - button [ref=f80e989] [cursor=pointer]
+            - button [ref=f80e990] [cursor=pointer]
+            - button [ref=f80e991] [cursor=pointer]
+            - button [ref=f80e992] [cursor=pointer]
+            - button [ref=f80e993] [cursor=pointer]
+        - toolbar [ref=f80e994]:
+          - button [ref=f80e995] [cursor=pointer]
+    - generic:
+      - button:
+        - generic [ref=f80e444] [cursor=pointer]
+    - generic [ref=f80e283]:
+      - generic [ref=f80e996]:
+        - textbox [ref=f80e285]: H14
+        - button [ref=f80e997] [cursor=pointer]
+      - textbox [ref=f80e303]
+  - generic [ref=f80e306]:
+    - generic [ref=f80e457]:
+      - generic [ref=f80e458]:
+        - progressbar [ref=f80e460]
+        - button [ref=f80e998] [cursor=pointer]:
+          - generic [ref=f80e470]: Convertir a tabla
+      - generic [ref=f80e475]:
+        - button [ref=f80e999] [cursor=pointer]
+        - tooltip [aria-hidden] [ref=f80e482]: Más sugerencias
+      - generic [ref=f80e484]:
+        - button [ref=f80e1000] [cursor=pointer]
+        - tooltip [aria-hidden] [ref=f80e491]: Rechazar la sugerencia
+    - navigation [ref=f80e1001]:
+      - toolbar [ref=f80e344]:
+        - button [ref=f80e1002] [cursor=pointer]
+        - button [ref=f80e1003] [cursor=pointer]
+      - toolbar [ref=f80e357]:
+        - button [ref=f80e1004]:
+          - generic [ref=f80e359]: Hoja 1
+      - toolbar [ref=f80e366]
+  - link [aria-hidden] [ref=f80e1005] [cursor=pointer]:
+    - /url: "#"
+    - text: Activar la compatibilidad con lectores de pantalla
+  - textbox [aria-hidden] [ref=f80e369]
+  - region [ref=f80e370]: Para habilitar la compatibilidad con lectores de pantalla, pulsa Ctrl+Alt+Z. Para obtener información acerca de las combinaciones de teclas, pulsa Ctrl+barra diagonal.
+  - generic [aria-hidden] [ref=f80e371]: Banner oculto
+  - generic [aria-hidden] [ref=f80e497]: Cuadro con nombre. Ctrl + J. Se ha seleccionado H13. Introduce un intervalo de celdas o un intervalo con nombre y pulsa la tecla Intro desplazarte a él.
+  - dialog "Insertar imagen" [ref=f80e1007]:
+    - iframe [active] [ref=f80e1010]:
+      - generic [active] [ref=f100e1]:
+        - generic [ref=f100e2]:
+          - heading
+          - dialog "Insertar imagen" [ref=f100e3]:
+            - banner [ref=f100e6]:
+              - heading "Insertar imagen" [level=2] [ref=f100e7]
+              - generic [ref=f100e8]:
+                - button "Cerrar el selector Insertar imagen" [ref=f100e9] [cursor=pointer]
+                - tooltip [aria-hidden] [ref=f100e16]: Cerrar
+            - generic [ref=f100e17]:
+              - listbox [ref=f100e20]:
+                - option [ref=f100e21]
+                - option [ref=f100e25]
+                - option [ref=f100e29]
+                - separator [ref=f100e33]
+                - option [selected] [ref=f100e34]
+                - option [ref=f100e38]
+              - tabpanel [ref=f100e42]:
+                - generic [ref=f100e49]:
+                  - img "Upload" [ref=f100e51]
+                  - progressbar "Progreso de la subida" [ref=f100e54]
+        - generic [ref=f100e60]: Se ha abierto el selector Insertar imagen.

@@ -1,0 +1,631 @@
+- generic [ref=f2e1]:
+  - link "Saltar al contenido" [ref=f2e2] [cursor=pointer]:
+    - /url: "#contenido"
+  - banner:
+    - generic [ref=f2e694]:
+      - link "PyCon Colombia 2028, inicio" [ref=f2e695] [cursor=pointer]:
+        - /url: "#inicio"
+        - generic [ref=f2e698]: PyCon CO
+      - navigation "Menú principal" [ref=f2e699]:
+        - link "Keynotes" [ref=f2e700] [cursor=pointer]:
+          - /url: "#keynotes"
+        - link "Ponentes" [ref=f2e701] [cursor=pointer]:
+          - /url: "#ponentes"
+        - link "Agenda" [ref=f2e702] [cursor=pointer]:
+          - /url: "#/agenda"
+        - link "Patrocinadores" [ref=f2e703] [cursor=pointer]:
+          - /url: "#patrocinadores"
+        - link "Lugar" [ref=f2e704] [cursor=pointer]:
+          - /url: "#lugar"
+        - link "Código de conducta" [ref=f2e705] [cursor=pointer]:
+          - /url: "#/codigo-de-conducta"
+        - link "Comprar boleta" [ref=f2e706] [cursor=pointer]:
+          - /url: "#boletas"
+    - button "Cambiar idioma / Change language" [ref=f2e3] [cursor=pointer]:
+      - generic [ref=f2e5]: ES
+      - generic [ref=f2e6]: EN
+  - main [ref=f2e7]:
+    - generic [ref=f2e8]:
+      - region [ref=f2e9]:
+        - generic [ref=f2e10]:
+          - heading "PyCon Colombia 2028" [level=1] [ref=f2e12]:
+            - generic [ref=f2e15]: PyCon
+            - generic [ref=f2e16]: Colombia 2028
+          - generic [ref=f2e18]:
+            - paragraph [ref=f2e19]:
+              - generic [ref=f2e23]:
+                - generic [ref=f2e24]: Ciudad
+                - text: Medellín, Colombia
+            - paragraph [ref=f2e25]:
+              - generic [ref=f2e28]:
+                - generic [ref=f2e29]: Fecha
+                - text: 14 – 16 de julio, 2028
+          - generic [ref=f2e30]:
+            - link "Obtén tu boleta" [ref=f2e31] [cursor=pointer]:
+              - /url: "#boletas"
+            - link "Conoce a los ponentes" [ref=f2e32] [cursor=pointer]:
+              - /url: "#ponentes"
+        - link "Explora la selva" [ref=f2e33] [cursor=pointer]:
+          - /url: "#acerca"
+      - region [ref=f2e37]:
+        - generic [ref=f2e38]:
+          - generic [ref=f2e39]:
+            - generic [ref=f2e40]:
+              - paragraph [ref=f2e41]: Sobre la conferencia
+              - heading "Una comunidad que crece como la selva" [level=2] [ref=f2e42]
+              - paragraph [ref=f2e43]: PyCon Colombia es una conferencia sin ánimo de lucro, organizada por voluntarios de la comunidad Python. Cada año reunimos a personas desarrolladoras, científicas de datos, estudiantes y docentes para aprender, compartir y conectar.
+              - paragraph [ref=f2e44]: "En 2028 celebramos nuestra undécima edición inspirada en la Amazonía: un ecosistema diverso, interconectado y lleno de vida, igual que nuestra comunidad."
+            - generic [ref=f2e45]:
+              - paragraph [ref=f2e46]: Faltan
+              - timer [ref=f2e47]:
+                - generic [ref=f2e48]:
+                  - generic [ref=f2e49]: "638"
+                  - text: días
+                - generic [ref=f2e50]:
+                  - generic [ref=f2e51]: "08"
+                  - text: horas
+                - generic [ref=f2e52]:
+                  - generic [ref=f2e53]: "03"
+                  - text: min
+                - generic [ref=f2e54]:
+                  - generic [ref=f2e55]: "56"
+                  - text: seg
+          - list [ref=f2e56]:
+            - listitem [ref=f2e57]:
+              - generic [ref=f2e58]: "600"
+              - text: + asistentes
+            - listitem [ref=f2e59]:
+              - generic [ref=f2e60]: "30"
+              - text: charlas
+            - listitem [ref=f2e61]:
+              - generic [ref=f2e62]: "15"
+              - text: + talleres
+            - listitem [ref=f2e63]:
+              - generic [ref=f2e64]: "5"
+              - text: keynotes
+      - region [ref=f2e65]:
+        - generic [ref=f2e66]:
+          - paragraph [ref=f2e67]: Únete a la manada
+          - heading "Boletas" [level=2] [ref=f2e68]
+          - paragraph [ref=f2e69]: Precios en pesos colombianos. Todas incluyen los 3 días, alimentación y kit de bienvenida.
+        - list [ref=f2e70]:
+          - listitem [ref=f2e71]:
+            - heading "Estudiante" [level=3] [ref=f2e72]
+            - paragraph [ref=f2e73]: $180.000 COP
+            - list [ref=f2e74]:
+              - listitem [ref=f2e75]: Acceso a los 3 días
+              - listitem [ref=f2e76]: Alimentación incluida
+              - listitem [ref=f2e77]: Requiere carné vigente
+            - link "Comprar" [ref=f2e78] [cursor=pointer]:
+              - /url: "#"
+          - listitem [ref=f2e79]:
+            - generic [ref=f2e80]: Más popular
+            - heading "General" [level=3] [ref=f2e81]
+            - paragraph [ref=f2e82]: $350.000 COP
+            - list [ref=f2e83]:
+              - listitem [ref=f2e84]: Acceso a los 3 días
+              - listitem [ref=f2e85]: Alimentación incluida
+              - listitem [ref=f2e86]: Kit y camiseta oficial
+            - link "Comprar" [active] [ref=f2e87] [cursor=pointer]:
+              - /url: "#"
+          - listitem [ref=f2e88]:
+            - heading "Corporativa" [level=3] [ref=f2e89]
+            - paragraph [ref=f2e90]: $750.000 COP
+            - list [ref=f2e91]:
+              - listitem [ref=f2e92]: Acceso a los 3 días
+              - listitem [ref=f2e93]: Factura electrónica
+              - listitem [ref=f2e94]: Apoyas a la comunidad
+            - link "Comprar" [ref=f2e95] [cursor=pointer]:
+              - /url: "#"
+          - listitem [ref=f2e96]:
+            - heading "Becas" [level=3] [ref=f2e97]
+            - paragraph [ref=f2e98]: Gratis
+            - list [ref=f2e99]:
+              - listitem [ref=f2e100]: Para quienes no pueden pagar
+              - listitem [ref=f2e101]: Apoyo de viaje y hospedaje
+              - listitem [ref=f2e102]: Prioridad a grupos subrepresentados
+            - link "Aplicar" [ref=f2e103] [cursor=pointer]:
+              - /url: "#"
+      - region [ref=f2e104]:
+        - generic [ref=f2e105]:
+          - paragraph [ref=f2e106]: Keynotes
+          - heading "Keynotes, las voces que abren y cierran cada día" [level=2] [ref=f2e107]:
+            - text: Keynotes,
+            - generic [ref=f2e108]: las voces que abren y cierran cada día
+        - list [ref=f2e109]:
+          - listitem [ref=f2e110]:
+            - generic [ref=f2e111]:
+              - generic [ref=f2e112]: VR
+              - heading "Valentina Restrepo" [level=3] [ref=f2e115]
+              - paragraph [ref=f2e116]: Ciencia abierta y datos ambientales
+            - paragraph [ref=f2e117]: Investigadora que usa Python para monitorear la deforestación de la Amazonía con imágenes satelitales y datos abiertos.
+            - list [ref=f2e118]:
+              - listitem [ref=f2e119]:
+                - link "GitHub" [ref=f2e120] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e123]:
+                - link "LinkedIn" [ref=f2e124] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e127]:
+                - link "X" [ref=f2e128] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e131]:
+                - link "Instagram" [ref=f2e132] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e135]:
+                - link "Web" [ref=f2e136] [cursor=pointer]:
+                  - /url: "#"
+            - button "Ver perfil de Valentina Restrepo" [ref=f2e139] [cursor=pointer]
+          - listitem [ref=f2e141]:
+            - generic [ref=f2e142]:
+              - generic [ref=f2e143]: TG
+              - heading "Tomás Guerrero" [level=3] [ref=f2e146]
+              - paragraph [ref=f2e147]: Mantenedor open source
+            - paragraph [ref=f2e148]: Mantiene bibliotecas de Python usadas por miles de proyectos y promueve la sostenibilidad del open source en Latinoamérica.
+            - list [ref=f2e149]:
+              - listitem [ref=f2e150]:
+                - link "GitHub" [ref=f2e151] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e154]:
+                - link "LinkedIn" [ref=f2e155] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e158]:
+                - link "X" [ref=f2e159] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e162]:
+                - link "Instagram" [ref=f2e163] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e166]:
+                - link "Web" [ref=f2e167] [cursor=pointer]:
+                  - /url: "#"
+            - button "Ver perfil de Tomás Guerrero" [ref=f2e170] [cursor=pointer]
+          - listitem [ref=f2e172]:
+            - generic [ref=f2e173]:
+              - generic [ref=f2e174]: IM
+              - heading "Ingrid Mejía" [level=3] [ref=f2e177]
+              - paragraph [ref=f2e178]: Educación y comunidad
+            - paragraph [ref=f2e179]: Fundadora de programas que han enseñado Python a miles de estudiantes de colegios públicos del país.
+            - list [ref=f2e180]:
+              - listitem [ref=f2e181]:
+                - link "GitHub" [ref=f2e182] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e185]:
+                - link "LinkedIn" [ref=f2e186] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e189]:
+                - link "X" [ref=f2e190] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e193]:
+                - link "Instagram" [ref=f2e194] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e197]:
+                - link "Web" [ref=f2e198] [cursor=pointer]:
+                  - /url: "#"
+            - button "Ver perfil de Ingrid Mejía" [ref=f2e201] [cursor=pointer]
+          - listitem [ref=f2e203]:
+            - generic [ref=f2e204]:
+              - generic [ref=f2e205]: "?"
+              - heading "Por anunciar" [level=3] [ref=f2e208]
+              - paragraph [ref=f2e209]: Core developer de CPython
+            - paragraph [ref=f2e210]: Muy pronto revelaremos a nuestra keynote de cierre.
+            - list [ref=f2e211]:
+              - listitem [ref=f2e212]:
+                - link "GitHub" [ref=f2e213] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e216]:
+                - link "LinkedIn" [ref=f2e217] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e220]:
+                - link "X" [ref=f2e221] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e224]:
+                - link "Instagram" [ref=f2e225] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e228]:
+                - link "Web" [ref=f2e229] [cursor=pointer]:
+                  - /url: "#"
+            - button "Ver perfil de Por anunciar" [ref=f2e232] [cursor=pointer]
+      - region [ref=f2e234]:
+        - generic [ref=f2e235]:
+          - paragraph [ref=f2e236]: Ponentes
+          - heading "Te presentamos a los ponentes, las voces detrás de las charlas" [level=2] [ref=f2e237]:
+            - text: Te presentamos a los ponentes,
+            - generic [ref=f2e238]: las voces detrás de las charlas
+        - list [ref=f2e239]:
+          - listitem [ref=f2e240]:
+            - generic [ref=f2e241]:
+              - generic [ref=f2e242]: AC
+              - heading "Andres Calamaro Murillo" [level=3] [ref=f2e245]
+              - paragraph [ref=f2e246]: Partner Solution Architect Data and AI @ Microsoft
+            - paragraph [ref=f2e247]: Apasionado por los datos, la inteligencia artificial, la educación y las comunidades tecnológicas.
+            - list [ref=f2e248]:
+              - listitem [ref=f2e249]:
+                - link "GitHub" [ref=f2e250] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e253]:
+                - link "LinkedIn" [ref=f2e254] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e257]:
+                - link "X" [ref=f2e258] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e261]:
+                - link "Instagram" [ref=f2e262] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e265]:
+                - link "Web" [ref=f2e266] [cursor=pointer]:
+                  - /url: "#"
+            - button "Ver perfil de Andres Calamaro Murillo" [ref=f2e269] [cursor=pointer]
+          - listitem [ref=f2e271]:
+            - generic [ref=f2e272]:
+              - generic [ref=f2e273]: EW
+              - heading "Elizabeth Williams" [level=3] [ref=f2e276]
+              - paragraph [ref=f2e277]: Scientific Instrumentation and Microelectronics Group
+            - paragraph [ref=f2e278]: Estudiante de último año de Física en la Universidad de Antioquia y participante de un bootcamp de IA.
+            - list [ref=f2e279]:
+              - listitem [ref=f2e280]:
+                - link "GitHub" [ref=f2e281] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e284]:
+                - link "LinkedIn" [ref=f2e285] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e288]:
+                - link "X" [ref=f2e289] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e292]:
+                - link "Instagram" [ref=f2e293] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e296]:
+                - link "Web" [ref=f2e297] [cursor=pointer]:
+                  - /url: "#"
+            - button "Ver perfil de Elizabeth Williams" [ref=f2e300] [cursor=pointer]
+          - listitem [ref=f2e302]:
+            - generic [ref=f2e303]:
+              - generic [ref=f2e304]: CB
+              - heading "Coraline Brown" [level=3] [ref=f2e307]
+              - paragraph [ref=f2e308]: Estudiante de Maestría en Estudios Humanísticos
+            - paragraph [ref=f2e309]: Vinculada al área de lenguaje de la Escuela de Artes y Humanidades.
+            - list [ref=f2e310]:
+              - listitem [ref=f2e311]:
+                - link "GitHub" [ref=f2e312] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e315]:
+                - link "LinkedIn" [ref=f2e316] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e319]:
+                - link "X" [ref=f2e320] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e323]:
+                - link "Instagram" [ref=f2e324] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e327]:
+                - link "Web" [ref=f2e328] [cursor=pointer]:
+                  - /url: "#"
+            - button "Ver perfil de Coraline Brown" [ref=f2e331] [cursor=pointer]
+          - listitem [ref=f2e333]:
+            - generic [ref=f2e334]:
+              - generic [ref=f2e335]: NW
+              - heading "Nicola Wilson" [level=3] [ref=f2e338]
+              - paragraph [ref=f2e339]: Asistente de investigación y estudiante de maestría en matemáticas aplicadas
+            - paragraph [ref=f2e340]: Con experiencia en procesamiento de lenguaje natural (NLP) e integración de modelos de lenguaje en sistemas reales.
+            - list [ref=f2e341]:
+              - listitem [ref=f2e342]:
+                - link "GitHub" [ref=f2e343] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e346]:
+                - link "LinkedIn" [ref=f2e347] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e350]:
+                - link "X" [ref=f2e351] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e354]:
+                - link "Instagram" [ref=f2e355] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e358]:
+                - link "Web" [ref=f2e359] [cursor=pointer]:
+                  - /url: "#"
+            - button "Ver perfil de Nicola Wilson" [ref=f2e362] [cursor=pointer]
+          - listitem [ref=f2e364]:
+            - generic [ref=f2e365]:
+              - generic [ref=f2e366]: AM
+              - heading "Angelica Miller" [level=3] [ref=f2e369]
+              - paragraph [ref=f2e370]: Data Scientist @ Cuesta Partners
+            - paragraph [ref=f2e371]: Ingeniera industrial convertida en científica de datos por amor a los números y la tecnología.
+            - list [ref=f2e372]:
+              - listitem [ref=f2e373]:
+                - link "GitHub" [ref=f2e374] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e377]:
+                - link "LinkedIn" [ref=f2e378] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e381]:
+                - link "X" [ref=f2e382] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e385]:
+                - link "Instagram" [ref=f2e386] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e389]:
+                - link "Web" [ref=f2e390] [cursor=pointer]:
+                  - /url: "#"
+            - button "Ver perfil de Angelica Miller" [ref=f2e393] [cursor=pointer]
+          - listitem [ref=f2e395]:
+            - generic [ref=f2e396]:
+              - generic [ref=f2e397]: DP
+              - heading "Devdan Patel" [level=3] [ref=f2e400]
+              - paragraph [ref=f2e401]: Staff MLE @ DeepThought Solutions
+            - paragraph [ref=f2e402]: Astrofísico (Universidad de Florida, 2021).
+            - list [ref=f2e403]:
+              - listitem [ref=f2e404]:
+                - link "GitHub" [ref=f2e405] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e408]:
+                - link "LinkedIn" [ref=f2e409] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e412]:
+                - link "X" [ref=f2e413] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e416]:
+                - link "Instagram" [ref=f2e417] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e420]:
+                - link "Web" [ref=f2e421] [cursor=pointer]:
+                  - /url: "#"
+            - button "Ver perfil de Devdan Patel" [ref=f2e424] [cursor=pointer]
+          - listitem [ref=f2e426]:
+            - generic [ref=f2e427]:
+              - generic [ref=f2e428]: LM
+              - heading "Laura Montes Rodriguez" [level=3] [ref=f2e431]
+              - paragraph [ref=f2e432]: AI Builder & Team Lead @ Nequi
+            - paragraph [ref=f2e433]: "Lleva un buen tiempo en inteligencia artificial: empezó por el lado de ML y ciencia de datos y evolucionó hasta donde más le emociona, construir productos con IA generativa."
+            - list [ref=f2e434]:
+              - listitem [ref=f2e435]:
+                - link "GitHub" [ref=f2e436] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e439]:
+                - link "LinkedIn" [ref=f2e440] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e443]:
+                - link "X" [ref=f2e444] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e447]:
+                - link "Instagram" [ref=f2e448] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e451]:
+                - link "Web" [ref=f2e452] [cursor=pointer]:
+                  - /url: "#"
+            - button "Ver perfil de Laura Montes Rodriguez" [ref=f2e455] [cursor=pointer]
+          - listitem [ref=f2e457]:
+            - generic [ref=f2e458]:
+              - generic [ref=f2e459]: HK
+              - heading "Hana Khan" [level=3] [ref=f2e462]
+              - paragraph [ref=f2e463]: Junior Machine Learning Engineer @ Loka
+            - paragraph [ref=f2e464]: ML Engineer en una consultora de machine learning, con proyectos que van desde visión por computador hasta modelos de lenguaje.
+            - list [ref=f2e465]:
+              - listitem [ref=f2e466]:
+                - link "GitHub" [ref=f2e467] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e470]:
+                - link "LinkedIn" [ref=f2e471] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e474]:
+                - link "X" [ref=f2e475] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e478]:
+                - link "Instagram" [ref=f2e479] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=f2e482]:
+                - link "Web" [ref=f2e483] [cursor=pointer]:
+                  - /url: "#"
+            - button "Ver perfil de Hana Khan" [ref=f2e486] [cursor=pointer]
+      - region [ref=f2e488]:
+        - generic [ref=f2e489]:
+          - generic [ref=f2e490]:
+            - paragraph [ref=f2e491]: Programa
+            - heading "Arma tu agenda de 3 días" [level=2] [ref=f2e492]
+            - paragraph [ref=f2e493]: Explora las charlas, talleres y keynotes, filtra por track, nivel o idioma, guarda tus favoritas y encuentra cómo llegar a cada sala del campus.
+          - generic [ref=f2e494]:
+            - link "Ver la agenda" [ref=f2e495] [cursor=pointer]:
+              - /url: "#/agenda"
+            - link "Mi agenda" [ref=f2e496] [cursor=pointer]:
+              - /url: "#/agenda/mi"
+      - region [ref=f2e497]:
+        - generic [ref=f2e498]:
+          - heading "Con el respaldo de líderes de la industria" [level=2] [ref=f2e499]
+          - paragraph [ref=f2e500]: PyCon Colombia es posible gracias al apoyo de organizaciones comprometidas con el ecosistema Python y la innovación tecnológica en Latinoamérica.
+          - link "Sé patrocinador" [ref=f2e501] [cursor=pointer]:
+            - /url: mailto:sponsors@pycon.co
+          - generic [ref=f2e502]:
+            - heading "Sede" [level=3] [ref=f2e503]
+            - list [ref=f2e505]:
+              - listitem [ref=f2e506]:
+                - link "Universidad EAFIT Ver patrocinador" [ref=f2e507] [cursor=pointer]:
+                  - /url: "#/patrocinador/eafit"
+                  - generic [ref=f2e509]: EAFIT
+                  - generic [ref=f2e510]: Universidad EAFIT
+                  - generic [ref=f2e511]: Ver patrocinador
+            - heading "Platinum" [level=3] [ref=f2e514]
+            - list [ref=f2e516]:
+              - listitem [ref=f2e517]:
+                - link "Ceiba Cloud Ver patrocinador" [ref=f2e518] [cursor=pointer]:
+                  - /url: "#/patrocinador/ceiba"
+                  - generic [ref=f2e520]: CC
+                  - generic [ref=f2e521]: Ceiba Cloud
+                  - generic [ref=f2e522]: Ver patrocinador
+              - listitem [ref=f2e525]:
+                - link "Selva Data Ver patrocinador" [ref=f2e526] [cursor=pointer]:
+                  - /url: "#/patrocinador/selva"
+                  - generic [ref=f2e528]: SD
+                  - generic [ref=f2e529]: Selva Data
+                  - generic [ref=f2e530]: Ver patrocinador
+            - heading "Gold +" [level=3] [ref=f2e533]
+            - list [ref=f2e535]:
+              - listitem [ref=f2e536]:
+                - link "Tucán Labs Ver patrocinador" [ref=f2e537] [cursor=pointer]:
+                  - /url: "#/patrocinador/tucan"
+                  - generic [ref=f2e539]: TL
+                  - generic [ref=f2e540]: Tucán Labs
+                  - generic [ref=f2e541]: Ver patrocinador
+              - listitem [ref=f2e544]:
+                - link "Río Software Ver patrocinador" [ref=f2e545] [cursor=pointer]:
+                  - /url: "#/patrocinador/rio"
+                  - generic [ref=f2e547]: RS
+                  - generic [ref=f2e548]: Río Software
+                  - generic [ref=f2e549]: Ver patrocinador
+            - heading "Gold" [level=3] [ref=f2e552]
+            - list [ref=f2e554]:
+              - listitem [ref=f2e555]:
+                - link "Jaguar Dev Ver patrocinador" [ref=f2e556] [cursor=pointer]:
+                  - /url: "#/patrocinador/jaguar"
+                  - generic [ref=f2e558]: JD
+                  - generic [ref=f2e559]: Jaguar Dev
+                  - generic [ref=f2e560]: Ver patrocinador
+              - listitem [ref=f2e563]:
+                - link "Orquídea AI Ver patrocinador" [ref=f2e564] [cursor=pointer]:
+                  - /url: "#/patrocinador/orquidea"
+                  - generic [ref=f2e566]: OA
+                  - generic [ref=f2e567]: Orquídea AI
+                  - generic [ref=f2e568]: Ver patrocinador
+            - heading "Silver +" [level=3] [ref=f2e571]
+            - list [ref=f2e573]:
+              - listitem [ref=f2e574]:
+                - link "Guadua Systems Ver patrocinador" [ref=f2e575] [cursor=pointer]:
+                  - /url: "#/patrocinador/guadua"
+                  - generic [ref=f2e577]: GS
+                  - generic [ref=f2e578]: Guadua Systems
+                  - generic [ref=f2e579]: Ver patrocinador
+              - listitem [ref=f2e582]:
+                - link "Colibrí Media Ver patrocinador" [ref=f2e583] [cursor=pointer]:
+                  - /url: "#/patrocinador/colibri"
+                  - generic [ref=f2e585]: CM
+                  - generic [ref=f2e586]: Colibrí Media
+                  - generic [ref=f2e587]: Ver patrocinador
+      - region [ref=f2e590]:
+        - generic [ref=f2e591]:
+          - generic [ref=f2e592]:
+            - paragraph [ref=f2e593]: El lugar
+            - heading "Universidad EAFIT" [level=2] [ref=f2e594]
+            - paragraph [ref=f2e595]: "Carrera 49 #7 Sur-50, Medellín. Un campus verde con más de 500 especies de plantas: el hogar perfecto para nuestra edición Amazonía."
+            - list [ref=f2e596]:
+              - listitem [ref=f2e597]: "Metro: estación Aguacatala (línea A), 10 min caminando"
+              - listitem [ref=f2e598]: Aeropuerto José María Córdova (MDE) a 50 min
+              - listitem [ref=f2e599]: Tarifas especiales en hoteles aliados
+            - link "Cómo llegar" [ref=f2e600] [cursor=pointer]:
+              - /url: https://www.openstreetmap.org/?mlat=6.2003&mlon=-75.5781#map=16/6.2003/-75.5781
+          - iframe [ref=f2e602]:
+            - generic [ref=f3e2]:
+              - generic:
+                - region "Mapa" [ref=f3e3]
+                - button "Marcadores de mapas" [ref=f3e4]
+              - generic:
+                - generic [ref=f3e8]:
+                  - button "Acercar" [ref=f3e9] [cursor=pointer]
+                  - button "Alejar" [ref=f3e11] [cursor=pointer]
+                - group [ref=f3e13]:
+                  - generic [ref=f3e14]:
+                    - text: ©
+                    - link "Colaboradores de OpenStreetMap" [ref=f3e15] [cursor=pointer]:
+                      - /url: /copyright
+                    - text: ♥️
+                    - link "Hacer una donación" [ref=f3e16] [cursor=pointer]:
+                      - /url: https://supporting.openstreetmap.org
+                    - text: .
+                    - link "Términos del sitio web y de la API" [ref=f3e17] [cursor=pointer]:
+                      - /url: https://wiki.osmfoundation.org/wiki/Terms_of_Use
+      - generic [ref=f2e604]:
+        - article [ref=f2e605]:
+          - paragraph [ref=f2e606]: Convocatoria abierta
+          - heading "Comparte lo que sabes" [level=2] [ref=f2e607]
+          - paragraph [ref=f2e608]: Buscamos charlas, talleres y lightning talks sobre web, datos, IA, educación, ciencia y comunidad. Si es tu primera charla, te acompañamos con mentorías.
+          - generic [ref=f2e609]:
+            - link "Enviar propuesta" [ref=f2e610] [cursor=pointer]:
+              - /url: "#"
+            - link "Quiero mentoría" [ref=f2e611] [cursor=pointer]:
+              - /url: "#"
+        - article [ref=f2e612]:
+          - paragraph [ref=f2e613]: Voluntariado
+          - heading "Vive PyCon desde adentro" [level=2] [ref=f2e614]
+          - paragraph [ref=f2e615]: PyCon Colombia existe gracias a decenas de voluntarios. Ayúdanos con logística, registro, redes, diseño o acompañando a ponentes. Recibes camiseta oficial, alimentación y la mejor experiencia de comunidad.
+          - link "Registrarme como voluntario" [ref=f2e617] [cursor=pointer]:
+            - /url: "#/voluntariado"
+      - region [ref=f2e618]:
+        - generic [ref=f2e619]:
+          - paragraph [ref=f2e620]: ¿Dudas?
+          - heading "Preguntas frecuentes" [level=2] [ref=f2e621]
+          - generic [ref=f2e622]:
+            - group [ref=f2e623]:
+              - generic "¿Necesito saber Python para asistir?" [ref=f2e624] [cursor=pointer]
+            - group [ref=f2e625]:
+              - generic "¿En qué idioma son las charlas?" [ref=f2e626] [cursor=pointer]
+            - group [ref=f2e627]:
+              - generic "¿Puedo transferir o reembolsar mi boleta?" [ref=f2e628] [cursor=pointer]
+            - group [ref=f2e629]:
+              - generic "¿Las charlas quedan grabadas?" [ref=f2e630] [cursor=pointer]
+            - group [ref=f2e631]:
+              - generic "¿El lugar es accesible?" [ref=f2e632] [cursor=pointer]
+      - generic [ref=f2e634]:
+        - heading "No te pierdas nada" [level=2] [ref=f2e635]
+        - paragraph [ref=f2e636]: Recibe noticias de ponentes, agenda y boletas.
+        - generic [ref=f2e637]:
+          - generic [ref=f2e638]: Email
+          - textbox "Email" [invalid] [ref=f2e639]:
+            - /placeholder: tu@email.com
+            - text: correo-invalido
+          - button "Suscribirme" [ref=f2e640] [cursor=pointer]
+        - status [ref=f2e641]: Escribe un email válido.
+  - contentinfo [ref=f2e642]:
+    - generic [ref=f2e643]:
+      - generic [ref=f2e644]:
+        - paragraph [ref=f2e645]: PyCon Colombia 2028
+        - paragraph [ref=f2e646]: Conferencia sin ánimo de lucro organizada por la comunidad Python de Colombia.
+        - link "info@pycon.co" [ref=f2e647] [cursor=pointer]:
+          - /url: mailto:info@pycon.co
+      - navigation "Ediciones anteriores" [ref=f2e648]:
+        - paragraph [ref=f2e649]: Ediciones anteriores
+        - list [ref=f2e650]:
+          - listitem [ref=f2e651]:
+            - link "2026" [ref=f2e652] [cursor=pointer]:
+              - /url: https://2026.pycon.co/
+          - listitem [ref=f2e653]:
+            - link "2025" [ref=f2e654] [cursor=pointer]:
+              - /url: https://2025.pycon.co/
+          - listitem [ref=f2e655]:
+            - link "2024" [ref=f2e656] [cursor=pointer]:
+              - /url: "#"
+          - listitem [ref=f2e657]:
+            - link "2023" [ref=f2e658] [cursor=pointer]:
+              - /url: "#"
+      - navigation "Enlaces" [ref=f2e659]:
+        - paragraph [ref=f2e660]: Enlaces
+        - list [ref=f2e661]:
+          - listitem [ref=f2e662]:
+            - link "Código de conducta" [ref=f2e663] [cursor=pointer]:
+              - /url: "#/codigo-de-conducta"
+          - listitem [ref=f2e664]:
+            - link "Agenda" [ref=f2e665] [cursor=pointer]:
+              - /url: "#/agenda"
+          - listitem [ref=f2e666]:
+            - link "Patrocinadores" [ref=f2e667] [cursor=pointer]:
+              - /url: "#patrocinadores"
+          - listitem [ref=f2e668]:
+            - link "FAQ" [ref=f2e669] [cursor=pointer]:
+              - /url: "#faq"
+      - generic [ref=f2e670]:
+        - paragraph [ref=f2e671]: Síguenos
+        - list [ref=f2e672]:
+          - listitem [ref=f2e673]:
+            - link "X / Twitter" [ref=f2e674] [cursor=pointer]:
+              - /url: https://x.com/pyconcolombia
+          - listitem [ref=f2e677]:
+            - link "Facebook" [ref=f2e678] [cursor=pointer]:
+              - /url: https://www.facebook.com/pyconcolombia/
+          - listitem [ref=f2e681]:
+            - link "LinkedIn" [ref=f2e682] [cursor=pointer]:
+              - /url: https://www.linkedin.com/company/pycon-colombia
+          - listitem [ref=f2e685]:
+            - link "YouTube" [ref=f2e686] [cursor=pointer]:
+              - /url: https://www.youtube.com/pyconcolombia
+          - listitem [ref=f2e689]:
+            - link "Instagram" [ref=f2e690] [cursor=pointer]:
+              - /url: "#"
+    - paragraph [ref=f2e693]: © 2028 PyCon Colombia · Hecho con 🐍 y 🌿 por voluntarios
+  - link "Volver arriba":
+    - /url: "#top"

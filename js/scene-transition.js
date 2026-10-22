@@ -72,7 +72,7 @@
         this.enableBoard();
       };
 
-      // Photographs accept the entry click only once this delay has passed since «iniciar experiencia».
+      // Photographs accept the entry click only once this delay has passed since «Iniciar».
       const delay = app.Config.intro.photoDelayMs;
       const finishWait = () => {
         const remaining = delay - (performance.now() - waitStarted);

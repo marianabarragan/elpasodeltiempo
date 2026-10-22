@@ -17,9 +17,10 @@
       this.damping = limits.damping;
       this.distance = 30;
       this.aspect = 16 / 9;
-      // Visible area: the whole table (width) and the window above it (height).
-      this.viewWidth = 19.5;
-      this.viewHeight = 13.4;
+      // Visible area: close, first-person framing of the objects on the table and the lower
+      // part of the window; the table extends beyond every edge, so the floor never shows.
+      this.viewWidth = 17.5;
+      this.viewHeight = 10.4;
       // Extra zoom used by the first-person glasses animation (1 = rest).
       this.zoom = 1;
       this.current = { yaw: 0, tilt: 0 };
@@ -94,7 +95,7 @@
       this.offset.setFromMatrixColumn(this.camera.matrixWorld, 0).multiplyScalar(this.slide.x);
       this.offset.addScaledVector(this.axis.setFromMatrixColumn(this.camera.matrixWorld, 1), this.slide.y);
       this.camera.position.add(this.offset);
-      // Fill the screen: keep the table's width on narrow screens and the room's height on wide ones.
+      // Fill the screen: keep the objects' width on narrow screens and the framing height on wide ones.
       const height = Math.max(this.viewHeight, this.viewWidth / this.aspect);
       this.camera.left = -height * this.aspect / 2;
       this.camera.right = height * this.aspect / 2;

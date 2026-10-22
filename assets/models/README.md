@@ -65,11 +65,12 @@ assets/models/adulthood/keyboard.glb
 assets/models/adulthood/clock-digital.glb
 assets/models/adulthood/coffee-thermos.glb
 assets/models/adulthood/checklist-paper.glb
+assets/models/adulthood/wall-calendar.glb
 assets/models/adulthood/pen.glb
 assets/models/adulthood/plant.glb
 ```
 
-Cada prop es un par `{ root, visual }` con nombre identificable (`monitor`, `keyboard`, `clockDigital`, `coffeeThermos`, `checklistPaper`, `pen`, `plant`, `desk`, `room`):
+Cada prop es un par `{ root, visual }` con nombre identificable (`monitor`, `keyboard`, `clockDigital`, `coffeeThermos`, `checklistPaper`, `pen`, `wallCalendar`, `plant`, `desk`, `room`). El calendario de pared es la excepción a `settle()`: cuelga de la pared y sus hojas (`calendar-page-front` / `calendar-page-under`) giran desde su borde superior. En todos:
 
 - `root`: colocación sobre el escritorio, con el pivote en el centro de la base. `settle()` lo apoya usando su `THREE.Box3` real, de modo que un modelo nuevo no flota ni atraviesa la mesa.
 - `visual`: hijo de `root` que recibe el hover (escala) y las animaciones (rebote del termo, pulsación del reloj). Para sustituir un prop, en `build()` añade la escena del `.glb` a su `visual` en lugar de las geometrías provisionales; la llamada a `settle()` de la sección «Placement on the desk» lo apoyará igual.
@@ -85,9 +86,10 @@ La interacción (`js/adulthood-interactions.js`) solo usa estos identificadores 
   group,                 // THREE.Group raíz, eje Y hacia arriba
   deskTopY,              // altura de la superficie del escritorio
   models,                // { monitor, keyboard, clockDigital, ... } → { root, visual }
-  interactive: { pen, coffeeThermos, clockDigital },   // { root, visual }
-  monitorScreen: { anchor, width, height },  // Object3D en el centro de la pantalla, +Z hacia fuera
-  paper: { root, visual, mesh, material, width, height, surfaceTop },
+  interactive: { checklistPaper, pen, monitor, monitorPower, wallCalendar, coffeeThermos, clockDigital },  // { root, visual }
+  monitorScreen: { anchor, width, height, setZoom(t), setPower(on) },  // anchor: centro de la pantalla, +Z hacia fuera; setZoom: hover 0–1; setPower: pantalla encendida/apagada
+  paper: { root, visual, mesh, material, width, height, surfaceTop, rest, glow },  // glow: malla del brillo de los bordes
+  calendar: { root, visual, pages: { front, under }, setMonth(index) },  // index 0 = mes inicial
   pen: { root, visual, tip, rest: { position, quaternion }, materials },
   clock: { setPower(on) },                   // dibuja 10:30 PM o la pantalla negra
   metadata, dispose()
@@ -112,9 +114,6 @@ assets/models/oldage/plant-2.glb
 assets/models/oldage/watering-can.glb
 assets/models/oldage/radio.glb
 assets/models/oldage/coffee-cup.glb
-assets/models/oldage/glasses-case.glb
-assets/models/oldage/blanket.glb
-assets/models/oldage/picture-frame.glb
 assets/models/oldage/table.glb
 assets/models/oldage/room.glb
 ```
@@ -123,9 +122,9 @@ Cada prop es un par `{ root, visual }`. Para sustituir uno, en `build()` añade 
 
 Convenciones que conservan las animaciones:
 
-- **Gafas**: lentes hacia `+Z`, puente en el origen y varillas hacia `-Z`. Las varillas se despliegan si se llaman `glasses-temple-left` y `glasses-temple-right`. Marca las lentes con `userData.lens = true` (no reciben contorno).
+- **Gafas**: lentes hacia `+Z`, puente en el origen y varillas hacia `-Z`. Las varillas se despliegan si se llaman `glasses-temple-left` y `glasses-temple-right`. Marca las lentes con `userData.lens = true` (no reciben contorno). Se apoyan directamente sobre la mesa (sin estuche); `settle()` usa su caja real.
 - **Plantas**: `plant1` y `plant2` son hijos del `visual` de su maceta, a la altura de la tierra, y viajan con ella. Su grupo `plantN-sway` se mece al regar; cada hoja o tallo con `userData.leaf = true` añade su propio movimiento.
 - **Regadera**: boquilla hacia `-X` y un `Object3D` llamado `watering-can-spout` en la punta (origen de las gotas y referencia para colocarla sobre la maceta).
-- **Radio**: un grupo `radio-antenna` opcional se balancea en la interacción oculta.
+- **Radio**: un grupo `radio-antenna` opcional se balancea al hacer clic en la radio.
 
 `OldAgeScene` llama a `Config.oldage.propsFactory` o, si es `null`, a `OldAgeProps.build()`. La fábrica debe ser **síncrona** (precarga los `.glb` antes) y devolver `{ group, tableTopY, models, interactive, curiosities, rest, center, pots, glasses, wateringCan, radio, coffeeCup, metadata, dispose() }`, con la misma forma que el prototipo.

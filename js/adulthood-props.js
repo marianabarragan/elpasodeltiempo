@@ -19,6 +19,7 @@
     clockDigital: 'assets/models/adulthood/clock-digital.glb',
     coffeeThermos: 'assets/models/adulthood/coffee-thermos.glb',
     checklistPaper: 'assets/models/adulthood/checklist-paper.glb',
+    wallCalendar: 'assets/models/adulthood/wall-calendar.glb',
     pen: 'assets/models/adulthood/pen.glb',
     plant: 'assets/models/adulthood/plant.glb'
   });
@@ -175,53 +176,117 @@
     const baseboard = mesh(new THREE.BoxGeometry(31, .55, .12), trim, room.visual);
     baseboard.position.set(0, .275, -3.84);
     // Wall shelf with notebooks and a wall calendar of crossed-out days: routine, deadlines.
+    // Both hang low enough to stay inside the view at every camera angle.
+    const SHELF_X = -4.9, SHELF_Y = 9.6;
     const shelfWood = material(tone(PALETTE.walnut, .12, '#ffffff'), { map: deskTexture });
     const shelf = mesh(softBox(4.4, .16, .95), shelfWood, room.visual);
-    shelf.position.set(-6.4, 10.85, -3.42); shelf.name = 'wall-shelf';
+    shelf.position.set(SHELF_X, SHELF_Y, -3.42); shelf.name = 'wall-shelf';
     [[-1.7, .62, 1.25, PALETTE.lime], [-1.38, .5, 1.05, PALETTE.olive], [-1.08, .55, 1.4, PALETTE.steel],
       [-.74, .45, 1.15, PALETTE.sand], [-.42, .5, 1.3, tone(PALETTE.mint, .35)]].forEach(([x, depth, height, color]) => {
       const book = mesh(new THREE.BoxGeometry(.28, height, depth), material(color), room.visual);
-      book.position.set(-6.4 + x, 10.93 + height / 2, -3.48);
+      book.position.set(SHELF_X + x, SHELF_Y + .08 + height / 2, -3.48);
     });
     const leaning = mesh(new THREE.BoxGeometry(.26, 1.1, .5), material(tone(PALETTE.walnut, .2, '#ffffff')), room.visual);
-    leaning.position.set(-6.4 - .02, 10.93 + .52, -3.48); leaning.rotation.z = -.38;
+    leaning.position.set(SHELF_X - .02, SHELF_Y + .08 + .52, -3.48); leaning.rotation.z = -.38;
     const boxOnShelf = mesh(softBox(1.1, .55, .7), material(PALETTE.sand), room.visual);
-    boxOnShelf.position.set(-5.1, 10.93 + .275, -3.45);
-    const calendarTexture = canvasTexture(256, 320, (ctx, w, h) => {
-      ctx.fillStyle = '#f3ead6'; ctx.fillRect(0, 0, w, h);
-      ctx.fillStyle = PALETTE.olive; ctx.fillRect(0, 0, w, 58);
-      ctx.fillStyle = '#f3ead6'; ctx.font = '700 30px "DM Sans", sans-serif'; ctx.textAlign = 'center';
-      ctx.fillText('OCTUBRE', w / 2, 40);
-      for (let row = 0; row < 5; row++) for (let col = 0; col < 7; col++) {
-        const x = 14 + col * 33, y = 74 + row * 47;
-        ctx.strokeStyle = 'rgba(96,68,39,.35)'; ctx.lineWidth = 1.2; ctx.strokeRect(x, y, 30, 42);
-        if (row * 7 + col < 23) {
-          ctx.strokeStyle = 'rgba(70,64,92,.75)'; ctx.lineWidth = 2.4;
-          ctx.beginPath(); ctx.moveTo(x + 5, y + 7); ctx.lineTo(x + 25, y + 35); ctx.moveTo(x + 25, y + 8); ctx.lineTo(x + 6, y + 34); ctx.stroke();
+    boxOnShelf.position.set(SHELF_X + 1.3, SHELF_Y + .08 + .275, -3.45);
+    // ---------- Wall calendar (interactive: one sheet per month) ----------
+    // A backing board with binding rings and a pad of month sheets. Each sheet hangs from
+    // a pivot on its top edge; `calendar.pages.front` is the visible month and `under` the next.
+    const MONTHS = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+    const calendarStart = app.Config.adulthood.calendar;
+    const monthTextures = new Map();
+    // `index` counts months from the configured start (0 = start month).
+    function monthTexture(index) {
+      if (monthTextures.has(index)) return monthTextures.get(index);
+      const absolute = calendarStart.startYear * 12 + calendarStart.startMonth + index;
+      const year = Math.floor(absolute / 12), month = absolute % 12;
+      const texture = canvasTexture(320, 380, (ctx, w, h) => {
+        ctx.fillStyle = '#f3ead6'; ctx.fillRect(0, 0, w, h);
+        ctx.fillStyle = PALETTE.olive; ctx.fillRect(0, 0, w, 70);
+        ctx.fillStyle = '#f3ead6'; ctx.font = '700 36px "DM Sans", sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText(MONTHS[month], w / 2, 48);
+        ctx.fillStyle = 'rgba(96,68,39,.7)'; ctx.font = '700 16px "DM Sans", sans-serif';
+        ['L', 'M', 'M', 'J', 'V', 'S', 'D'].forEach((day, col) => ctx.fillText(day, 34 + col * 42, 92));
+        const first = (new Date(year, month, 1).getDay() + 6) % 7;
+        const days = new Date(year, month + 1, 0).getDate();
+        ctx.font = '600 14px "DM Sans", sans-serif'; ctx.textAlign = 'left';
+        for (let cell = 0; cell < 42; cell++) {
+          const col = cell % 7, row = Math.floor(cell / 7), day = cell - first + 1;
+          const x = 15 + col * 42, y = 102 + row * 45;
+          ctx.strokeStyle = 'rgba(96,68,39,.3)'; ctx.lineWidth = 1.2; ctx.strokeRect(x, y, 38, 41);
+          if (day < 1 || day > days) continue;
+          ctx.fillStyle = 'rgba(96,68,39,.75)'; ctx.fillText(String(day), x + 4, y + 15);
+          // The starting month keeps its crossed-out days: routine and deadlines.
+          if (index === 0 && day <= 23) {
+            ctx.strokeStyle = 'rgba(70,64,92,.75)'; ctx.lineWidth = 2.6;
+            ctx.beginPath(); ctx.moveTo(x + 9, y + 9); ctx.lineTo(x + 31, y + 36); ctx.moveTo(x + 31, y + 9); ctx.lineTo(x + 9, y + 35); ctx.stroke();
+          }
         }
-      }
+      });
+      texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
+      monthTextures.set(index, texture);
+      return texture;
+    }
+    const wallCalendar = prop('wallCalendar');
+    const board = mesh(new THREE.BoxGeometry(2.3, 2.95, .04), trim, wallCalendar.visual);
+    board.name = 'calendar-board'; board.castShadow = false;
+    const ringMaterial = material(tone(PALETTE.steel, .2), { metalness: .35, roughness: .45 });
+    [-.75, -.25, .25, .75].forEach(x => {
+      const ring = mesh(new THREE.TorusGeometry(.07, .018, 6, 14, Math.PI * 1.3), ringMaterial, wallCalendar.visual);
+      ring.position.set(x, 1.33, .05); ring.rotation.set(0, Math.PI / 2, Math.PI * .85);
     });
-    const calendar = mesh(new THREE.BoxGeometry(2.3, 2.9, .05), [trim, trim, trim, trim, material('#ffffff', { map: calendarTexture, flatShading: false }), trim], room.visual);
-    calendar.position.set(6.3, 10.75, -3.86); calendar.rotation.z = .02; calendar.name = 'wall-calendar';
+    const pageWidth = 2.14, pageHeight = 2.62;
+    const pageGeometry = new THREE.PlaneGeometry(pageWidth, pageHeight);
+    pageGeometry.translate(0, -pageHeight / 2, 0);
+    geometries.add(pageGeometry);
+    function page(name, z) {
+      const pivot = new THREE.Group();
+      pivot.name = name;
+      pivot.position.set(0, 1.3, z);
+      const surface = material('#ffffff', { flatShading: false, transparent: true, side: THREE.DoubleSide });
+      const sheet = mesh(pageGeometry, surface, pivot);
+      sheet.castShadow = false;
+      wallCalendar.visual.add(pivot);
+      return { pivot, sheet, material: surface };
+    }
+    const calendarPages = { under: page('calendar-page-under', .024), front: page('calendar-page-front', .032) };
+    // Shows month `index` on the front sheet and the following month underneath.
+    function setCalendarMonth(index) {
+      calendarPages.front.material.map = monthTexture(index);
+      calendarPages.under.material.map = monthTexture(index + 1);
+      [calendarPages.front, calendarPages.under].forEach(item => { item.material.needsUpdate = true; });
+      // Keep only the textures that can still be shown.
+      monthTextures.forEach((texture, key) => {
+        if (key < index || key > index + 1) { texture.dispose(); textures.delete(texture); monthTextures.delete(key); }
+      });
+    }
+    setCalendarMonth(0);
+    wallCalendar.root.position.set(5.75, 9.5, -3.84);
+    wallCalendar.root.rotation.z = .02;
 
     // ---------- Desk ----------
     const desk = prop('desk');
     const deskWood = material(tone(PALETTE.walnut, .34, '#ffffff'), { map: deskTexture, flatShading: false, roughness: .85 });
     const deskDark = material(tone(PALETTE.walnut, .15));
-    const top = mesh(softBox(16, .36, 7.2, .1), deskWood, desk.visual);
-    top.position.set(0, DESK_TOP - .18, 0); top.name = 'desk-top';
+    // A long, deep top: from the back wall (z = -3.6) well past the bottom of the view and
+    // wider than it on both sides, so the camera only ever sees the desk, never the floor.
+    const DESK_WIDTH = 26, DESK_BACK = -3.6, DESK_FRONT = 12;
+    const top = mesh(softBox(DESK_WIDTH, .36, DESK_FRONT - DESK_BACK, .1), deskWood, desk.visual);
+    top.position.set(0, DESK_TOP - .18, (DESK_FRONT + DESK_BACK) / 2); top.name = 'desk-top';
     const legHeight = DESK_TOP - .36;
-    [[-7.45, -3.1], [-7.45, 3.1], [7.45, -3.1], [7.45, 3.1]].forEach(([x, z]) => {
+    const legX = DESK_WIDTH / 2 - .45;
+    [[-legX, DESK_BACK + .5], [-legX, DESK_FRONT - .3], [legX, DESK_BACK + .5], [legX, DESK_FRONT - .3]].forEach(([x, z]) => {
       const leg = mesh(new THREE.BoxGeometry(.42, legHeight, .42), deskDark, desk.visual);
       leg.position.set(x, legHeight / 2, z);
     });
-    const modesty = mesh(new THREE.BoxGeometry(14.5, 2.6, .12), deskDark, desk.visual);
+    const modesty = mesh(new THREE.BoxGeometry(DESK_WIDTH - 1.5, 2.6, .12), deskDark, desk.visual);
     modesty.position.set(0, legHeight - 1.3, -3.05);
     const drawers = mesh(new THREE.BoxGeometry(3.1, legHeight - .3, 6.2), deskWood, desk.visual);
-    drawers.position.set(5.6, (legHeight - .3) / 2 + .3, -.05);
+    drawers.position.set(5.6, (legHeight - .3) / 2 + .3, DESK_FRONT - 3.4);
     [0, 1, 2].forEach(index => {
       const handle = mesh(new THREE.BoxGeometry(.9, .1, .1), material(PALETTE.steel, { metalness: .2, roughness: .5 }), desk.visual);
-      handle.position.set(5.6, legHeight - .8 - index * 2.05, 3.1);
+      handle.position.set(5.6, legHeight - .8 - index * 2.05, DESK_FRONT - .25);
     });
 
     // ---------- Monitor (main light source) ----------
@@ -272,6 +337,52 @@
     const screen = mesh(new THREE.PlaneGeometry(screenWidth, screenHeight), screenMaterial, head);
     screen.position.z = .113; screen.name = 'monitor-screen';
     screen.castShadow = false; screen.userData.ignoreScreenLight = true;
+    // Hover emphasis on the screen only (0 = rest, 1 = hover): the panel grows slightly
+    // inside its bezel and its content zooms in a little.
+    function setScreenZoom(amount) {
+      screen.scale.set(1 + .035 * amount, 1 + .035 * amount, 1);
+      const repeat = 1 / (1 + .07 * amount);
+      [screenTexture, screenOffTexture].forEach(texture => {
+        texture.repeat.set(repeat, repeat);
+        texture.offset.set((1 - repeat) / 2, (1 - repeat) / 2);
+      });
+    }
+    // Switched-off panel: dark glass with a faint reflection.
+    const screenOffTexture = canvasTexture(512, 280, (ctx, w, h) => {
+      ctx.fillStyle = '#15191e'; ctx.fillRect(0, 0, w, h);
+      const glare = ctx.createLinearGradient(0, 0, w * .8, h);
+      glare.addColorStop(0, 'rgba(255,255,255,.08)'); glare.addColorStop(.45, 'rgba(255,255,255,.015)'); glare.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = glare; ctx.fillRect(0, 0, w, h);
+    });
+    // Power button on the bottom edge of the bezel, with a small status light beside it.
+    const powerButton = { root: new THREE.Group(), visual: new THREE.Group() };
+    powerButton.root.name = 'monitorPower';
+    powerButton.root.add(powerButton.visual);
+    powerButton.root.position.set(0, -1.79, .11);
+    head.add(powerButton.root);
+    const powerIcon = canvasTexture(128, 128, (ctx, w) => {
+      ctx.fillStyle = tone(PALETTE.steel, .45).getStyle(); ctx.fillRect(0, 0, w, w);
+      ctx.strokeStyle = '#eef3f6'; ctx.lineWidth = 11; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.arc(64, 68, 30, -Math.PI * .32, Math.PI * 1.32); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(64, 26); ctx.lineTo(64, 64); ctx.stroke();
+    });
+    powerIcon.wrapS = powerIcon.wrapT = THREE.ClampToEdgeWrapping;
+    const buttonBody = mesh(new THREE.CylinderGeometry(.13, .13, .05, 24), material(tone(PALETTE.steel, .45)), powerButton.visual);
+    buttonBody.rotation.x = Math.PI / 2;
+    const buttonFace = mesh(new THREE.CircleGeometry(.12, 24), material('#ffffff', { map: powerIcon, flatShading: false }), powerButton.visual);
+    buttonFace.position.z = .027;
+    buttonFace.castShadow = false;
+    const ledMaterial = new THREE.MeshBasicMaterial({ color: PALETTE.mint, toneMapped: false });
+    materials.add(ledMaterial);
+    const led = mesh(new THREE.CircleGeometry(.035, 12), ledMaterial, head);
+    led.position.set(.27, -1.79, .114);
+    led.castShadow = false; led.userData.ignoreScreenLight = true;
+    function setScreenPower(on) {
+      screenMaterial.map = on ? screenTexture : screenOffTexture;
+      screenMaterial.color.set(on ? '#eef7ff' : '#ffffff');
+      screenMaterial.needsUpdate = true;
+      ledMaterial.color.set(on ? PALETTE.mint : tone(PALETTE.steel, .6));
+    }
     const screenAnchor = new THREE.Object3D();
     screenAnchor.name = 'monitor-screen-light-anchor';
     screenAnchor.position.z = .12;
@@ -446,6 +557,38 @@
     const paperMesh = mesh(paperGeometry, paperMaterial, checklistPaper.visual);
     paperMesh.name = 'checklist-paper-sheet';
     paperMesh.castShadow = false;
+    // Call-to-action glow: soft light around the sheet's edges only (transparent inside,
+    // so it never covers the writing). Its opacity is animated by the scene.
+    const glowMargin = .42;
+    const glowTexture = canvasTexture(256, 320, (ctx, w, h) => {
+      const image = ctx.createImageData(w, h);
+      const totalW = paperWidth + glowMargin * 2, totalH = paperHeight + glowMargin * 2;
+      for (let py = 0; py < h; py++) for (let px = 0; px < w; px++) {
+        const x = Math.abs((px + .5) / w - .5) * totalW, y = Math.abs((py + .5) / h - .5) * totalH;
+        const dx = Math.max(0, x - paperWidth / 2), dy = Math.max(0, y - paperHeight / 2);
+        const inside = dx === 0 && dy === 0;
+        const d = Math.hypot(dx, dy) / glowMargin;
+        const alpha = inside ? 0 : Math.exp(-d * d * 4.5);
+        const k = (py * w + px) * 4;
+        image.data[k] = 255; image.data[k + 1] = 236; image.data[k + 2] = 168; image.data[k + 3] = Math.round(alpha * 255);
+      }
+      ctx.putImageData(image, 0, 0);
+    });
+    glowTexture.wrapS = glowTexture.wrapT = THREE.ClampToEdgeWrapping;
+    const glowMaterial = new THREE.MeshBasicMaterial({
+      map: glowTexture, transparent: true, opacity: 0, depthWrite: false, toneMapped: false, blending: THREE.AdditiveBlending
+    });
+    materials.add(glowMaterial);
+    const glowGeometry = new THREE.PlaneGeometry(paperWidth + glowMargin * 2, paperHeight + glowMargin * 2);
+    glowGeometry.rotateX(-Math.PI / 2);
+    const paperGlow = mesh(glowGeometry, glowMaterial, checklistPaper.visual);
+    paperGlow.name = 'checklist-paper-glow';
+    paperGlow.position.y = .003;
+    paperGlow.castShadow = paperGlow.receiveShadow = false;
+    paperGlow.renderOrder = 2;
+    paperGlow.visible = false;
+    paperGlow.raycast = () => {};
+    paperGlow.userData.ignoreScreenLight = true;
 
     // ---------- Pen (main interaction tool) ----------
     // Authored along +X, tip at +X. The tip is derived from the bounds below.
@@ -485,16 +628,22 @@
     settle(pen.root, -1.75, 1.7, -1.22);
     group.updateMatrixWorld(true);
 
-    ['pen', 'coffeeThermos', 'clockDigital'].forEach(name => {
-      models[name].root.userData.interactive = name;
-    });
+    const interactive = ['checklistPaper', 'pen', 'monitor', 'wallCalendar', 'coffeeThermos', 'clockDigital'];
+    interactive.forEach(name => { models[name].root.userData.interactive = name; });
+    // Nested inside the monitor: the raycast finds the button before the monitor itself.
+    powerButton.root.userData.interactive = 'monitorPower';
     const penRest = { position: pen.root.position.clone(), quaternion: pen.root.quaternion.clone() };
+    const paperRest = { position: checklistPaper.root.position.clone(), quaternion: checklistPaper.root.quaternion.clone() };
 
     return {
       group, deskTopY: DESK_TOP, models,
-      interactive: { pen: models.pen, coffeeThermos: models.coffeeThermos, clockDigital: models.clockDigital },
-      monitorScreen: { anchor: screenAnchor, width: screenWidth, height: screenHeight },
-      paper: { ...checklistPaper, mesh: paperMesh, material: paperMaterial, width: paperWidth, height: paperHeight, surfaceTop: paperTop },
+      interactive: { ...Object.fromEntries(interactive.map(name => [name, models[name]])), monitorPower: powerButton },
+      monitorScreen: { anchor: screenAnchor, width: screenWidth, height: screenHeight, setZoom: setScreenZoom, setPower: setScreenPower },
+      paper: {
+        ...checklistPaper, mesh: paperMesh, material: paperMaterial, width: paperWidth, height: paperHeight,
+        surfaceTop: paperTop, rest: paperRest, glow: paperGlow
+      },
+      calendar: { ...wallCalendar, pages: calendarPages, setMonth: setCalendarMonth },
       pen: { ...pen, tip: tipMarker.position.clone(), rest: penRest, materials: [penBlue, penDark] },
       clock: { setPower: setClockPower },
       metadata: { palette: PALETTE, modelSlots: MODEL_SLOTS, axis: 'Y-up', penTipAxis: '+X' },

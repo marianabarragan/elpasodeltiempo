@@ -1,0 +1,184 @@
+- generic [ref=f26e1]:
+  - generic [aria-hidden] [ref=f26e2]:
+    - button [ref=f26e4] [cursor=pointer]
+    - generic [ref=f26e11]:
+      - generic [ref=f26e14]:
+        - generic [ref=f26e16]:
+          - generic [ref=f26e18]:
+            - heading [level=1] [ref=f26e20]: Registro de hallazgos - Evaluación heurística - Pycon - Mariana Barragán
+            - generic [ref=f26e21]: Registra un hallazgo por envío. Evalúa la interfaz con los 10 principios heurísticos de Nielsen. Pycon.
+          - generic [ref=f26e23]:
+            - generic [ref=f26e24]:
+              - generic [ref=f26e27]:
+                - text: mariana.barragan@uao.edu.co
+                - link [ref=f26e28] [cursor=pointer]:
+                  - /url: https://accounts.google.com/AccountChooser?continue=https://docs.google.com/forms/d/e/1FAIpQLSd071lc1pEA6bBLcu8bzz1ug010xrFM1Pu0qUAILUr2KXfjsw/viewform&service=wise
+                  - text: Cambiar de cuenta
+              - status [ref=f26e30] [cursor=pointer]:
+                - generic [ref=f26e34]: Borrador guardado
+            - generic [ref=f26e35]: El nombre, el correo y la foto asociados a tu cuenta de Google se registrarán cuando subas archivos y envíes este formulario
+            - generic [aria-hidden] [ref=f26e37]: "* Indica que la pregunta es obligatoria"
+        - list [ref=f26e38]:
+          - listitem [ref=f26e39]:
+            - generic [ref=f26e41]:
+              - generic [ref=f26e43]:
+                - heading [level=3] [ref=f26e44]:
+                  - generic [ref=f26e45]: Ubicación del problema (sección o pantalla)
+                  - generic [ref=f26e46]: "*"
+                - generic [ref=f26e47]: "Ej.: inicio, menú principal, ficha de producto, formulario de contacto."
+              - textbox [ref=f26e53]: Ponentes y Keynotes, iconos de redes en cada tarjeta
+          - listitem [ref=f26e55]:
+            - generic [ref=f26e57]:
+              - heading [level=3] [ref=f26e60]:
+                - generic [ref=f26e61]: Principio heurístico afectado
+                - generic [ref=f26e62]: "*"
+              - radiogroup [ref=f26e65]:
+                - generic [ref=f26e66]:
+                  - generic [ref=f26e69]:
+                    - radio [ref=f26e71] [cursor=pointer]
+                    - generic [ref=f26e74]: 1. Visibilidad del estado del sistema
+                  - generic [ref=f26e79]:
+                    - radio [ref=f26e81] [cursor=pointer]
+                    - generic [ref=f26e84]: 2. Relación entre el sistema y el mundo real
+                  - generic [ref=f26e89]:
+                    - radio [ref=f26e91] [cursor=pointer]
+                    - generic [ref=f26e94]: 3. Control y libertad del usuario
+                  - generic [ref=f26e99]:
+                    - radio [ref=f26e101] [cursor=pointer]
+                    - generic [ref=f26e104]: 4. Consistencia y estándares
+                  - generic [ref=f26e109]:
+                    - radio [ref=f26e111] [cursor=pointer]
+                    - generic [ref=f26e114]: 5. Prevención de errores
+                  - generic [ref=f26e119]:
+                    - radio [ref=f26e121] [cursor=pointer]
+                    - generic [ref=f26e124]: 6. Reconocer antes que recordar
+                  - generic [ref=f26e129]:
+                    - radio [ref=f26e131] [cursor=pointer]
+                    - generic [ref=f26e134]: 7. Flexibilidad y eficiencia de uso
+                  - generic [ref=f26e139]:
+                    - radio [ref=f26e141] [cursor=pointer]
+                    - generic [ref=f26e144]: 8. Diseño estético y minimalista
+                  - generic [ref=f26e149]:
+                    - radio [checked] [ref=f26e151] [cursor=pointer]
+                    - generic [ref=f26e155]: 9. Ayudar a reconocer, diagnosticar y recuperarse de errores
+                  - generic [ref=f26e160]:
+                    - radio [ref=f26e162] [cursor=pointer]
+                    - generic [ref=f26e165]: 10. Ayuda y documentación
+          - listitem [ref=f26e168]:
+            - generic [ref=f26e170]:
+              - generic [ref=f26e172]:
+                - heading [level=3] [ref=f26e173]:
+                  - generic [ref=f26e174]: ¿Qué observaste?
+                  - generic [ref=f26e175]: "*"
+                - generic [ref=f26e176]: "Describe lo que ocurrió de forma objetiva. Ej.: Al enviar el formulario no aparece ningún mensaje."
+              - textbox [ref=f26e181]: Los iconos de GitHub, LinkedIn, X, Instagram y web de los ponentes no llevan a ningún lado. Pasa igual con "Enviar propuesta", "Quiero mentoría" y las ediciones 2024 y 2023 del footer.
+          - listitem [ref=f26e183]:
+            - generic [ref=f26e185]:
+              - generic [ref=f26e187]:
+                - heading [level=3] [ref=f26e188]:
+                  - generic [ref=f26e189]: ¿Por qué representa un problema?
+                  - generic [ref=f26e190]: "*"
+                - generic [ref=f26e191]: "Explica la consecuencia para el usuario. Ej.: No sabe si la información fue enviada."
+              - textbox [ref=f26e196]: Al hacer clic la página salta arriba sin ningún aviso. El usuario no sabe si falló algo y el sitio se siente sin terminar.
+          - listitem [ref=f26e198]:
+            - generic [ref=f26e200]:
+              - generic [ref=f26e202]:
+                - heading [level=3] [ref=f26e203]:
+                  - generic [ref=f26e204]: ¿Qué solución propones?
+                  - generic [ref=f26e205]: "*"
+                - generic [ref=f26e206]: "Propón una mejora concreta. Ej.: Mostrar un mensaje de envío exitoso."
+              - textbox [ref=f26e211]: Poner los enlaces reales o quitar los iconos que no existan. Si algo aún no está listo, mostrarlo desactivado con un "Próximamente".
+          - listitem [ref=f26e213]:
+            - generic [ref=f26e215]:
+              - generic [ref=f26e217]:
+                - heading [level=3] [ref=f26e218]:
+                  - generic [ref=f26e219]: Severidad
+                  - generic [ref=f26e220]: "*"
+                - generic [ref=f26e221]: Considera frecuencia, impacto y persistencia al asignar la severidad.
+              - radiogroup [ref=f26e224]:
+                - generic [ref=f26e225]:
+                  - generic [ref=f26e228]:
+                    - radio [ref=f26e230] [cursor=pointer]
+                    - generic [ref=f26e233]: 0 — No es un problema
+                  - generic [ref=f26e238]:
+                    - radio [ref=f26e240] [cursor=pointer]
+                    - generic [ref=f26e243]: 1 — Cosmético
+                  - generic [ref=f26e248]:
+                    - radio [ref=f26e250] [cursor=pointer]
+                    - generic [ref=f26e253]: 2 — Menor
+                  - generic [ref=f26e258]:
+                    - radio [checked] [ref=f26e260] [cursor=pointer]
+                    - generic [ref=f26e264]: 3 — Mayor
+                  - generic [ref=f26e269]:
+                    - radio [ref=f26e271] [cursor=pointer]
+                    - generic [ref=f26e274]: 4 — Catastrófico
+          - listitem [ref=f26e277]:
+            - generic [ref=f26e279]:
+              - generic [ref=f26e281]:
+                - heading [level=3] [ref=f26e282]:
+                  - generic [ref=f26e283]: Evidencia visual (enlace a la captura)
+                  - generic [ref=f26e284]: "*"
+                - generic [ref=f26e285]: Captura en drive
+              - generic [ref=f26e287]:
+                - generic [ref=f26e288]: "Sube 1 archivo compatible. Tamaño máximo: 10 MB."
+                - button [ref=f26e289] [cursor=pointer]:
+                  - generic [ref=f26e291]: Añadir archivo
+        - generic [ref=f26e297]:
+          - generic [ref=f26e298]:
+            - button [ref=f26e300] [cursor=pointer]:
+              - generic [ref=f26e302]: Enviar
+            - button [ref=f26e305] [cursor=pointer]:
+              - generic [ref=f26e307]: Borrar formulario
+          - generic [ref=f26e309]: Nunca envíes contraseñas a través de Formularios de Google.
+      - generic [ref=f26e310]:
+        - generic [ref=f26e311]:
+          - text: Este formulario se creó en Universidad Autónoma de Occidente. -
+          - button [ref=f26e312]: Contactar con el propietario del formulario
+          - paragraph [ref=f26e313]:
+            - text: ¿Parece sospechoso este formulario?
+            - link [ref=f26e314] [cursor=pointer]:
+              - /url: https://docs.google.com/forms/u/0/d/e/1FAIpQLSd071lc1pEA6bBLcu8bzz1ug010xrFM1Pu0qUAILUr2KXfjsw/abuse
+              - text: Informe
+        - link [ref=f26e316] [cursor=pointer]:
+          - /url: //www.google.com/forms/about/?utm_source=product&utm_medium=forms_logo&utm_campaign=forms
+          - text: Formularios
+    - generic [ref=f26e321]:
+      - button [ref=f26e322] [cursor=pointer]
+      - tooltip [aria-hidden] [ref=f26e325]: Ayuda y comentarios
+  - iframe [aria-hidden] [ref=f26e326]
+  - dialog "Insertar un archivo" [ref=f26e328]:
+    - iframe [active] [ref=f26e331]:
+      - generic [active] [ref=f28e1]:
+        - generic [ref=f28e2]:
+          - heading
+          - dialog "Insertar un archivo" [ref=f28e3]:
+            - generic [ref=f28e4]:
+              - banner [ref=f28e6]:
+                - search [ref=f28e10]:
+                  - generic [ref=f28e11]:
+                    - generic [ref=f28e18]:
+                      - textbox [disabled] [aria-hidden] [ref=f28e19]
+                      - combobox "Buscar en Drive o pegar la URL" [ref=f28e20]
+                    - generic [ref=f28e23]:
+                      - button "Filtrar" [ref=f28e24] [cursor=pointer]
+                      - tooltip [aria-hidden] [ref=f28e30]: Filtrar
+                - generic [ref=f28e31]:
+                  - button "Cerrar el selector Insertar un archivo" [ref=f28e32] [cursor=pointer]
+                  - tooltip [aria-hidden] [ref=f28e39]: Cerrar
+              - generic [ref=f28e40]:
+                - tooltip [aria-hidden] [ref=f28e41]: Desplázate hacia la izquierda para ver más
+                - tooltip [aria-hidden] [ref=f28e42]: Desplázate hacia la derecha para ver más
+                - tablist [ref=f28e43]:
+                  - generic [ref=f28e46]:
+                    - tab "Subir" [selected] [ref=f28e48] [cursor=pointer]
+                    - tab "Mi unidad" [ref=f28e49] [cursor=pointer]
+                    - tab "Reciente" [ref=f28e50] [cursor=pointer]
+            - tabpanel [ref=f28e53]:
+              - alertdialog [ref=f28e56]:
+                - generic [ref=f28e57]: "Sube 1 archivo compatible. Tamaño máximo: 10 MB. Se enviará una copia del archivo seleccionado. Una vez que se haya enviado, no se podrá editar ni quitar."
+              - generic [ref=f28e70]:
+                - img "Upload" [ref=f28e72]
+                - generic "Examinar o arrastra un archivo para subirlo a Mi unidad y selecciona" [ref=f28e73]:
+                  - button "Examinar" [ref=f28e76] [cursor=pointer]
+                  - generic [ref=f28e79]: o arrastra un archivo para subirlo a Mi unidad y selecciona
+        - generic [ref=f28e80]: Se ha abierto el selector Insertar un archivo.

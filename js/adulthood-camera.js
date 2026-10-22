@@ -3,38 +3,45 @@
   const app = window.TimeExperience;
   const DEG = Math.PI / 180;
 
-  // First-person, slightly elevated view looking down at the desk (picada, not overhead).
+  // Orthographic, slightly elevated view looking down at the desk (picada, not overhead).
   // The camera orbits the desk focus within the configured limits, so the desk always
-  // stays in frame and the camera never leaves the open space in front of it.
+  // stays in frame. The visible area is fixed to the desk and the props on it: the
+  // floor never comes into view; narrow screens see more of the wall and the desk instead.
   class AdulthoodCamera {
     constructor(target) {
       const limits = app.Config.adulthood.camera;
-      this.camera = new THREE.PerspectiveCamera(40, 16 / 9, .1, 120);
+      this.camera = new THREE.OrthographicCamera(-8, 8, 4.5, -4.5, .1, 120);
       this.target = target.clone();
       this.baseElevation = 31 * DEG;
-      // The 25° vertical range is split around the resting view: 10° lower, 15° higher.
-      this.tiltRange = [-limits.maxTilt * .4, limits.maxTilt * .6];
+      // The vertical range (Config.adulthood.camera.maxTilt) is split evenly around the resting
+      // view, so the wall shelf and the calendar never leave the frame.
+      this.tiltRange = [-limits.maxTilt / 2, limits.maxTilt / 2];
       this.maxYaw = limits.maxYaw;
       this.damping = limits.damping;
-      this.focusHalfWidth = 6.9;
-      this.distance = 12.3;
+      this.distance = 30;
+      this.aspect = 16 / 9;
+      // Visible area in world units: the desk's width, from its front edge to the wall
+      // calendar above the monitor (no legs, no floor).
+      this.viewWidth = 16.2;
+      this.viewHeight = 8.6;
+      this.maxViewHeight = 12.5;
       this.current = { yaw: 0, tilt: 0 };
       this.desired = { yaw: 0, tilt: 0 };
       // Small slide opposite to the rotation, which then settles back (inertia).
       this.slide = new THREE.Vector2();
       this.slideTarget = new THREE.Vector2();
       this.offset = new THREE.Vector3();
+      this.axis = new THREE.Vector3();
       this.drag = null;
       this.frozen = false;
       this.apply();
     }
 
+    // Height of the visible area in world units (used to size the lifted sheet).
+    get viewSize() { return this.camera.top - this.camera.bottom; }
+
     resize(width, height) {
-      this.camera.aspect = width / height;
-      const halfHorizontal = Math.atan(Math.tan(this.camera.fov * DEG / 2) * this.camera.aspect);
-      // Wide screens keep the resting distance; narrow ones step back so the desk fits.
-      this.distance = Math.min(24, Math.max(12.3, this.focusHalfWidth / Math.tan(halfHorizontal)));
-      this.camera.updateProjectionMatrix();
+      this.aspect = width / height;
       this.apply();
     }
 
@@ -100,8 +107,16 @@
       // Slide camera and focus together along the view's right/up axes.
       this.camera.updateMatrixWorld();
       this.offset.setFromMatrixColumn(this.camera.matrixWorld, 0).multiplyScalar(this.slide.x);
-      this.offset.addScaledVector(new THREE.Vector3().setFromMatrixColumn(this.camera.matrixWorld, 1), this.slide.y);
+      this.offset.addScaledVector(this.axis.setFromMatrixColumn(this.camera.matrixWorld, 1), this.slide.y);
       this.camera.position.add(this.offset);
+      // Keep the desk area's width on any screen: narrow screens show more height (more wall
+      // and more desk, never the floor) up to maxViewHeight.
+      const height = THREE.MathUtils.clamp(this.viewWidth / this.aspect, this.viewHeight, this.maxViewHeight);
+      this.camera.left = -height * this.aspect / 2;
+      this.camera.right = height * this.aspect / 2;
+      this.camera.top = height / 2;
+      this.camera.bottom = -height / 2;
+      this.camera.updateProjectionMatrix();
       this.camera.updateMatrixWorld();
     }
 

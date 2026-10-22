@@ -1,0 +1,133 @@
+- generic [ref=e1]:
+  - link "Saltar al contenido" [ref=e2] [cursor=pointer]:
+    - /url: "#contenido"
+  - banner:
+    - generic [ref=e694]:
+      - link "PyCon Colombia 2028, inicio" [ref=e695] [cursor=pointer]:
+        - /url: "#inicio"
+        - generic [ref=e698]: PyCon CO
+      - navigation "Menú principal" [ref=e699]:
+        - link "Keynotes" [ref=e700] [cursor=pointer]:
+          - /url: "#keynotes"
+        - link "Ponentes" [ref=e701] [cursor=pointer]:
+          - /url: "#ponentes"
+        - link "Agenda" [ref=e702] [cursor=pointer]:
+          - /url: "#/agenda"
+        - link "Patrocinadores" [ref=e703] [cursor=pointer]:
+          - /url: "#patrocinadores"
+        - link "Lugar" [ref=e704] [cursor=pointer]:
+          - /url: "#lugar"
+        - link "Código de conducta" [ref=e705] [cursor=pointer]:
+          - /url: "#/codigo-de-conducta"
+        - link "Comprar boleta" [ref=e706] [cursor=pointer]:
+          - /url: "#boletas"
+    - button "Cambiar idioma / Change language" [ref=e3] [cursor=pointer]:
+      - generic [ref=e5]: ES
+      - generic [ref=e6]: EN
+  - main [ref=e7]:
+    - generic [ref=e781]:
+      - navigation "Navegación" [ref=e782]:
+        - link "Volver a los keynotes" [ref=e783] [cursor=pointer]:
+          - /url: "#keynotes"
+      - article [ref=e787]:
+        - paragraph [ref=e788]: Sesión
+        - list [ref=e789]:
+          - listitem [ref=e790]: Comunidad
+        - heading "Keynote de cierre" [active] [level=1] [ref=e791]
+        - list [ref=e792]:
+          - listitem [ref=e793]: "Formato: Keynote"
+          - listitem [ref=e794]: "Nivel: Principiante"
+          - listitem [ref=e795]: "Idioma: Inglés"
+        - generic [ref=e796]:
+          - paragraph [ref=e798]: La keynote de cierre se anunciará muy pronto.
+          - complementary [ref=e799]:
+            - heading "Cuándo y dónde" [level=2] [ref=e800]
+            - paragraph [ref=e801]:
+              - generic [ref=e804]: Domingo 16 · 16:30 – 17:30
+            - link "Auditorio Fundadores" [ref=e805] [cursor=pointer]:
+              - /url: "#/agenda/evento/d2-7"
+            - button "Guardar en mi agenda" [ref=e809] [cursor=pointer]
+        - paragraph [ref=e813]: Ponente
+        - generic [ref=e814]:
+          - generic [ref=e815]: "?"
+          - generic [ref=e818]:
+            - heading "Por anunciar" [level=2] [ref=e819]
+            - paragraph [ref=e820]: Core developer de CPython
+            - paragraph [ref=e821]: Muy pronto revelaremos a nuestra keynote de cierre. ¡Síguenos en redes para enterarte primero!
+            - list [ref=e822]:
+              - listitem [ref=e823]:
+                - link "GitHub" [ref=e824] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=e827]:
+                - link "LinkedIn" [ref=e828] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=e831]:
+                - link "X" [ref=e832] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=e835]:
+                - link "Instagram" [ref=e836] [cursor=pointer]:
+                  - /url: "#"
+              - listitem [ref=e839]:
+                - link "Web" [ref=e840] [cursor=pointer]:
+                  - /url: "#"
+          - button "Ver ponente" [ref=e843] [cursor=pointer]
+      - link "Volver a los keynotes" [ref=e845] [cursor=pointer]:
+        - /url: "#keynotes"
+  - contentinfo [ref=e642]:
+    - generic [ref=e643]:
+      - generic [ref=e644]:
+        - paragraph [ref=e645]: PyCon Colombia 2028
+        - paragraph [ref=e646]: Conferencia sin ánimo de lucro organizada por la comunidad Python de Colombia.
+        - link "info@pycon.co" [ref=e647] [cursor=pointer]:
+          - /url: mailto:info@pycon.co
+      - navigation "Ediciones anteriores" [ref=e648]:
+        - paragraph [ref=e649]: Ediciones anteriores
+        - list [ref=e650]:
+          - listitem [ref=e651]:
+            - link "2026" [ref=e652] [cursor=pointer]:
+              - /url: https://2026.pycon.co/
+          - listitem [ref=e653]:
+            - link "2025" [ref=e654] [cursor=pointer]:
+              - /url: https://2025.pycon.co/
+          - listitem [ref=e655]:
+            - link "2024" [ref=e656] [cursor=pointer]:
+              - /url: "#"
+          - listitem [ref=e657]:
+            - link "2023" [ref=e658] [cursor=pointer]:
+              - /url: "#"
+      - navigation "Enlaces" [ref=e659]:
+        - paragraph [ref=e660]: Enlaces
+        - list [ref=e661]:
+          - listitem [ref=e662]:
+            - link "Código de conducta" [ref=e663] [cursor=pointer]:
+              - /url: "#/codigo-de-conducta"
+          - listitem [ref=e664]:
+            - link "Agenda" [ref=e665] [cursor=pointer]:
+              - /url: "#/agenda"
+          - listitem [ref=e666]:
+            - link "Patrocinadores" [ref=e667] [cursor=pointer]:
+              - /url: "#patrocinadores"
+          - listitem [ref=e668]:
+            - link "FAQ" [ref=e669] [cursor=pointer]:
+              - /url: "#faq"
+      - generic [ref=e670]:
+        - paragraph [ref=e671]: Síguenos
+        - list [ref=e672]:
+          - listitem [ref=e673]:
+            - link "X / Twitter" [ref=e674] [cursor=pointer]:
+              - /url: https://x.com/pyconcolombia
+          - listitem [ref=e677]:
+            - link "Facebook" [ref=e678] [cursor=pointer]:
+              - /url: https://www.facebook.com/pyconcolombia/
+          - listitem [ref=e681]:
+            - link "LinkedIn" [ref=e682] [cursor=pointer]:
+              - /url: https://www.linkedin.com/company/pycon-colombia
+          - listitem [ref=e685]:
+            - link "YouTube" [ref=e686] [cursor=pointer]:
+              - /url: https://www.youtube.com/pyconcolombia
+          - listitem [ref=e689]:
+            - link "Instagram" [ref=e690] [cursor=pointer]:
+              - /url: "#"
+    - paragraph [ref=e693]: © 2028 PyCon Colombia · Hecho con 🐍 y 🌿 por voluntarios
+  - link "Volver arriba":
+    - /url: "#top"

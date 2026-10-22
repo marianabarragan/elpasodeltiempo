@@ -12,9 +12,27 @@
       maxTilt: 20 * Math.PI / 180,
       damping: 5.5
     },
-    childhood: { paperScale: 1.4, crayonScale: 1.5 },
-    progress: { narrative: 60, eachObject: 10 },
-    // Tablero de inicio: tiempo mínimo, desde el clic en «iniciar experiencia», antes de
+    childhood: {
+      paperScale: 1.4, crayonScale: 1.5,
+      // ► 16 COLORES DE LA PALETA DESPLEGABLE DE LA CRAYOLA (4 × 4). Cada fila es una familia
+      //   tonal ordenada de oscuro a claro; el orden aquí es el orden en pantalla.
+      palette: [
+        { family: 'Azules', colors: [['#2e319c', 'Azul índigo'], ['#728ac5', 'Azul lavanda'], ['#47acc2', 'Azul turquesa'], ['#b7c7ed', 'Azul cielo']] },
+        { family: 'Verdes', colors: [['#49891b', 'Verde bosque'], ['#afdf36', 'Verde lima'], ['#c0dea4', 'Verde salvia'], ['#e4f098', 'Verde limón claro']] },
+        { family: 'Amarillo, naranja, rojo y café', colors: [['#ffc501', 'Amarillo'], ['#f67500', 'Naranja'], ['#ad1414', 'Rojo'], ['#6e4827', 'Café']] },
+        { family: 'Magentas y rosados', colors: [['#86034a', 'Vino'], ['#9e098f', 'Magenta oscuro'], ['#eb4097', 'Fucsia'], ['#f0a5e8', 'Rosado']] }
+      ],
+      // Barra de progreso: cinco hitos de 20 % (clic en la crayola, color elegido, sol, casa y
+      // árbol). Cada figura cuenta cuando su área total (p. ej. tronco + copa) llega a este %.
+      figureThreshold: 25,
+      // Piso de rompecabezas: tres tonos pastel (amarillo, azul y verde), usados tal cual.
+      // desaturate y lighten (0–1) permiten suavizarlos más si hiciera falta.
+      floor: { colors: ['#ffe085', '#a3c8f2', '#cee59d'], desaturate: 0, lighten: 0 },
+      // Sonido al pasar por los colores. Con null suena una nota de xilófono generada en el
+      // navegador; para usar un archivo: 'assets/audio/palette-hover.mp3'.
+      audio: { paletteHoverSrc: null }
+    },
+    // Tablero de inicio: tiempo mínimo, desde el clic en «Iniciar» de la portada, antes de
     // que la primera fotografía acepte el clic de entrada (no hay acercamiento automático).
     // El desenfoque inicial del fondo (≈40 %) se define en styles.css (--intro-blur).
     intro: { photoDelayMs: 2000 },
@@ -30,17 +48,31 @@
     // Escenario 2: juventud / adultez joven.
     adulthood: {
       palette: ['#837858', '#91959c', '#c7cf96', '#604427', '#c0dea4', '#e2c99e'],
-      // TEXTOS EDITABLES de la checklist. El encabezado se muestra desde el inicio;
-      // cada tarea aparece solo al tachar la anterior. Admite más o menos de cuatro.
+      // TEXTOS EDITABLES de la checklist. Todos los pendientes se ven desde el inicio, cada
+      // uno con su casilla; solo se puede marcar la casilla siguiente a la última marcada.
       checklist: {
         title: 'Pendientes',
-        tasks: ['pendiente 1', 'pendiente 2', 'pendiente 3', 'pendiente 4'],
-        // Fracción mínima del ancho del renglón que debe cubrir un trazo horizontal.
-        strikeCoverage: 0.68
+        tasks: [
+          'ahorrar 600 mil para el próximo mes',
+          'Actualizar el hoja de vida o el perfil de LinkedIn',
+          'Retomar el contacto con amigos viejos',
+          'Paseo pa’ puebliar el próximo festivo'
+        ]
       },
+      // Hoja de pendientes: brillo de los bordes (a los `glowDelayMs` de entrar) y lectura
+      // levantada. `blurAmount` es el desenfoque del fondo (0–1) sobre `maxBlurPx` px y
+      // `liftHeight` la fracción del alto de la pantalla que ocupa la hoja levantada.
+      sheet: { glowDelayMs: 3000, blurAmount: 0.6, maxBlurPx: 14, liftHeight: 0.74 },
+      // Calendario de pared: mes inicial (0 = enero … 9 = octubre) y año de referencia.
+      calendar: { startMonth: 9, startYear: 2026 },
+      // ► BARRA DE PROGRESO del escenario 2 (arriba, horizontal). `checklist` es el % de la lista
+      //   (repartido entre sus casillas); el resto se reparte entre `propsNeeded` de los `props`
+      //   (termo, reloj, calendario), cada uno cuenta una vez. Con propsNeeded: 1 basta con
+      //   cualquiera de los tres. La flecha de continuar aparece al llegar al 100 %.
+      progress: { checklist: 60, props: ['coffeeThermos', 'clockDigital', 'wallCalendar'], propsNeeded: 3 },
       message: 'Cuando crecemos, el tiempo parece ir más rápido que nosotros.',
-      // Picada en primera persona alrededor del escritorio (radianes).
-      camera: { maxYaw: 30 * Math.PI / 180, maxTilt: 25 * Math.PI / 180, damping: 5.5 },
+      // Cámara ortográfica en picada alrededor del escritorio (radianes).
+      camera: { maxYaw: 12 * Math.PI / 180, maxTilt: 12 * Math.PI / 180, damping: 5.5 },
       // Hora fija del reloj digital cuando está encendido.
       clockTime: { digits: '10:30', period: 'PM' },
       // RUTAS DE AUDIO del escenario 2. Sustituye null por rutas relativas a
@@ -63,6 +95,10 @@
       wateringSeconds: 4.5,
       // Inclinación de la regadera mientras riega (radianes).
       pourAngle: 40 * Math.PI / 180,
+      // ► BARRA DE PROGRESO del escenario 3 (arriba, horizontal), en %: ponerse las gafas, elegir
+      //   maceta, completar el riego e interactuar con la taza o la radio (cuenta una sola vez).
+      //   La flecha de continuar aparece al llegar al 100 %.
+      progress: { glasses: 20, pot: 20, watering: 40, extra: 20 },
       // ► MÚSICA AMBIENTAL DEL ESCENARIO 3: sustituye null por la ruta del archivo, p. ej.
       //   musicSrc: 'assets/audio/oldage-music.mp3'. Suena en bucle desde la entrada.
       //   waterSrc: efecto opcional al empezar cada riego.

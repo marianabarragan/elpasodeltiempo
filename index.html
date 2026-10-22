@@ -18,19 +18,26 @@
       <div class="intro-stage" id="intro3d" role="img" aria-label="Tablero tridimensional de corcho con marco naranja y un hilo de cabuya del que cuelgan tres fotografías: niñez, adultez joven y vejez."></div>
       <div class="intro-veil" aria-hidden="true"></div>
       <div class="intro-copy">
-        <p class="intro-label">El paso del tiempo</p>
-        <h1 id="intro-title">¿Te has detenido a pensar cómo cambia la vida con <span>el paso del tiempo?</span></h1>
-        <button class="primary-button intro-start" id="startExperience" type="button">iniciar experiencia</button>
+        <div class="intro-hourglass" id="introHourglass" role="img" aria-label="Reloj de arena de madera rodeado por una enredadera con flores moradas."></div>
+        <div class="intro-text">
+          <p class="intro-label">El paso del tiempo</p>
+          <h1 id="intro-title"><span class="intro-line">¿Te has detenido a pensar</span> <span class="intro-line">cómo cambia la vida</span> <span class="intro-line">con <span class="intro-highlight">el paso del tiempo?</span></span></h1>
+          <button class="primary-button intro-start" id="startExperience" type="button">Iniciar</button>
+        </div>
+        <span class="intro-rule" aria-hidden="true"></span>
       </div>
     </section>
 
     <section class="scene childhood-room" data-scene="childhood" aria-labelledby="childhood-title" hidden>
       <h2 class="sr-only" id="childhood-title">Niñez</h2>
-      <div class="three-stage" id="childhood3d" role="application" aria-label="Habitación infantil 3D. Elige un color. Mantén el clic izquierdo sobre la crayola y arrástrala hasta el dibujo para colorear. Suelta para devolverla. Arrastra el resto del escenario para girar la cámara."></div>
-      <div class="color-panel" role="group" aria-label="Elige un color para la crayola">
-        <button class="color-choice" type="button" data-color="#60AE29" style="--swatch:#60AE29" aria-pressed="true"><i aria-hidden="true"></i><span>Verde</span></button>
-        <button class="color-choice" type="button" data-color="#F2BB31" style="--swatch:#F2BB31" aria-pressed="false"><i aria-hidden="true"></i><span>Amarillo</span></button>
-        <button class="color-choice" type="button" data-color="#bf5527" style="--swatch:#bf5527" aria-pressed="false"><i aria-hidden="true"></i><span>Café</span></button>
+      <div class="three-stage" id="childhood3d" role="application" aria-label="Habitación infantil 3D. Haz clic en la crayola para abrir la paleta y elige un color. La crayola seguirá el ratón; mantén el clic izquierdo sobre el dibujo para colorear. Un clic fuera de la hoja la devuelve a su lugar. Arrastra fuera de la hoja para girar la cámara."></div>
+      <div class="childhood-progress" id="childhoodProgress" role="progressbar" aria-label="Progreso del escenario" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div class="childhood-progress__track"><span class="childhood-progress__fill"></span><i></i><i></i><i></i><i></i></div>
+        <span class="childhood-progress__value">0%</span>
+      </div>
+      <div class="crayon-palette" id="crayonPalette" role="dialog" aria-label="Paleta de colores de la crayola" hidden>
+        <p class="crayon-palette__title">Elige un color</p>
+        <div class="crayon-palette__grid"></div>
       </div>
       <button class="sound-toggle round-control" id="soundToggle" type="button" aria-label="Silenciar sonido" aria-pressed="true">
         <svg class="sound-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15 9a4 4 0 0 1 0 6M18 6a8 8 0 0 1 0 12"/></svg>
@@ -42,7 +49,11 @@
 
     <section class="scene adulthood-room" data-scene="adulthood" aria-labelledby="adulthood-title" hidden>
       <h2 class="sr-only" id="adulthood-title">Juventud y adultez joven</h2>
-      <div class="three-stage" id="adulthood3d" role="application" aria-label="Escritorio de noche iluminado por un monitor. Mantén el clic izquierdo sobre el lapicero y tacha cada pendiente de la hoja con un trazo horizontal. Suelta para devolverlo. El termo y el reloj también responden al clic. Arrastra el resto del escenario para girar la cámara."></div>
+      <div class="three-stage" id="adulthood3d" role="application" aria-label="Escritorio de noche iluminado por un monitor. Haz clic en la hoja de pendientes para levantarla; luego haz clic en el lapicero para tomarlo y marca, en orden, la casilla de cada pendiente. Al completar los cuatro la hoja vuelve a la mesa. El calendario de la pared pasa al mes siguiente con cada clic; el termo y el reloj también responden al clic, y el botón inferior del monitor enciende y apaga la pantalla. La barra superior muestra el progreso. Arrastra el resto del escenario para girar la cámara."></div>
+      <div class="childhood-progress adulthood-progress" id="adulthoodProgress" role="progressbar" aria-label="Progreso del escenario" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div class="childhood-progress__track"><span class="childhood-progress__fill"></span></div>
+        <span class="childhood-progress__value">0%</span>
+      </div>
       <button class="sound-toggle round-control" id="adulthoodSoundToggle" type="button" aria-label="Silenciar sonido" aria-pressed="true">
         <svg class="sound-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15 9a4 4 0 0 1 0 6M18 6a8 8 0 0 1 0 12"/></svg>
         <svg class="sound-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="m16 10 5 5m0-5-5 5"/></svg>
@@ -53,7 +64,11 @@
 
     <section class="scene oldage-room" data-scene="oldage" aria-labelledby="oldage-title" hidden>
       <h2 class="sr-only" id="oldage-title">Vejez</h2>
-      <div class="three-stage" id="oldage3d" role="application" aria-label="Mesa junto a una ventana, vista con la visión borrosa. Primero haz clic en las gafas para ponértelas. Después elige una de las dos macetas, haz clic en la regadera y mantén el clic sobre ella para regar la planta. Arrastra el resto del escenario para girar la cámara."></div>
+      <div class="three-stage" id="oldage3d" role="application" aria-label="Mesa junto a una ventana, vista con la visión borrosa. Primero haz clic en las gafas para ponértelas. Después elige una de las dos macetas, haz clic en la regadera y mantén el clic sobre ella para regar la planta. Con las gafas puestas, la taza de café y la radio también responden al clic. La barra superior muestra el progreso. Arrastra el resto del escenario para girar la cámara."></div>
+      <div class="childhood-progress oldage-scene-progress" id="oldageSceneProgress" role="progressbar" aria-label="Progreso del escenario" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div class="childhood-progress__track"><span class="childhood-progress__fill"></span><i></i><i></i><i></i><i></i></div>
+        <span class="childhood-progress__value">0%</span>
+      </div>
       <div class="oldage-progress" id="oldageProgress" role="progressbar" aria-label="Riego" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden><span></span></div>
       <button class="sound-toggle round-control" id="oldageSoundToggle" type="button" aria-label="Silenciar sonido" aria-pressed="true">
         <svg class="sound-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15 9a4 4 0 0 1 0 6M18 6a8 8 0 0 1 0 12"/></svg>
@@ -80,9 +95,12 @@
   <script src="js/intro-textures.js"></script>
   <script src="js/intro-camera.js"></script>
   <script src="js/intro-scene.js"></script>
+  <script src="js/intro-hourglass.js"></script>
   <script src="js/childhood-props.js"></script>
   <script src="js/painting-system.js"></script>
   <script src="js/audio-system.js"></script>
+  <script src="js/childhood-progress.js"></script>
+  <script src="js/crayon-palette.js"></script>
   <script src="js/childhood-camera.js"></script>
   <script src="js/object-interactions.js"></script>
   <script src="js/childhood-scene.js"></script>
@@ -90,12 +108,15 @@
   <script src="js/monitor-light.js"></script>
   <script src="js/checklist-system.js"></script>
   <script src="js/adulthood-camera.js"></script>
+  <script src="js/adulthood-progress.js"></script>
+  <script src="js/adulthood-sheet.js"></script>
   <script src="js/adulthood-interactions.js"></script>
   <script src="js/adulthood-scene.js"></script>
   <script src="js/oldage-props.js"></script>
   <script src="js/oldage-vision.js"></script>
   <script src="js/oldage-camera.js"></script>
   <script src="js/oldage-interactions.js"></script>
+  <script src="js/oldage-progress.js"></script>
   <script src="js/oldage-scene.js"></script>
   <script src="js/closing-content.js"></script>
   <script src="js/closing-screens.js"></script>

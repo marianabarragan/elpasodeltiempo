@@ -80,6 +80,13 @@ this.uniforms.uBeamIntensity.value =
 this.volume.visible = ENABLE_MONITOR_LIGHT;
     }
 
+    // Screen power (0 = off, 1 = on): scales the beam on the desk and the light haze.
+    setLevel(level) {
+      this.uniforms.uBeamIntensity.value = ENABLE_MONITOR_LIGHT ? this.originalIntensity * level : 0;
+      this.volume.material.uniforms.uOpacity.value = .16 * level;
+      this.volume.visible = ENABLE_MONITOR_LIGHT && level > .001;
+    }
+
     update() {
       this.anchor.updateWorldMatrix(true, false);
       this.uniforms.uBeamInverse.value.copy(this.anchor.matrixWorld).invert();

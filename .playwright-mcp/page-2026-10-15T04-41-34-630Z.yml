@@ -1,0 +1,21 @@
+- generic [ref=f25e3]:
+  - generic [ref=f25e5]:
+    - heading "Registro de hallazgos - Evaluación heurística - Pycon - Mariana Barragán" [level=1] [ref=f25e7]
+    - generic [ref=f25e8]: ¡Hallazgo registrado! Puedes enviar otra respuesta para registrar un nuevo hallazgo.
+    - generic [ref=f25e9]:
+      - link "Modificar tu respuesta" [ref=f25e10] [cursor=pointer]:
+        - /url: https://docs.google.com/forms/u/0/d/e/1FAIpQLSd071lc1pEA6bBLcu8bzz1ug010xrFM1Pu0qUAILUr2KXfjsw/viewform?usp=form_confirm&edit2=2_ABaOnufZHbHkSMryKGfJ3oFJhUbKAIqWTjVOll4z4EQtp0_RYzZrXALhawp2p_7e-5gsOZs
+      - link "Enviar otra respuesta" [ref=f25e11] [cursor=pointer]:
+        - /url: https://docs.google.com/forms/u/0/d/e/1FAIpQLSd071lc1pEA6bBLcu8bzz1ug010xrFM1Pu0qUAILUr2KXfjsw/viewform?usp=form_confirm
+  - generic [ref=f25e12]:
+    - generic [ref=f25e13]:
+      - text: Este formulario se creó en Universidad Autónoma de Occidente. -
+      - button "Contactar con el propietario del formulario" [ref=f25e14]
+      - paragraph [ref=f25e15]:
+        - text: ¿Parece sospechoso este formulario?
+        - link "Informe" [ref=f25e16] [cursor=pointer]:
+          - /url: https://docs.google.com/forms/u/0/d/e/1FAIpQLSd071lc1pEA6bBLcu8bzz1ug010xrFM1Pu0qUAILUr2KXfjsw/abuse
+    - link [ref=f25e18] [cursor=pointer]:
+      - /url: //www.google.com/forms/about/?utm_source=product&utm_medium=forms_logo&utm_campaign=forms
+      - img "Google" [ref=f25e19]
+      - text: Formularios

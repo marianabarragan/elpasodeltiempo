@@ -1,0 +1,159 @@
+- generic [ref=f22e1]:
+  - generic [aria-hidden] [ref=f22e2]:
+    - button [ref=f22e321] [cursor=pointer]
+    - generic [ref=f22e11]:
+      - generic [ref=f22e14]:
+        - generic [ref=f22e16]:
+          - generic [ref=f22e18]:
+            - heading [level=1] [ref=f22e322]: Registro de hallazgos - Evaluación heurística - Pycon - Mariana Barragán
+            - generic [ref=f22e21]: Registra un hallazgo por envío. Evalúa la interfaz con los 10 principios heurísticos de Nielsen. Pycon.
+          - generic [ref=f22e23]:
+            - generic [ref=f22e24]:
+              - generic [ref=f22e27]:
+                - text: mariana.barragan@uao.edu.co
+                - link [ref=f22e323] [cursor=pointer]:
+                  - /url: https://accounts.google.com/AccountChooser?continue=https://docs.google.com/forms/d/e/1FAIpQLSd071lc1pEA6bBLcu8bzz1ug010xrFM1Pu0qUAILUr2KXfjsw/viewform?authuser%3D0&service=wise
+                  - text: Cambiar de cuenta
+              - generic [ref=f22e29] [cursor=pointer]
+            - generic [ref=f22e32]: El nombre, el correo y la foto asociados a tu cuenta de Google se registrarán cuando subas archivos y envíes este formulario
+            - generic [aria-hidden] [ref=f22e34]: "* Indica que la pregunta es obligatoria"
+        - list [ref=f22e35]:
+          - listitem [ref=f22e36]:
+            - generic [ref=f22e38]:
+              - generic [ref=f22e40]:
+                - heading [level=3] [ref=f22e324]:
+                  - generic [ref=f22e42]: Ubicación del problema (sección o pantalla)
+                  - generic [ref=f22e325]: "*"
+                - generic [ref=f22e44]: "Ej.: inicio, menú principal, ficha de producto, formulario de contacto."
+              - generic [ref=f22e49]:
+                - textbox [ref=f22e326]
+                - generic [aria-hidden]: Tu respuesta
+          - listitem [ref=f22e52]:
+            - generic [ref=f22e54]:
+              - heading [level=3] [ref=f22e327]:
+                - generic [ref=f22e58]: Principio heurístico afectado
+                - generic [ref=f22e328]: "*"
+              - radiogroup [ref=f22e329]:
+                - generic [ref=f22e63]:
+                  - generic [ref=f22e66]:
+                    - radio [ref=f22e330] [cursor=pointer]
+                    - generic [ref=f22e71]: 1. Visibilidad del estado del sistema
+                  - generic [ref=f22e76]:
+                    - radio [ref=f22e331] [cursor=pointer]
+                    - generic [ref=f22e81]: 2. Relación entre el sistema y el mundo real
+                  - generic [ref=f22e86]:
+                    - radio [ref=f22e332] [cursor=pointer]
+                    - generic [ref=f22e91]: 3. Control y libertad del usuario
+                  - generic [ref=f22e96]:
+                    - radio [ref=f22e333] [cursor=pointer]
+                    - generic [ref=f22e101]: 4. Consistencia y estándares
+                  - generic [ref=f22e106]:
+                    - radio [ref=f22e334] [cursor=pointer]
+                    - generic [ref=f22e111]: 5. Prevención de errores
+                  - generic [ref=f22e116]:
+                    - radio [ref=f22e335] [cursor=pointer]
+                    - generic [ref=f22e121]: 6. Reconocer antes que recordar
+                  - generic [ref=f22e126]:
+                    - radio [ref=f22e336] [cursor=pointer]
+                    - generic [ref=f22e131]: 7. Flexibilidad y eficiencia de uso
+                  - generic [ref=f22e136]:
+                    - radio [ref=f22e337] [cursor=pointer]
+                    - generic [ref=f22e141]: 8. Diseño estético y minimalista
+                  - generic [ref=f22e146]:
+                    - radio [ref=f22e338] [cursor=pointer]
+                    - generic [ref=f22e151]: 9. Ayudar a reconocer, diagnosticar y recuperarse de errores
+                  - generic [ref=f22e156]:
+                    - radio [ref=f22e339] [cursor=pointer]
+                    - generic [ref=f22e161]: 10. Ayuda y documentación
+          - listitem [ref=f22e164]:
+            - generic [ref=f22e166]:
+              - generic [ref=f22e168]:
+                - heading [level=3] [ref=f22e340]:
+                  - generic [ref=f22e170]: ¿Qué observaste?
+                  - generic [ref=f22e341]: "*"
+                - generic [ref=f22e172]: "Describe lo que ocurrió de forma objetiva. Ej.: Al enviar el formulario no aparece ningún mensaje."
+              - generic [ref=f22e175]:
+                - generic [aria-hidden]: Tu respuesta
+                - textbox [ref=f22e342]
+          - listitem [ref=f22e179]:
+            - generic [ref=f22e181]:
+              - generic [ref=f22e183]:
+                - heading [level=3] [ref=f22e343]:
+                  - generic [ref=f22e185]: ¿Por qué representa un problema?
+                  - generic [ref=f22e344]: "*"
+                - generic [ref=f22e187]: "Explica la consecuencia para el usuario. Ej.: No sabe si la información fue enviada."
+              - generic [ref=f22e190]:
+                - generic [aria-hidden]: Tu respuesta
+                - textbox [ref=f22e345]
+          - listitem [ref=f22e194]:
+            - generic [ref=f22e196]:
+              - generic [ref=f22e198]:
+                - heading [level=3] [ref=f22e346]:
+                  - generic [ref=f22e200]: ¿Qué solución propones?
+                  - generic [ref=f22e347]: "*"
+                - generic [ref=f22e202]: "Propón una mejora concreta. Ej.: Mostrar un mensaje de envío exitoso."
+              - generic [ref=f22e205]:
+                - generic [aria-hidden]: Tu respuesta
+                - textbox [ref=f22e348]
+          - listitem [ref=f22e209]:
+            - generic [ref=f22e211]:
+              - generic [ref=f22e213]:
+                - heading [level=3] [ref=f22e349]:
+                  - generic [ref=f22e215]: Severidad
+                  - generic [ref=f22e350]: "*"
+                - generic [ref=f22e217]: Considera frecuencia, impacto y persistencia al asignar la severidad.
+              - radiogroup [ref=f22e351]:
+                - generic [ref=f22e221]:
+                  - generic [ref=f22e224]:
+                    - radio [ref=f22e352] [cursor=pointer]
+                    - generic [ref=f22e229]: 0 — No es un problema
+                  - generic [ref=f22e234]:
+                    - radio [ref=f22e353] [cursor=pointer]
+                    - generic [ref=f22e239]: 1 — Cosmético
+                  - generic [ref=f22e244]:
+                    - radio [ref=f22e354] [cursor=pointer]
+                    - generic [ref=f22e249]: 2 — Menor
+                  - generic [ref=f22e254]:
+                    - radio [ref=f22e355] [cursor=pointer]
+                    - generic [ref=f22e259]: 3 — Mayor
+                  - generic [ref=f22e264]:
+                    - radio [ref=f22e356] [cursor=pointer]
+                    - generic [ref=f22e269]: 4 — Catastrófico
+          - listitem [ref=f22e272]:
+            - generic [ref=f22e274]:
+              - generic [ref=f22e276]:
+                - heading [level=3] [ref=f22e357]:
+                  - generic [ref=f22e278]: Evidencia visual (enlace a la captura)
+                  - generic [ref=f22e358]: "*"
+                - generic [ref=f22e280]: Captura en drive
+              - generic [ref=f22e282]:
+                - generic [ref=f22e283]: "Sube 1 archivo compatible. Tamaño máximo: 10 MB."
+                - button [ref=f22e359] [cursor=pointer]:
+                  - generic [ref=f22e286]: Añadir archivo
+        - generic [ref=f22e292]:
+          - generic [ref=f22e293]:
+            - button [ref=f22e360] [cursor=pointer]:
+              - generic [ref=f22e297]: Enviar
+            - button [ref=f22e361] [cursor=pointer]:
+              - generic [ref=f22e302]: Borrar formulario
+          - generic [ref=f22e304]: Nunca envíes contraseñas a través de Formularios de Google.
+      - generic [ref=f22e305]:
+        - generic [ref=f22e306]:
+          - text: Este formulario se creó en Universidad Autónoma de Occidente. -
+          - button [ref=f22e362]: Contactar con el propietario del formulario
+          - paragraph [ref=f22e308]:
+            - text: ¿Parece sospechoso este formulario?
+            - link [ref=f22e363] [cursor=pointer]:
+              - /url: https://docs.google.com/forms/u/0/d/e/1FAIpQLSd071lc1pEA6bBLcu8bzz1ug010xrFM1Pu0qUAILUr2KXfjsw/abuse
+              - text: Informe
+        - link [ref=f22e364] [cursor=pointer]:
+          - /url: //www.google.com/forms/about/?utm_source=product&utm_medium=forms_logo&utm_campaign=forms
+          - text: Formularios
+    - generic [ref=f22e316]:
+      - button [ref=f22e366] [cursor=pointer]
+      - tooltip [aria-hidden] [ref=f22e320]: Ayuda y comentarios
+  - iframe [aria-hidden] [ref=f22e367]
+  - dialog "Insertar un archivo" [active] [ref=f22e369]:
+    - generic:
+      - button "Cerrar"
+    - iframe [ref=f22e372]

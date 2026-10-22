@@ -7,7 +7,7 @@
    * Narrative order of scenario 3, independent of any mesh or animation:
    *   glasses → (wearing) → choose → (moving-pot) → can → (moving-can) → water → (returning) → complete
    * Steps in parentheses are animations driven by the scene; nothing is interactive meanwhile.
-   * Identifiers: 'glasses', 'pot1', 'pot2', 'wateringCan'.
+   * Identifiers: 'glasses', 'pot1', 'pot2', 'wateringCan'; complementary: 'radio', 'coffeeCup'.
    */
   class OldAgeActivity {
     constructor({ wateringSeconds = 4.5, onChange } = {}) {
@@ -39,8 +39,8 @@
       }[this.step] || [];
     }
 
-    // Hidden curiosities ('radio', 'coffeeCup'): no glow and no hover, they only answer a
-    // click, and only once the glasses are on (nothing else responds before that).
+    // Complementary objects ('radio', 'coffeeCup'): a subtle hover and a short response to a
+    // click, available once the glasses are on (nothing else responds before that).
     get curiosities() {
       return ['glasses', 'wearing'].includes(this.step) ? [] : ['radio', 'coffeeCup'];
     }
@@ -98,9 +98,9 @@
       this.raycaster.setFromCamera(this.pointer, this.world.cameraRig.camera);
     }
 
-    // Identifier under the pointer among the objects allowed in the current step, or null.
-    // Curiosities are only considered for clicks, so hovering them reveals nothing.
-    pick(withCuriosities = false) {
+    // Identifier under the pointer among the objects allowed in the current step (plus the
+    // cup and the radio once the glasses are on), or null.
+    pick(withCuriosities = true) {
       const props = this.world.props;
       const allowed = this.activity.interactive.map(name => props.interactive[name]);
       if (withCuriosities) allowed.push(...this.activity.curiosities.map(name => props.curiosities[name]));
@@ -124,7 +124,7 @@
     }
 
     refreshHover() {
-      if (!this.activity.interactive.includes(this.hovered)) this.setHover(null);
+      if (!this.activity.interactive.includes(this.hovered) && !this.activity.curiosities.includes(this.hovered)) this.setHover(null);
     }
 
     down(event) {
@@ -132,8 +132,8 @@
       this.ray(event);
       this.pointerId = event.pointerId;
       this.canvas.setPointerCapture(event.pointerId);
-      const target = this.pick(true);
-      this.setHover(this.activity.interactive.includes(target) ? target : null);
+      const target = this.pick();
+      this.setHover(target);
       // Watering: hold the click on the can positioned over the pot.
       if (target === 'wateringCan' && this.activity.step === 'water') {
         this.world.cameraRig.freeze();
@@ -166,7 +166,7 @@
       this.release();
       if (cancelled || !press || !this.enabled) return;
       this.ray(event);
-      if (this.pick(true) === press.target) this.activate(press.target);
+      if (this.pick() === press.target) this.activate(press.target);
     }
 
     // Single clicks advance the activity; each step accepts only its own objects.
