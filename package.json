@@ -4,7 +4,10 @@
   "scripts": {
     "start": "node scripts/serve.cjs",
     "check": "node scripts/check.cjs",
-    "test:browser": "node tests/browser.cjs"
+    "test:browser": "node tests/browser.cjs",
+    "models": "node scripts/embed-models.cjs",
+    "obj": "node scripts/convert-obj.cjs",
+    "vendor": "node scripts/build-three-examples.cjs"
   },
   "dependencies": {
     "gsap": "^3.15.0",

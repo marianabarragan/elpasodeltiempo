@@ -14,6 +14,15 @@
     },
     childhood: {
       paperScale: 1.4, crayonScale: 1.5,
+      // ► JUGUETES (modelos de Blender): posición en el piso (x, z; la hoja ocupa x ±5,74 y
+      //   z ±4,3), giro en radianes y tamaño. `size` multiplica la medida más grande del juguete
+      //   provisional (1 = igual, la crayola mide 4,5 de largo); el escalado es uniforme, así
+      //   que nunca cambia las proporciones del modelo.
+      toys: {
+        rings: { x: -8.74, z: -3.83, turn: 0, size: 1.55 },
+        xylophone: { x: 10.6, z: 0.54, turn: -0.29, size: 1.3 },
+        crayon: { x: 0.12, z: 5.27, turn: -0.09, size: 0.63 }
+      },
       // ► 16 COLORES DE LA PALETA DESPLEGABLE DE LA CRAYOLA (4 × 4). Cada fila es una familia
       //   tonal ordenada de oscuro a claro; el orden aquí es el orden en pantalla.
       palette: [
@@ -27,18 +36,27 @@
       figureThreshold: 25,
       // Piso de rompecabezas: tres tonos pastel (amarillo, azul y verde), usados tal cual.
       // desaturate y lighten (0–1) permiten suavizarlos más si hiciera falta.
-      floor: { colors: ['#ffe085', '#a3c8f2', '#cee59d'], desaturate: 0, lighten: 0 },
-      // Sonido al pasar por los colores. Con null suena una nota de xilófono generada en el
-      // navegador; para usar un archivo: 'assets/audio/palette-hover.mp3'.
-      audio: { paletteHoverSrc: null }
+      floor: { colors: ['#ffe085', '#a3c8f2', '#cee59d'], desaturate: 0.35, lighten: 0.08 },
+      // Sonidos del escenario 1. paletteHoverSrc: al pasar por los colores; con null suena una nota
+      // de xilófono generada en el navegador (para usar un archivo: 'assets/audio/palette-hover.mp3').
+      // ► AL HACER CLIC EN LOS JUGUETES: ringsSrc (juego de aros), xylophoneSrc (xilófono) y
+      //   crayonSrc (crayola, al tomarla). Con null no suenan; para usar un archivo, escribe su
+      //   ruta, p. ej. xylophoneSrc: 'assets/audio/xilofono.mp3'.
+      audio: { paletteHoverSrc: null, ringsSrc: null, xylophoneSrc: null, crayonSrc: null }
     },
     // Tablero de inicio: tiempo mínimo, desde el clic en «Iniciar» de la portada, antes de
     // que la primera fotografía acepte el clic de entrada (no hay acercamiento automático).
     // El desenfoque inicial del fondo (≈40 %) se define en styles.css (--intro-blur).
-    intro: { photoDelayMs: 2000 },
+    // ► RELOJ DE ARENA DE LA PORTADA: segundos que tarda en caer la arena (luego se detiene) y
+    //   cuánto brilla y alumbra su arena (1 = como está, 0 = sin luz). El brillo del botón
+    //   «Iniciar» y la luz cálida sobre la portada se ajustan en styles.css (--glow).
+    intro: { photoDelayMs: 2000, hourglass: { drainSeconds: 90, glow: 1 } },
     assets: {
       // Put your files in assets/audio/ and replace null with their relative paths.
       // For example: 'assets/audio/childhood-music.mp3'. No invented audio is shipped.
+      // Música ambiental de la niñez (en bucle mientras el escenario 1 está activo). Desactivada
+      // por ahora (null); la pista anterior sigue en assets/audio/ por si se quiere volver a usar:
+      // 'assets/audio/goldensoundlabs-bouncy-birds-vibrant-solo-501860.mp3'.
       audio: { musicSrc: null, frictionSrc: null },
       photos: { childhood: null, adulthood: null, oldage: null },
       // Optional factory returning the same contract as ChildhoodProps.build().
@@ -73,8 +91,16 @@
       message: 'Cuando crecemos, el tiempo parece ir más rápido que nosotros.',
       // Cámara ortográfica en picada alrededor del escritorio (radianes).
       camera: { maxYaw: 12 * Math.PI / 180, maxTilt: 12 * Math.PI / 180, damping: 5.5 },
-      // Hora fija del reloj digital cuando está encendido.
-      clockTime: { digits: '10:30', period: 'PM' },
+      // Hora fija del reloj digital cuando está encendido (números de 7 segmentos).
+      clockTime: { digits: '11:15', period: 'PM' },
+      // ► LUZ DE LA PANTALLA sobre el escritorio: color, intensidad, `neutral` (0–1: cuánto se
+      //   agrisa el color de la madera bajo la luz, para que no la vuelva cálida) y `haze`
+      //   (opacidad del haz de luz en el aire).
+      screenLight: { color: '#90ccff', intensity: 2.6, neutral: 0.7, haze: 0.1 },
+      // ► LIBROS DE LA REPISA: los que eran blancos (verde pastel y amarillo beige), el canto de
+      //   sus hojas y los cafés que parecían corcho (azul grisáceo claro; sus dibujos quedan en
+      //   tonos de ese azul).
+      books: { green: '#acd8b0', beige: '#e8d5a0', pages: '#f2e8cc', brown: '#98b6d6' },
       // RUTAS DE AUDIO del escenario 2. Sustituye null por rutas relativas a
       // index.html, p. ej. 'assets/audio/adulthood-music.mp3'. No se incluyen archivos.
       audio: { musicSrc: null, thermosSrc: null, clockSrc: null },
@@ -91,6 +117,9 @@
       camera: { elevation: 40 * Math.PI / 180, maxYaw: 10 * Math.PI / 180, maxTilt: 10 * Math.PI / 180, damping: 5.5 },
       // Visión deteriorada inicial: 0 = nítido, 1 = desenfoque máximo (`maxBlurPx` px por lado).
       vision: { initialAmount: 0.6, maxBlurPx: 22 },
+      // Mesa pintada: cuánto se le quita de saturación (0 = colores originales, 1 = gris), para
+      // que las materas de barro contrasten con la madera.
+      table: { desaturate: 0.4 },
       // Segundos de clic sostenido acumulado para completar el riego.
       wateringSeconds: 4.5,
       // Inclinación de la regadera mientras riega (radianes).
@@ -108,6 +137,9 @@
     },
     // Cierre: reflexión, formas de aportar y agradecimiento (textos en js/closing-content.js).
     closing: {
+      // ► Reflexión: segundos que el reloj de arena se ve antes de voltearse (una vez cada vez
+      //   que aparece la pantalla). Su arena y su brillo son los de Config.intro.hourglass.
+      hourglass: { flipAfterSeconds: 3 },
       // ► DESTINO DE «Salir de la experiencia». Con null se vuelve a la pantalla inicial sin
       //   iniciar las escenas. Para salir a otro sitio, escribe aquí su URL (p. ej. la página
       //   del proyecto) o asigna en TimeExperience.Config.closing.onExit una función propia.

@@ -7,13 +7,15 @@
     lime: '#AFDF36', orange: '#F67500', brown: '#BF5527'
   });
 
-  // All meshes are provisional, replaceable models. They share a Y-up ground
-  // convention; the crayon is authored along +X with its tip at (1.5, 0, 0).
+  // The floor is procedural. The rings, the xylophone and the crayon come from the Blender
+  // models (js/childhood-models.js) and fall back to the provisional geometry below while those
+  // are not available. All share a Y-up ground convention; the crayon lies along +X with its
+  // tip at (1.5, 0, 0).
   const MODEL_SLOTS = Object.freeze({
     floor: 'assets/models/childhood/foam-floor.glb',
-    rings: 'assets/models/childhood/stacking-rings.glb',
-    xylophone: 'assets/models/childhood/xylophone.glb',
-    crayon: 'assets/models/childhood/crayon.glb',
+    rings: 'assets/models/childhood/toys.glb',
+    xylophone: 'assets/models/childhood/toys.glb',
+    crayon: 'assets/models/childhood/toys.glb',
     surface: 'assets/textures/childhood/painted-surfaces.png'
   });
 
@@ -116,6 +118,41 @@
       const bounds = new THREE.Box3().setFromObject(model);
       model.position.y += floorY + clearance - bounds.min.y;
       model.updateMatrixWorld(true);
+    }
+
+    // Replaces a provisional toy with its Blender model, uniformly scaled so its largest measure
+    // equals the provisional toy's (the proportions stay as modelled). Returns null, keeping the
+    // provisional toy, while the models are not available.
+    const toyBounds = new THREE.Box3(), partBounds = new THREE.Box3(), toToy = new THREE.Matrix4(), partToToy = new THREE.Matrix4();
+    function useModel(toy, name) {
+      const model = app.ChildhoodModels?.create(name);
+      if (!model) return null;
+      toy.updateMatrixWorld(true);
+      toToy.copy(toy.matrixWorld).invert();
+      toyBounds.makeEmpty();
+      toy.traverse(object => {
+        if (!object.isMesh) return;
+        object.geometry.computeBoundingBox();
+        toyBounds.union(partBounds.copy(object.geometry.boundingBox).applyMatrix4(partToToy.multiplyMatrices(toToy, object.matrixWorld)));
+      });
+      const bounds = toyBounds.getSize(new THREE.Vector3());
+      toy.clear();
+      model.scale.multiplyScalar(Math.max(bounds.x, bounds.y, bounds.z));
+      model.traverse(object => {
+        if (!object.isMesh) return;
+        geometries.add(object.geometry); materials.add(object.material);
+      });
+      toy.add(model);
+      toy.userData.blenderModel = true;
+      return model;
+    }
+
+    // Place, turn and uniform size of each toy (Config.childhood.toys); grounded afterwards.
+    const toys = app.Config.childhood.toys;
+    function place(toy, layout, scale = 1) {
+      toy.position.set(layout.x, 0, layout.z);
+      toy.rotation.y = layout.turn;
+      toy.scale.setScalar(scale * layout.size);
     }
 
     const floor = new THREE.Group();
@@ -251,7 +288,6 @@
     const rings = new THREE.Group();
     rings.name = 'stacking-rings';
     rings.userData.modelSource = MODEL_SLOTS.rings;
-    rings.position.set(-8.10, 0, -3.95);
     group.add(rings);
     const woodenYellow = material('#e8b356');
     const base = mesh(new THREE.CylinderGeometry(1.07, 1.11, 0.19, 20), woodenYellow, rings);
@@ -278,13 +314,13 @@
     });
     const finial = mesh(new THREE.SphereGeometry(0.195, 12, 6), material(PALETTE.orange), rings);
     finial.position.y = 1.615;
+    useModel(rings, 'rings');
+    place(rings, toys.rings);
     ground(rings);
 
     const xylophone = new THREE.Group();
     xylophone.name = 'wooden-xylophone';
     xylophone.userData.modelSource = MODEL_SLOTS.xylophone;
-    xylophone.position.set(8.30, 0, -0.55);
-    xylophone.rotation.y = -0.12;
     group.add(xylophone);
     const wood = material('#dfaa60');
     const woodDark = material('#af733e');
@@ -308,6 +344,8 @@
         peg.position.set(x, 0.443, z);
       });
     });
+    useModel(xylophone, 'xylophone');
+    place(xylophone, toys.xylophone);
     ground(xylophone);
 
     const crayon = new THREE.Group();
@@ -334,19 +372,27 @@
     cylinderAlongX(0.207, 1.50, -0.29, paperWrapper);
     cylinderAlongX(0.210, 0.70, -0.29, colorBand);
     [-0.96, 0.38].forEach(x => cylinderAlongX(0.211, 0.035, x, wrapperLine));
-    crayon.scale.setScalar(app.Config.childhood.crayonScale);
-    crayon.position.set(0.80, 0, 6.25);
-    crayon.rotation.y = -0.09;
+    // With the Blender crayon the chosen colour tints the whole crayon (all its materials).
+    const crayonModel = useModel(crayon, 'crayon');
+    const crayonColorMaterials = [];
+    if (crayonModel) crayonModel.traverse(object => { if (object.isMesh && !crayonColorMaterials.includes(object.material)) crayonColorMaterials.push(object.material); });
+    else crayonColorMaterials.push(wax, colorBand);
+    place(crayon, toys.crayon, app.Config.childhood.crayonScale);
     ground(crayon, 0.004);
     crayon.traverse(object => { if (object.isMesh) object.userData.interactive = 'crayon'; });
 
     const crayonTip = new THREE.Vector3(1.50, 0, 0);
     const crayonRest = { position: crayon.position.clone(), quaternion: crayon.quaternion.clone() };
+    // Resting pose of the rings and the xylophone: their hover state (js/object-interactions.js)
+    // always comes back to it.
+    [rings, xylophone].forEach(toy => {
+      toy.userData.rest = { position: toy.position.clone(), quaternion: toy.quaternion.clone(), scale: toy.scale.clone() };
+    });
     group.updateMatrixWorld(true);
 
     return {
       group, floorY, paperSurface, crayon,
-      crayonColorMaterials: [wax, colorBand],
+      crayonColorMaterials,
       crayonTip, crayonTipSpace: 'crayon-local',
       crayonTipRestWorld: crayon.localToWorld(crayonTip.clone()),
       crayonRest, ensureFloorCoverage,

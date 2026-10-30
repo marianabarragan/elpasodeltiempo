@@ -6,6 +6,8 @@
   // Complementary objects: the cup rises a little, the radio grows slightly in place.
   const CUP_HOVER = { lift: .12, scale: 1.05 };
   const RADIO_HOVER = 1.045;
+  // Sun and fill intensities, and the sun's shadow map (texels and blur radius in texels).
+  const SHADOW = { sun: 1.95, ambient: 2, fill: .55, mapSize: [1536, 980], radius: 3 };
 
   // Soft outline drawn behind an object (back faces pushed out along the normals).
   // It is built from whatever meshes the prop's `visual` holds, so .glb models get it too.
@@ -56,7 +58,8 @@
       this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
       this.renderer.toneMappingExposure = 1.05;
       this.renderer.shadowMap.enabled = true;
-      this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      // PCF honours shadow.radius: the sun's shadows get a soft edge (see addLights).
+      this.renderer.shadowMap.type = THREE.PCFShadowMap;
       this.renderer.domElement.className = 'three-canvas';
       this.renderer.domElement.setAttribute('aria-hidden', 'true');
       container.appendChild(this.renderer.domElement);
@@ -98,23 +101,24 @@
       this.time = 0;
     }
 
-    // Warm late-afternoon light entering through the window behind the table.
+    // Warm late-afternoon light entering through the window behind the table. Shadows are warm
+    // (the light that fills them is warm too) and medium-soft: a blurred edge, not too dark.
     addLights() {
       const palette = app.OldAgeProps.PALETTE;
       const top = this.props.tableTopY;
       this.lights = [];
-      const hemisphere = new THREE.HemisphereLight('#fff4dc', palette.plum, 1.9);
-      const sun = new THREE.DirectionalLight('#ffd9a0', 2.1);
+      const hemisphere = new THREE.HemisphereLight('#fff4dc', new THREE.Color(palette.plum).lerp(new THREE.Color(palette.clay), .55), SHADOW.ambient);
+      const sun = new THREE.DirectionalLight('#ffd9a0', SHADOW.sun);
       sun.position.set(-7, 15, -9);
       sun.target.position.set(.5, top, 1);
       sun.castShadow = true;
       // The shadow covers all the table that can be on screen (wide or tall windows, any camera
-      // angle), so the table reads as one even surface with no hard-edged lit patches. The map
-      // keeps about the same detail per unit as before.
-      sun.shadow.mapSize.set(3584, 2304);
+      // angle), so the table reads as one even surface with no hard-edged lit patches.
+      sun.shadow.mapSize.set(...SHADOW.mapSize);
+      sun.shadow.radius = SHADOW.radius;
       Object.assign(sun.shadow.camera, { left: -22, right: 22, top: 15, bottom: -13, near: .5, far: 50 });
       sun.shadow.bias = -.0004; sun.shadow.normalBias = .03;
-      const fill = new THREE.DirectionalLight(palette.sky, .55);
+      const fill = new THREE.DirectionalLight(new THREE.Color(palette.butter).lerp(new THREE.Color(palette.clay), .3), SHADOW.fill);
       fill.position.set(8, 9, 12);
       const bounce = new THREE.PointLight(palette.butter, 10, 14, 1.6);
       bounce.position.set(0, top + 4.5, 3);
@@ -171,10 +175,80 @@
       return { drops, geometry, material, spawn: 0, floor: 0 };
     }
 
+    // The painted table (props.tableFit) is scaled uniformly, never stretched, just enough to
+    // cover everything the camera can show in front of the wall on this screen shape, at any
+    // permitted angle: the floor never shows and the painted wood stays as sharp as possible.
+    fitTable() {
+      const fit = this.props.tableFit;
+      if (!fit) return;
+      const rig = this.cameraRig, pose = { ...rig.current }, zoom = rig.zoom;
+      const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -this.props.tableTopY);
+      const ray = new THREE.Raycaster(), point = new THREE.Vector3(), screen = new THREE.Vector2();
+      const origin = fit.object.position, needed = [];
+      rig.zoom = 1;
+      for (const yaw of [-1, 0, 1]) for (const tilt of [-1, 0, 1]) {
+        rig.current.yaw = yaw * rig.maxYaw; rig.current.tilt = tilt * rig.maxTilt;
+        rig.apply();
+        for (let i = 0; i <= 16; i++) for (let j = 0; j <= 16; j++) {
+          ray.setFromCamera(screen.set(i / 8 - 1, j / 8 - 1), rig.camera);
+          if (ray.ray.intersectPlane(plane, point) && point.z >= fit.back) needed.push([point.x - origin.x, point.z - origin.z]);
+        }
+      }
+      Object.assign(rig.current, pose);
+      rig.zoom = zoom;
+      rig.apply();
+      // From its bounding box, grow the scale until every visible point lies on the real top
+      // outline, plus a little for the camera's slide while it turns.
+      const inside = (x, z, outline) => {
+        let hit = false;
+        for (let a = 0, b = outline.length - 1; a < outline.length; b = a++) {
+          const [xa, za] = outline[a], [xb, zb] = outline[b];
+          if ((za > z) !== (zb > z) && x < (xb - xa) * (z - za) / (zb - za) + xa) hit = !hit;
+        }
+        return hit;
+      };
+      let scale = Math.max(...needed.map(([x, z]) => Math.max(2 * Math.abs(x) / fit.width, z / fit.depth)), .01);
+      for (let step = 0; step < 80 && needed.some(([x, z]) => !inside(x / scale, Math.max(z, .02) / scale, fit.outline)); step++) scale *= 1.01;
+      fit.object.scale.setScalar(scale * 1.04);
+    }
+
+    // The Blender wall (props.wallFit) keeps its size unless a very wide or tall screen sees
+    // past its edges: then it grows uniformly from the middle of its bottom edge, just enough
+    // to fill everything the camera shows behind the table, at any permitted angle.
+    fitWall() {
+      const fit = this.props.wallFit, table = this.props.tableFit;
+      if (!fit) return;
+      const rig = this.cameraRig, pose = { ...rig.current }, zoom = rig.zoom;
+      const top = new THREE.Plane(new THREE.Vector3(0, 1, 0), -this.props.tableTopY);
+      const wall = new THREE.Plane(new THREE.Vector3(0, 0, 1), -fit.object.position.z);
+      const back = table ? table.back : -Infinity;
+      const ray = new THREE.Raycaster(), point = new THREE.Vector3(), screen = new THREE.Vector2();
+      let scale = 1;
+      rig.zoom = 1;
+      for (const yaw of [-1, 0, 1]) for (const tilt of [-1, 0, 1]) {
+        rig.current.yaw = yaw * rig.maxYaw; rig.current.tilt = tilt * rig.maxTilt;
+        rig.apply();
+        for (let i = 0; i <= 16; i++) for (let j = 0; j <= 16; j++) {
+          ray.setFromCamera(screen.set(i / 8 - 1, j / 8 - 1), rig.camera);
+          // Rays that land on the table in front of its back edge never reach the wall.
+          if (ray.ray.intersectPlane(top, point) && point.z >= back) continue;
+          if (!ray.ray.intersectPlane(wall, point)) continue;
+          const x = point.x - fit.object.position.x, y = point.y - fit.object.position.y;
+          scale = Math.max(scale, x < 0 ? -x / fit.left : x / fit.right, y / fit.height);
+        }
+      }
+      Object.assign(rig.current, pose);
+      rig.zoom = zoom;
+      rig.apply();
+      fit.object.scale.setScalar(scale > 1 ? scale * 1.03 : 1);
+    }
+
     resize() {
       const width = this.container.clientWidth, height = this.container.clientHeight;
       if (!width || !height) return;
       this.cameraRig.resize(width, height);
+      this.fitTable();
+      this.fitWall();
       this.firstPerson.resize(width / height);
       this.renderer.setSize(width, height, false);
       const size = this.renderer.getDrawingBufferSize(new THREE.Vector2());
@@ -429,7 +503,7 @@
       const bar = this.progressBar;
       if (!bar || bar.hidden) return;
       const can = this.props.wateringCan.root;
-      const point = can.localToWorld(new THREE.Vector3(1.35, .9, 0)).project(this.cameraRig.camera);
+      const point = can.localToWorld((this.props.wateringCan.gauge || new THREE.Vector3(1.35, .9, 0)).clone()).project(this.cameraRig.camera);
       const rect = this.container.getBoundingClientRect();
       bar.style.left = `${(point.x * .5 + .5) * rect.width}px`;
       bar.style.top = `${(.5 - point.y * .5) * rect.height}px`;

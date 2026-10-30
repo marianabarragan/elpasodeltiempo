@@ -1,8 +1,8 @@
 # Audio de la niñez
 
-Esta carpeta no contiene música ni efectos definitivos. No se sintetiza ni se selecciona una canción provisional.
+La música ambiental del escenario 1 está desactivada por ahora (`Config.assets.audio.musicSrc: null`). La pista anterior, `goldensoundlabs-bouncy-birds-vibrant-solo-501860.mp3`, sigue en esta carpeta por si se quiere volver a usar. No hay sonido de fricción de crayola (`frictionSrc: null`).
 
-Coloca tus archivos, por ejemplo:
+Para cambiar o añadir pistas, coloca tus archivos, por ejemplo:
 
 - `assets/audio/childhood-music.mp3`: música instrumental ambiental.
 - `assets/audio/crayon-friction.mp3`: fricción de crayola, preferentemente un fragmento que pueda repetirse sin cortes perceptibles.
@@ -23,6 +23,21 @@ La música intenta comenzar al entrar a niñez y se reproduce en bucle. El clic 
 La fricción suena únicamente mientras la crayola se mueve sobre una región pintable. Se detiene al soltarla, detener el movimiento, salir de la región permitida, perder el foco o salir de la escena. El control de silencio afecta a ambas pistas. La música también se pausa al ocultar la pestaña y el ciclo de salida la detiene y rebobina.
 
 `js/audio-system.js` concentra estas reglas y los volúmenes iniciales: `0.32` para música y `0.24` para fricción. Sin archivos configurados, el botón sigue permitiendo cambiar la preferencia de sonido, pero no hay audio que reproducir.
+
+### Sonidos de los juguetes
+
+Un clic en el juego de aros, en el xilófono o en la crayola (al tomarla) reproduce una vez el archivo de `Config.childhood.audio`. Por ahora están en `null` y no suenan:
+
+```javascript
+audio: {
+  paletteHoverSrc: null,                      // nota al pasar por los colores (null: generada)
+  ringsSrc: 'assets/audio/aros.mp3',          // clic en el juego de aros
+  xylophoneSrc: 'assets/audio/xilofono.mp3',  // clic en el xilófono
+  crayonSrc: 'assets/audio/crayola.mp3'       // clic en la crayola
+}
+```
+
+Se reproducen con `AudioSystem.playEffect(nombre)` y respetan el botón de silencio de la escena.
 
 ## Escenario 2: juventud / adultez joven
 

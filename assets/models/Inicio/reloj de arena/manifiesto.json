@@ -1,0 +1,259 @@
+{
+  "unidades": "metros de Blender",
+  "ejes_en_los_obj": "Y arriba, -Z adelante",
+  "posiciones": "cada OBJ conserva su posicion: cargados juntos, encajan",
+  "assets": [
+    {
+      "archivo": "partes/base_inferior.obj",
+      "objetos_blender": [
+        "Cylinder"
+      ],
+      "bbox_blender_min": [
+        -1.791,
+        -0.609,
+        -0.123
+      ],
+      "bbox_blender_max": [
+        -0.521,
+        0.66,
+        0.048
+      ],
+      "tamano_blender_xyz": [
+        1.269,
+        1.269,
+        0.171
+      ]
+    },
+    {
+      "archivo": "partes/base_superior.obj",
+      "objetos_blender": [
+        "Cylinder.002"
+      ],
+      "bbox_blender_min": [
+        -1.791,
+        -0.609,
+        1.756
+      ],
+      "bbox_blender_max": [
+        -0.521,
+        0.66,
+        1.926
+      ],
+      "tamano_blender_xyz": [
+        1.269,
+        1.269,
+        0.171
+      ]
+    },
+    {
+      "archivo": "partes/columnas.obj",
+      "objetos_blender": [
+        "Cylinder.001"
+      ],
+      "bbox_blender_min": [
+        -1.224,
+        -0.555,
+        0.047
+      ],
+      "bbox_blender_max": [
+        -1.088,
+        0.607,
+        1.763
+      ],
+      "tamano_blender_xyz": [
+        0.135,
+        1.162,
+        1.716
+      ]
+    },
+    {
+      "archivo": "partes/cristal.obj",
+      "objetos_blender": [
+        "Plane"
+      ],
+      "bbox_blender_min": [
+        -1.543,
+        -0.369,
+        0.048
+      ],
+      "bbox_blender_max": [
+        -0.769,
+        0.405,
+        1.788
+      ],
+      "tamano_blender_xyz": [
+        0.774,
+        0.774,
+        1.74
+      ]
+    },
+    {
+      "archivo": "partes/arena.obj",
+      "objetos_blender": [
+        "Plane.003"
+      ],
+      "bbox_blender_min": [
+        -1.53,
+        -0.358,
+        0.057
+      ],
+      "bbox_blender_max": [
+        -0.782,
+        0.39,
+        1.232
+      ],
+      "tamano_blender_xyz": [
+        0.748,
+        0.748,
+        1.176
+      ]
+    },
+    {
+      "archivo": "partes/enredadera_tallo.obj",
+      "objetos_blender": [
+        "Cylinder.003"
+      ],
+      "bbox_blender_min": [
+        -1.63,
+        -0.591,
+        0.015
+      ],
+      "bbox_blender_max": [
+        -0.624,
+        0.681,
+        1.79
+      ],
+      "tamano_blender_xyz": [
+        1.007,
+        1.272,
+        1.775
+      ]
+    },
+    {
+      "archivo": "partes/enredadera_hojas.obj",
+      "objetos_blender": [
+        "Cylinder.004"
+      ],
+      "bbox_blender_min": [
+        -2.076,
+        -0.907,
+        -0.138
+      ],
+      "bbox_blender_max": [
+        -0.115,
+        1.051,
+        2.155
+      ],
+      "tamano_blender_xyz": [
+        1.961,
+        1.959,
+        2.293
+      ]
+    },
+    {
+      "archivo": "partes/enredadera_esferas.obj",
+      "objetos_blender": [
+        "Sphere"
+      ],
+      "bbox_blender_min": [
+        -1.768,
+        -0.947,
+        -0.044
+      ],
+      "bbox_blender_max": [
+        -1.109,
+        1.16,
+        2.178
+      ],
+      "tamano_blender_xyz": [
+        0.659,
+        2.107,
+        2.221
+      ]
+    },
+    {
+      "archivo": "partes/flores.obj",
+      "objetos_blender": [
+        "Vertex",
+        "Vertex.001",
+        "Vertex.002",
+        "Vertex.003",
+        "Vertex.004",
+        "Vertex.005",
+        "Vertex.006"
+      ],
+      "bbox_blender_min": [
+        -1.92,
+        -0.733,
+        -0.029
+      ],
+      "bbox_blender_max": [
+        -1.143,
+        0.904,
+        2.164
+      ],
+      "tamano_blender_xyz": [
+        0.777,
+        1.637,
+        2.193
+      ]
+    },
+    {
+      "archivo": "reloj_de_arena_completo/reloj_de_arena_completo.obj",
+      "objetos_blender": [
+        "Cylinder",
+        "Cylinder.002",
+        "Cylinder.001",
+        "Plane",
+        "Plane.003",
+        "Cylinder.003",
+        "Cylinder.004",
+        "Sphere",
+        "Vertex",
+        "Vertex.001",
+        "Vertex.002",
+        "Vertex.003",
+        "Vertex.004",
+        "Vertex.005",
+        "Vertex.006"
+      ],
+      "bbox_blender_min": [
+        -2.076,
+        -0.947,
+        -0.138
+      ],
+      "bbox_blender_max": [
+        -0.115,
+        1.16,
+        2.178
+      ],
+      "tamano_blender_xyz": [
+        1.961,
+        2.107,
+        2.316
+      ]
+    },
+    {
+      "archivo": "fondo/fondo_suelo_y_pared.obj",
+      "objetos_blender": [
+        "Plane.001",
+        "Plane.002"
+      ],
+      "bbox_blender_min": [
+        -2.374,
+        -3.842,
+        -0.725
+      ],
+      "bbox_blender_max": [
+        2.722,
+        3.837,
+        3.137
+      ],
+      "tamano_blender_xyz": [
+        5.097,
+        7.679,
+        3.862
+      ]
+    }
+  ]
+}

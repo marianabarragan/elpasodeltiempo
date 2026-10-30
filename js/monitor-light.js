@@ -14,6 +14,7 @@ uniform float uBeamIntensity;
 uniform vec4 uBeamShape;    // screen half width, screen half height, spread per unit, reach
 uniform vec2 uBeamSoftness; // penumbra at the screen, penumbra growth per unit
 uniform float uBeamFloor;   // world height of the desk top: the beam does not pass through it
+uniform float uBeamNeutral; // 0–1: how much of the surface colour is greyed under the beam
 varying vec3 vBeamWorld;
 // Trapezoid in front of the screen: it widens with distance and its lateral
 // edges blur progressively instead of ending in a hard cut.
@@ -41,7 +42,9 @@ float monitorBeam(vec3 worldPosition) {
     // Grazing desk surfaces still read the projected trapezoid; back faces do not.
     float lambert = mix(0.5, 1.0, max(facing, 0.0)) * smoothstep(-0.3, 0.05, facing);
     // Reflected screen light plus a faint albedo-independent glow so dark wood still shows the beam.
-    outgoingLight += (diffuseColor.rgb + 0.05) * uBeamColor * (uBeamIntensity * beam * lambert);
+    // The surface colour is partly greyed first, so warm wood does not turn the cool light warm.
+    vec3 beamAlbedo = mix(diffuseColor.rgb, vec3(dot(diffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722))), uBeamNeutral);
+    outgoingLight += (beamAlbedo + 0.05) * uBeamColor * (uBeamIntensity * beam * lambert);
   }
 }
 `;
@@ -54,7 +57,7 @@ float monitorBeam(vec3 worldPosition) {
    * The anchor is an Object3D at the screen centre with +Z pointing out of the screen.
    */
   class MonitorLight {
-    constructor({ anchor, width, height, deskY, color = SCREEN_LIGHT_COLOR, intensity = 4.2, spread = .42, reach = 10 }) {
+    constructor({ anchor, width, height, deskY, color = SCREEN_LIGHT_COLOR, intensity = 4.2, neutral = 0, haze = .16, spread = .42, reach = 10 }) {
       this.anchor = anchor;
       this.size = { width, height, spread, reach };
       this.uniforms = {
@@ -64,8 +67,10 @@ float monitorBeam(vec3 worldPosition) {
         uBeamIntensity: { value: intensity },
         uBeamShape: { value: new THREE.Vector4(width / 2, height / 2, spread, reach) },
         uBeamSoftness: { value: new THREE.Vector2(.32, .17) },
-        uBeamFloor: { value: deskY }
+        uBeamFloor: { value: deskY },
+        uBeamNeutral: { value: neutral }
       };
+      this.haze = haze;
       this.patched = new Set();
 this.update();
 this.volume = this.buildVolume(deskY);
@@ -83,7 +88,7 @@ this.volume.visible = ENABLE_MONITOR_LIGHT;
     // Screen power (0 = off, 1 = on): scales the beam on the desk and the light haze.
     setLevel(level) {
       this.uniforms.uBeamIntensity.value = ENABLE_MONITOR_LIGHT ? this.originalIntensity * level : 0;
-      this.volume.material.uniforms.uOpacity.value = .16 * level;
+      this.volume.material.uniforms.uOpacity.value = this.haze * level;
       this.volume.visible = ENABLE_MONITOR_LIGHT && level > .001;
     }
 
@@ -138,8 +143,8 @@ this.volume.visible = ENABLE_MONITOR_LIGHT;
       geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
       const material = new THREE.ShaderMaterial({
         uniforms: {
-          uColor: { value: new THREE.Color(SCREEN_LIGHT_COLOR).lerp(new THREE.Color('#ffffff'), .35) },
-          uOpacity: { value: .16 },
+          uColor: { value: this.uniforms.uBeamColor.value.clone().lerp(new THREE.Color('#ffffff'), .35) },
+          uOpacity: { value: this.haze },
           uShape: this.uniforms.uBeamShape,
           uSoftness: this.uniforms.uBeamSoftness,
           uFar: { value: far }

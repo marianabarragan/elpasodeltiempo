@@ -2,7 +2,9 @@
   'use strict';
   const app = window.TimeExperience;
   class ChildhoodCamera {
-    constructor(targetY) {
+    // minWidth: world width always kept in view (wide enough for the toys at either side).
+    constructor(targetY, { minWidth = 21.5 } = {}) {
+      this.minWidth = minWidth;
       this.camera = new THREE.OrthographicCamera(-11, 11, 7.3, -7.3, .1, 70);
       this.target = new THREE.Vector3(0, targetY, 0);
       // Rotation values are offsets from the initial oblique pose. Keeping the
@@ -61,7 +63,7 @@
       // the vertical axis. This keeps both side toys and the foreground crayon
       // visible throughout the permitted orbit.
       const rotatedHeight = 13.2 * Math.cos(Math.abs(yaw)) + 8.6 * Math.sin(Math.abs(yaw));
-      const height = Math.max(13.2, 21.5 / this.aspect, rotatedHeight);
+      const height = Math.max(13.2, this.minWidth / this.aspect, rotatedHeight);
       this.camera.left = -height * this.aspect / 2;
       this.camera.right = height * this.aspect / 2;
       this.camera.top = height / 2;

@@ -22,10 +22,14 @@
    * Coordinates are canvas pixels: x to the right, y down from the top edge of the sheet.
    * Every task is visible from the start, left aligned, with its own checkbox. Only the
    * checkbox of the first unchecked task can be marked; a checked task never fires again.
+   * A Blender sheet (`sheet`: { image, boxes }) brings its own paper picture, title, tasks and
+   * boxes as meshes: then only the checks (and the flash of the enabled box) are drawn, on that
+   * picture, at its boxes (given in texture coordinates: u, v and half sizes hu, hv).
    */
   class ChecklistSystem {
-    constructor({ title, tasks, aspect = 1.28, onChange, onCheck, onComplete } = {}) {
+    constructor({ title, tasks, aspect = 1.28, sheet = null, onChange, onCheck, onComplete } = {}) {
       this.title = title;
+      this.sheet = sheet;
       this.onChange = onChange;
       this.onCheck = onCheck;
       this.onComplete = onComplete;
@@ -34,10 +38,12 @@
       this.canvas = document.createElement('canvas');
       this.canvas.width = this.width; this.canvas.height = this.height;
       this.ctx = this.canvas.getContext('2d');
-      this.base = this.paperBase();
+      this.base = sheet ? this.pictureBase(sheet.image) : this.paperBase();
       this.texture = new THREE.CanvasTexture(this.canvas);
       this.texture.colorSpace = THREE.SRGBColorSpace;
       this.texture.anisotropy = 8;
+      // glTF texture coordinates start at the picture's top edge.
+      if (sheet) this.texture.flipY = false;
       this.rows = tasks.map((text, index) => ({ text, index, seed: 811 + index * 97 }));
       this.tweens = new Set();
       this.complete = false;
@@ -49,7 +55,16 @@
 
     // Wraps every task inside the text column and places its lines on the ruling,
     // with one empty ruled line between tasks. The size shrinks if the list would overflow.
+    // On a Blender sheet the boxes are its own.
     layout() {
+      if (this.sheet) {
+        this.rows.forEach((row, index) => {
+          const { u, v, hu } = this.sheet.boxes[index], size = hu * 2 * this.width;
+          const { x, y } = this.uvToCanvas({ x: u, y: v });
+          row.box = { x: x - size / 2, y: y - size / 2, size };
+        });
+        return;
+      }
       const ctx = this.ctx;
       const lastRule = Math.floor((this.height - 60 - RULE_TOP) / RULE_STEP);
       for (let size = 58; size >= 38; size -= 4) {
@@ -120,6 +135,22 @@
       return canvas;
     }
 
+    // The Blender sheet's own paper picture, covering the whole texture.
+    pictureBase(image) {
+      const canvas = document.createElement('canvas');
+      canvas.width = this.width; canvas.height = this.height;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#f4ecdb';
+      ctx.fillRect(0, 0, this.width, this.height);
+      if (image) ctx.drawImage(image, 0, 0, this.width, this.height);
+      return canvas;
+    }
+
+    // Canvas pixels of a point of the sheet given by its texture coordinates.
+    uvToCanvas(uv) {
+      return { x: uv.x * this.width, y: (this.texture.flipY ? 1 - uv.y : uv.y) * this.height };
+    }
+
     reset() {
       this.tweens.forEach(tween => tween.kill());
       this.tweens.clear();
@@ -156,8 +187,10 @@
 
     // Task whose checkbox is under (x, y), with a small margin around the box.
     hit(x, y) {
-      return this.rows.find(({ box }) => x >= box.x - BOX_TOLERANCE && x <= box.x + box.size + BOX_TOLERANCE
-        && y >= box.y - BOX_TOLERANCE && y <= box.y + box.size + BOX_TOLERANCE) || null;
+      return this.rows.find(({ box }) => {
+        const margin = BOX_TOLERANCE * box.size / BOX_SIZE;
+        return x >= box.x - margin && x <= box.x + box.size + margin && y >= box.y - margin && y <= box.y + box.size + margin;
+      }) || null;
     }
 
     // Marks `row` if it is the enabled task. Returns 'checked', 'locked' (an earlier task is
@@ -186,18 +219,24 @@
       ctx.drawImage(this.base, 0, 0);
       ctx.fillStyle = INK; ctx.strokeStyle = INK;
       ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
-      ctx.font = `700 112px ${HAND}`;
-      ctx.fillText(this.title, BOX_X, RULE_TOP - 70);
-      const titleWidth = ctx.measureText(this.title).width;
-      this.wobbleLine(BOX_X, RULE_TOP - 50, BOX_X + titleWidth, RULE_TOP - 55, 4, seeded(77));
+      if (!this.sheet) {
+        ctx.font = `700 112px ${HAND}`;
+        ctx.fillText(this.title, BOX_X, RULE_TOP - 70);
+        const titleWidth = ctx.measureText(this.title).width;
+        this.wobbleLine(BOX_X, RULE_TOP - 50, BOX_X + titleWidth, RULE_TOP - 55, 4, seeded(77));
+      }
       ctx.font = `600 ${this.fontSize}px ${HAND}`;
       this.rows.forEach(row => {
         if (row.flash > 0) {
-          const { x, y, size } = row.box;
+          const { x, y, size } = row.box, pad = 12 * size / BOX_SIZE;
           ctx.save();
           ctx.fillStyle = `rgba(242,187,49,${.38 * row.flash})`;
-          ctx.beginPath(); ctx.roundRect(x - 12, y - 12, size + 24, size + 24, 12); ctx.fill();
+          ctx.beginPath(); ctx.roundRect(x - pad, y - pad, size + pad * 2, size + pad * 2, pad); ctx.fill();
           ctx.restore();
+        }
+        if (this.sheet) {
+          if (row.check > 0) this.tick(row);
+          return;
         }
         this.checkbox(row);
         // A barely varying slant per line gives the handwriting a pen-on-paper feel.
@@ -226,14 +265,14 @@
       ctx.closePath(); ctx.stroke();
     }
 
-    // Pen check mark, drawn progressively while `row.check` goes from 0 to 1.
+    // Pen check mark, drawn progressively while `row.check` goes from 0 to 1 (sized to the box).
     tick(row) {
-      const ctx = this.ctx, { x, y } = row.box;
-      const points = [[x + 7, y + 22], [x + 19, y + 38], [x + 54, y - 10]];
-      const lengths = [Math.hypot(12, 16), Math.hypot(35, 48)];
+      const ctx = this.ctx, { x, y } = row.box, k = row.box.size / BOX_SIZE;
+      const points = [[x + 7 * k, y + 22 * k], [x + 19 * k, y + 38 * k], [x + 54 * k, y - 10 * k]];
+      const lengths = [Math.hypot(12, 16) * k, Math.hypot(35, 48) * k];
       let left = row.check * (lengths[0] + lengths[1]);
       ctx.save();
-      ctx.lineWidth = 5.5; ctx.lineCap = ctx.lineJoin = 'round';
+      ctx.lineWidth = 5.5 * k; ctx.lineCap = ctx.lineJoin = 'round';
       ctx.beginPath(); ctx.moveTo(...points[0]);
       for (let i = 0; i < 2 && left > 0; i++) {
         const t = Math.min(1, left / lengths[i]);

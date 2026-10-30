@@ -8,7 +8,7 @@
   <title>El paso del tiempo</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=DM+Sans:wght@400;500;600;700&family=Nunito:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=DM+Sans:wght@400;500;600;700&family=Nunito:wght@500;600;700;800&family=Sofia&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body class="intro-active">
@@ -18,11 +18,11 @@
       <div class="intro-stage" id="intro3d" role="img" aria-label="Tablero tridimensional de corcho con marco naranja y un hilo de cabuya del que cuelgan tres fotografías: niñez, adultez joven y vejez."></div>
       <div class="intro-veil" aria-hidden="true"></div>
       <div class="intro-copy">
-        <div class="intro-hourglass" id="introHourglass" role="img" aria-label="Reloj de arena de madera rodeado por una enredadera con flores moradas."></div>
+        <div class="intro-hourglass hourglass-stage" id="introHourglass" role="img" aria-label="Reloj de arena de madera con arena dorada luminosa que cae, rodeado por una enredadera con flores blancas."></div>
         <div class="intro-text">
           <p class="intro-label">El paso del tiempo</p>
           <h1 id="intro-title"><span class="intro-line">¿Te has detenido a pensar</span> <span class="intro-line">cómo cambia la vida</span> <span class="intro-line">con <span class="intro-highlight">el paso del tiempo?</span></span></h1>
-          <button class="primary-button intro-start" id="startExperience" type="button">Iniciar</button>
+          <button class="primary-button intro-start glow-button" id="startExperience" type="button">Iniciar</button>
         </div>
         <span class="intro-rule" aria-hidden="true"></span>
       </div>
@@ -96,6 +96,10 @@
   <script src="js/intro-camera.js"></script>
   <script src="js/intro-scene.js"></script>
   <script src="js/intro-hourglass.js"></script>
+  <script src="js/vendor/three-examples.js"></script>
+  <script src="js/model-loader.js"></script>
+  <script src="js/intro-models.js"></script>
+  <script src="js/childhood-models.js"></script>
   <script src="js/childhood-props.js"></script>
   <script src="js/painting-system.js"></script>
   <script src="js/audio-system.js"></script>
@@ -104,6 +108,7 @@
   <script src="js/childhood-camera.js"></script>
   <script src="js/object-interactions.js"></script>
   <script src="js/childhood-scene.js"></script>
+  <script src="js/adulthood-models.js"></script>
   <script src="js/adulthood-props.js"></script>
   <script src="js/monitor-light.js"></script>
   <script src="js/checklist-system.js"></script>
@@ -112,6 +117,7 @@
   <script src="js/adulthood-sheet.js"></script>
   <script src="js/adulthood-interactions.js"></script>
   <script src="js/adulthood-scene.js"></script>
+  <script src="js/oldage-models.js"></script>
   <script src="js/oldage-props.js"></script>
   <script src="js/oldage-vision.js"></script>
   <script src="js/oldage-camera.js"></script>

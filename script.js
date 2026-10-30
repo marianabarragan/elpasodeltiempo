@@ -23,6 +23,12 @@
 
   app.audio = new app.AudioSystem({
     ...app.Config.assets.audio,
+    // Clicks on the toys (Config.childhood.audio); null paths stay silent.
+    effects: {
+      rings: app.Config.childhood.audio.ringsSrc,
+      xylophone: app.Config.childhood.audio.xylophoneSrc,
+      crayon: app.Config.childhood.audio.crayonSrc
+    },
     onStateChange(state) {
       const enabled = state.enabled && !state.blocked;
       sound.setAttribute('aria-pressed', String(enabled));
@@ -161,8 +167,10 @@
       detail: { from: 'intro', to: stage, memory: app.memory, adulthood: app.adulthoodMemory }
     }));
   }
+  // The board pre-builds the childhood room once the Blender toys have loaded (or failed, in
+  // which case the provisional toys are used); entering it never waits for them.
   app.introTransition = new app.SceneTransition({
-    intro, prepareChildhood, enterChildhood, enterAdulthood, enterOldAge, requestScene, showBoard,
+    intro, prepareChildhood: () => app.ChildhoodModels.whenSettled(prepareChildhood), enterChildhood, enterAdulthood, enterOldAge, requestScene, showBoard,
     beforeStart: () => app.audio.unlock(),
     afterEnter: stage => app.scenes.get(stage).ready()
   });
@@ -302,20 +310,26 @@
   // Local inspection shortcut; the normal experience always begins at the board.
   const inspect = new URLSearchParams(location.search).get('scene');
   if (inspect === 'childhood') {
-    enterChildhood();
-    app.Interface.setPhase('childhood');
-    prepareChildhood().ready();
+    app.ChildhoodModels.whenSettled(() => {
+      enterChildhood();
+      app.Interface.setPhase('childhood');
+      prepareChildhood().ready();
+    });
   } else if (inspect === 'adulthood') {
-    enterAdulthood();
-    app.Interface.setPhase('adulthood');
-    prepareAdulthood().ready();
+    app.AdulthoodModels.whenSettled(() => {
+      enterAdulthood();
+      app.Interface.setPhase('adulthood');
+      prepareAdulthood().ready();
+    });
   } else if (inspect === 'closing') {
     introSection.hidden = true;
     document.body.classList.remove('intro-active');
     app.closing.go('reflection');
   } else if (inspect === 'oldage') {
-    enterOldAge();
-    app.Interface.setPhase('oldage');
-    prepareOldAge().ready();
+    app.OldAgeModels.whenSettled(() => {
+      enterOldAge();
+      app.Interface.setPhase('oldage');
+      prepareOldAge().ready();
+    });
   }
 })();

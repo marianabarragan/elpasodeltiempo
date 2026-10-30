@@ -1,0 +1,337 @@
+{
+  "unidades": "metros de Blender (el escritorio mide ~22.6 de ancho)",
+  "ejes_en_los_obj": "Y arriba, -Z adelante (convertido desde Blender Z arriba)",
+  "posiciones": "cada OBJ conserva su posicion en la escena: cargados juntos, encajan",
+  "assets": [
+    {
+      "archivo": "computador/monitor.obj",
+      "objetos_blender": [
+        "Cube.002",
+        "Cylinder.003",
+        "Cylinder.006",
+        "Cylinder.007"
+      ],
+      "bbox_blender_min": [
+        -2.409,
+        1.002,
+        1.256
+      ],
+      "bbox_blender_max": [
+        2.641,
+        2.238,
+        4.944
+      ],
+      "tamano_blender_xyz": [
+        5.05,
+        1.236,
+        3.688
+      ],
+      "centro_base_blender": [
+        0.116,
+        1.62,
+        1.256
+      ]
+    },
+    {
+      "archivo": "computador/pantalla.obj",
+      "objetos_blender": [
+        "Plane"
+      ],
+      "bbox_blender_min": [
+        -2.263,
+        1.284,
+        2.233
+      ],
+      "bbox_blender_max": [
+        2.304,
+        1.284,
+        4.856
+      ],
+      "tamano_blender_xyz": [
+        4.567,
+        0.0,
+        2.623
+      ],
+      "centro_base_blender": [
+        0.02,
+        1.284,
+        2.233
+      ]
+    },
+    {
+      "archivo": "computador/teclado.obj",
+      "objetos_blender": [
+        "Cube"
+      ],
+      "bbox_blender_min": [
+        -1.937,
+        -1.672,
+        1.256
+      ],
+      "bbox_blender_max": [
+        1.527,
+        -0.349,
+        1.383
+      ],
+      "tamano_blender_xyz": [
+        3.464,
+        1.323,
+        0.127
+      ],
+      "centro_base_blender": [
+        -0.205,
+        -1.011,
+        1.256
+      ]
+    },
+    {
+      "archivo": "corcho/corcho_calendario.obj",
+      "objetos_blender": [
+        "Cube.030",
+        "Cube.031"
+      ],
+      "bbox_blender_min": [
+        3.744,
+        2.622,
+        2.423
+      ],
+      "bbox_blender_max": [
+        6.434,
+        2.87,
+        5.113
+      ],
+      "tamano_blender_xyz": [
+        2.69,
+        0.248,
+        2.69
+      ],
+      "centro_base_blender": [
+        5.089,
+        2.746,
+        2.423
+      ]
+    },
+    {
+      "archivo": "libros/libros_y_repisa.obj",
+      "objetos_blender": [
+        "Cube.013"
+      ],
+      "bbox_blender_min": [
+        -8.778,
+        1.323,
+        3.337
+      ],
+      "bbox_blender_max": [
+        -2.965,
+        2.855,
+        5.053
+      ],
+      "tamano_blender_xyz": [
+        5.812,
+        1.533,
+        1.715
+      ],
+      "centro_base_blender": [
+        -5.872,
+        2.089,
+        3.337
+      ]
+    },
+    {
+      "archivo": "matera/matera_y_planta.obj",
+      "objetos_blender": [
+        "Cylinder.009",
+        "Matera_Tierra.001"
+      ],
+      "bbox_blender_min": [
+        -6.14,
+        0.05,
+        1.258
+      ],
+      "bbox_blender_max": [
+        -4.863,
+        1.327,
+        3.889
+      ],
+      "tamano_blender_xyz": [
+        1.277,
+        1.277,
+        2.631
+      ],
+      "centro_base_blender": [
+        -5.501,
+        0.689,
+        1.258
+      ]
+    },
+    {
+      "archivo": "mesa/mesa.obj",
+      "objetos_blender": [
+        "Cube.009"
+      ],
+      "bbox_blender_min": [
+        -11.544,
+        -5.307,
+        1.098
+      ],
+      "bbox_blender_max": [
+        11.026,
+        2.855,
+        1.243
+      ],
+      "tamano_blender_xyz": [
+        22.57,
+        8.162,
+        0.145
+      ],
+      "centro_base_blender": [
+        -0.259,
+        -1.226,
+        1.098
+      ]
+    },
+    {
+      "archivo": "pared_fondo/pared_fondo.obj",
+      "objetos_blender": [
+        "Cube.010"
+      ],
+      "bbox_blender_min": [
+        -11.544,
+        2.855,
+        1.243
+      ],
+      "bbox_blender_max": [
+        11.026,
+        3.0,
+        8.083
+      ],
+      "tamano_blender_xyz": [
+        22.57,
+        0.145,
+        6.84
+      ],
+      "centro_base_blender": [
+        -0.259,
+        2.928,
+        1.243
+      ]
+    },
+    {
+      "archivo": "reloj_de_mesa/reloj_de_mesa.obj",
+      "objetos_blender": [
+        "Cube.006",
+        "Cube.007",
+        "Cube.008",
+        "Plane.001"
+      ],
+      "bbox_blender_min": [
+        -4.04,
+        0.749,
+        1.243
+      ],
+      "bbox_blender_max": [
+        -2.796,
+        1.545,
+        1.918
+      ],
+      "tamano_blender_xyz": [
+        1.245,
+        0.796,
+        0.674
+      ],
+      "centro_base_blender": [
+        -3.418,
+        1.147,
+        1.243
+      ]
+    },
+    {
+      "archivo": "termo/termo.obj",
+      "objetos_blender": [
+        "Cylinder.001"
+      ],
+      "bbox_blender_min": [
+        2.477,
+        -1.339,
+        1.256
+      ],
+      "bbox_blender_max": [
+        4.099,
+        0.282,
+        3.082
+      ],
+      "tamano_blender_xyz": [
+        1.622,
+        1.622,
+        1.826
+      ],
+      "centro_base_blender": [
+        3.288,
+        -0.529,
+        1.256
+      ]
+    },
+    {
+      "archivo": "lapicero/lapicero.obj",
+      "objetos_blender": [
+        "Lapicero",
+        "Lapicero_Clip"
+      ],
+      "bbox_blender_min": [
+        -1.904,
+        -3.515,
+        1.225
+      ],
+      "bbox_blender_max": [
+        -1.206,
+        -2.059,
+        1.419
+      ],
+      "tamano_blender_xyz": [
+        0.697,
+        1.456,
+        0.194
+      ],
+      "centro_base_blender": [
+        -1.555,
+        -2.787,
+        1.225
+      ]
+    },
+    {
+      "archivo": "papel/hoja_pendientes.obj",
+      "objetos_blender": [
+        "Hoja_Pendientes",
+        "Hoja_Titulo",
+        "Hoja_Casilla_1",
+        "Hoja_Casilla_2",
+        "Hoja_Casilla_3",
+        "Hoja_Casilla_4",
+        "Hoja_Texto_1",
+        "Hoja_Texto_2",
+        "Hoja_Texto_3",
+        "Hoja_Texto_4"
+      ],
+      "bbox_blender_min": [
+        -4.813,
+        -4.013,
+        1.239
+      ],
+      "bbox_blender_max": [
+        -2.026,
+        -0.388,
+        1.354
+      ],
+      "tamano_blender_xyz": [
+        2.787,
+        3.626,
+        0.115
+      ],
+      "centro_base_blender": [
+        -3.42,
+        -2.2,
+        1.239
+      ]
+    }
+  ]
+}

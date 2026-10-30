@@ -46,6 +46,7 @@
       this.checklist = new app.ChecklistSystem({
         ...config.checklist,
         aspect: paper.height / paper.width,
+        sheet: paper.sheet,
         onChange: () => this.invalidate(),
         onCheck: index => { this.interact(); this.progress.mark(`task${index}`); },
         // The fourth check stays in view for a moment, then sheet and pen go back to the desk.
@@ -60,6 +61,7 @@
 
       this.addLights();
       this.monitorLight = new app.MonitorLight({
+        ...app.Config.adulthood.screenLight,
         anchor: this.props.monitorScreen.anchor,
         width: this.props.monitorScreen.width,
         height: this.props.monitorScreen.height,
@@ -70,6 +72,9 @@
       const desk = this.props.deskTopY;
       // Orthographic picada centred on the desk top and the props standing on it.
       this.cameraRig = new app.AdulthoodCamera(new THREE.Vector3(.1, desk + 1.75, 0));
+      // The plant stands at the far left end of the desk: the view is always wide enough for it.
+      const plant = new THREE.Box3().setFromObject(this.props.models.plant.root);
+      this.cameraRig.viewWidth = Math.max(this.cameraRig.viewWidth, 2 * (this.cameraRig.target.x - plant.min.x) + .5);
       this.sheet = new app.SheetFocus(this);
       this.calendarMonth = 0;
       this.interactions = new app.AdulthoodInteractions(this);
@@ -133,10 +138,44 @@
       this.onComplete?.();
     }
 
+    // The Blender desk and wall (props.deskFit / wallFit) are scaled uniformly, never stretched,
+    // just enough to cover everything the camera can show on this screen shape at any permitted
+    // angle: the desk from the wall forward (never smaller than modelled), the wall only when a
+    // very wide or tall screen sees past its edges.
+    fitBackdrop() {
+      const desk = this.props.deskFit, wall = this.props.wallFit;
+      if (!desk && !wall) return;
+      const rig = this.cameraRig, pose = { ...rig.current };
+      const top = new THREE.Plane(new THREE.Vector3(0, 1, 0), -this.props.deskTopY);
+      const back = desk ? desk.back : -Infinity;
+      const wallPlane = wall && new THREE.Plane(new THREE.Vector3(0, 0, 1), -wall.object.position.z);
+      const ray = new THREE.Raycaster(), point = new THREE.Vector3(), screen = new THREE.Vector2();
+      let deskScale = 1, wallScale = 1;
+      for (const yaw of [-1, 0, 1]) for (const tilt of [rig.tiltRange[0], 0, rig.tiltRange[1]]) {
+        rig.current.yaw = yaw * rig.maxYaw; rig.current.tilt = tilt;
+        rig.apply();
+        for (let i = 0; i <= 16; i++) for (let j = 0; j <= 16; j++) {
+          ray.setFromCamera(screen.set(i / 8 - 1, j / 8 - 1), rig.camera);
+          // Margins of a few percent cover the camera's small slide while it turns.
+          if (ray.ray.intersectPlane(top, point) && point.z >= back) {
+            if (desk) deskScale = Math.max(deskScale, 2 * Math.abs(point.x - desk.object.position.x) / desk.width * 1.06, (point.z - back) / desk.depth * 1.06);
+          } else if (wall && ray.ray.intersectPlane(wallPlane, point)) {
+            const x = point.x - wall.object.position.x, y = point.y - wall.object.position.y;
+            wallScale = Math.max(wallScale, (x < 0 ? -x / wall.left : x / wall.right) * 1.04, y / wall.height * 1.04);
+          }
+        }
+      }
+      Object.assign(rig.current, pose);
+      rig.apply();
+      desk?.object.scale.setScalar(deskScale);
+      wall?.object.scale.setScalar(wallScale);
+    }
+
     resize() {
       const width = this.container.clientWidth, height = this.container.clientHeight;
       if (!width || !height) return;
       this.cameraRig.resize(width, height);
+      this.fitBackdrop();
       this.renderer.setSize(width, height, false);
       const buffer = this.renderer.getDrawingBufferSize(new THREE.Vector2());
       this.sheet.setSize(buffer.x, buffer.y);
@@ -173,14 +212,16 @@
     }
 
     // Click on a desk prop. The sheet (or the pen lying next to it) opens the reading mode;
-    // the calendar turns a month and the monitor's button switches the screen. The thermos,
-    // the clock and the calendar also add their share to the progress bar (once each).
+    // the calendar turns a month and the screen (or the monitor's button) switches the screen.
+    // The thermos, the clock and the calendar also add their share to the progress bar (once each).
     activateProp(name) {
       const item = this.props.interactive[name];
       if (!item) return;
       this.interact();
       if (name === 'checklistPaper' || name === 'pen') {
         if (this.sheet.liftSheet()) this.interact();
+      } else if (name === 'monitor') {
+        this.toggleScreen();
       } else if (name === 'monitorPower') {
         this.toggleScreen();
         gsap.fromTo(item.visual.position, { z: -.03 }, { z: 0, duration: .25, ease: 'power2.out', onUpdate: () => this.invalidate() });
@@ -229,7 +270,7 @@
 
     restCalendarPage() {
       const front = this.props.calendar.pages.front;
-      front.pivot.position.set(0, 1.3, .032);
+      front.pivot.position.copy(front.rest);
       front.pivot.rotation.set(0, 0, 0);
       front.material.opacity = 1;
       this.invalidate();

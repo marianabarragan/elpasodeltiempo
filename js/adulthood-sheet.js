@@ -166,9 +166,10 @@
         if (!this.world.active || this.state !== 'desk' || this.world.checklist.complete) return;
         const glow = this.paper.glow;
         glow.visible = true;
-        // Slow, gentle breathing of the edges (about 1.4 s per cycle).
-        this.glowTween = gsap.fromTo(glow.material, { opacity: .12 }, {
-          opacity: .85, duration: this.reduced ? 1.4 : .7, ease: 'sine.inOut', yoyo: true, repeat: -1,
+        // Slow, gentle breathing of the edges (about 2.6 s per cycle, like the glow of the props
+        // in the other scenes).
+        this.glowTween = gsap.fromTo(glow.material, { opacity: .25 }, {
+          opacity: .6, duration: this.reduced ? 2.6 : 1.3, ease: 'sine.inOut', yoyo: true, repeat: -1,
           onUpdate: () => this.world.invalidate()
         });
       }, this.config.glowDelayMs);
@@ -256,8 +257,7 @@
     sheetPoint(raycaster) {
       const hit = raycaster.intersectObject(this.paper.mesh, false)[0];
       if (!hit?.uv) return null;
-      const checklist = this.world.checklist;
-      return { x: hit.uv.x * checklist.width, y: (1 - hit.uv.y) * checklist.height };
+      return this.world.checklist.uvToCanvas(hit.uv);
     }
 
     // ---------- Poses ----------

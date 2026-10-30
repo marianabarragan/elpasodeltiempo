@@ -1,6 +1,30 @@
 (() => {
   'use strict';
   const app = window.TimeExperience;
+  // ► BRILLO DE LOS JUGUETES DE BLENDER: intensidad de los reflejos, color del estudio que se
+  //   refleja (más oscuro = reflejos más contrastados y colores más vivos) y rugosidad máxima
+  //   (0 = espejo, 1 = mate). Solo afecta a los modelos; el piso, la hoja y las luces de la
+  //   escena no cambian.
+  const TOY_GLOSS = { reflection: .9, studio: '#2b2420', roughness: .3 };
+  // ► BRILLO DE LA CRAYOLA EN REPOSO (indica que es interactiva): color, margen alrededor de
+  //   la crayola (unidades del mundo) y opacidad mínima y máxima de su pulso lento.
+  const CRAYON_GLOW = { color: '#fff3c4', margin: .09, min: .22, max: .55 };
+  const GLOW_VERTEX = `
+    varying vec3 vNormal;
+    void main() {
+      vNormal = normalize(normalMatrix * normal);
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `;
+  const GLOW_FRAGMENT = `
+    uniform vec3 uColor;
+    uniform float uOpacity;
+    varying vec3 vNormal;
+    void main() {
+      float rim = 1.0 - abs(normalize(vNormal).z);
+      gl_FragColor = vec4(uColor, uOpacity * (.35 + .65 * rim));
+    }
+  `;
   class ChildhoodScene {
     constructor(container, { audio, progressBar, palette, onComplete } = {}) {
       this.container = container;
@@ -25,6 +49,8 @@
       const factory = app.Config.assets.childhoodPropsFactory || app.ChildhoodProps.build;
       this.props = factory();
       this.scene.add(this.props.group);
+      this.addToyReflections();
+      this.crayonGlow = this.buildCrayonGlow();
       // Five 20 % milestones (crayon click, colour, sun, house, tree); see childhood-progress.js.
       this.progress = new app.ChildhoodProgress({ element: progressBar, onComplete });
       this.painting = new app.PaintingSystem({ onProgress: progress => { this.checkFigures(progress); this.invalidate(); } });
@@ -46,7 +72,7 @@
       this.paper.position.set(0, this.props.floorY + .026, 0);
       this.paper.receiveShadow = true;
       this.scene.add(this.paper);
-      this.cameraRig = new app.ChildhoodCamera(this.paper.position.y);
+      this.cameraRig = new app.ChildhoodCamera(this.paper.position.y, { minWidth: this.toysWidth() });
       this.addLights();
       this.addWindowLight();
       this.setColor(this.color, true);
@@ -58,11 +84,106 @@
       this.frame = this.frame.bind(this);
       this.tick = 0;
     }
+    // The Blender toys keep the glossy look of their material preview: a soft studio
+    // environment reflected only on them, with a cap on their roughness (TOY_GLOSS).
+    addToyReflections() {
+      const models = this.props.metadata?.models;
+      if (!models) return;
+      const toys = [models.rings, models.xylophone, models.crayon].filter(toy => toy?.userData.blenderModel);
+      if (!toys.length) return;
+      // A dark, warm studio with three small, very bright softboxes (upper left like the key
+      // light, right and a strip above): crisp highlights on the plastic, but little extra
+      // diffuse light, so the colours keep their strength.
+      const studio = new THREE.Scene();
+      studio.background = new THREE.Color(TOY_GLOSS.studio);
+      const panel = new THREE.PlaneGeometry(1, 1);
+      [[4, 3, 14, [-7, 9, 5]], [3, 2.5, 7, [8, 5, 6]], [6, .8, 3, [0, 10, -5]]].forEach(([width, height, power, position]) => {
+        const softbox = new THREE.Mesh(panel, new THREE.MeshBasicMaterial({ color: new THREE.Color().setScalar(power), side: THREE.DoubleSide }));
+        softbox.scale.set(width, height, 1);
+        softbox.position.set(...position);
+        softbox.lookAt(0, 0, 0);
+        studio.add(softbox);
+      });
+      const pmrem = new THREE.PMREMGenerator(this.renderer);
+      this.toyEnvironment = pmrem.fromScene(studio, .02).texture;
+      pmrem.dispose();
+      panel.dispose();
+      studio.traverse(object => object.material?.dispose());
+      toys.forEach(toy => toy.traverse(object => {
+        const material = object.isMesh && object.material;
+        if (!material?.isMeshStandardMaterial) return;
+        material.envMap = this.toyEnvironment;
+        material.envMapIntensity = TOY_GLOSS.reflection;
+        material.roughness = Math.min(material.roughness, TOY_GLOSS.roughness);
+        material.needsUpdate = true;
+      }));
+    }
+    // A soft halo around the crayon while it rests (CRAYON_GLOW): a slightly larger copy of
+    // it, drawn from behind and brighter at the silhouette, with the same margin all round
+    // whatever the crayon's proportions. It never catches the pointer.
+    buildCrayonGlow() {
+      const crayon = this.props.crayon;
+      crayon.updateMatrixWorld(true);
+      const bounds = new THREE.Box3(), part = new THREE.Box3(), toCrayon = crayon.matrixWorld.clone().invert(), matrix = new THREE.Matrix4();
+      crayon.traverse(object => {
+        if (!object.isMesh) return;
+        object.geometry.computeBoundingBox();
+        bounds.union(part.copy(object.geometry.boundingBox).applyMatrix4(matrix.multiplyMatrices(toCrayon, object.matrixWorld)));
+      });
+      const material = new THREE.ShaderMaterial({
+        vertexShader: GLOW_VERTEX, fragmentShader: GLOW_FRAGMENT,
+        uniforms: { uColor: { value: new THREE.Color(CRAYON_GLOW.color) }, uOpacity: { value: 0 } },
+        side: THREE.BackSide, transparent: true, depthWrite: false, toneMapped: false
+      });
+      const halo = new THREE.Group();
+      halo.name = 'crayon-glow';
+      crayon.children.forEach(child => halo.add(child.clone()));
+      halo.traverse(object => {
+        if (!object.isMesh) return;
+        object.material = material;
+        object.castShadow = object.receiveShadow = false;
+        object.raycast = () => {};
+        object.renderOrder = -1;
+      });
+      const size = bounds.getSize(new THREE.Vector3()), center = bounds.getCenter(new THREE.Vector3());
+      const margin = CRAYON_GLOW.margin / crayon.scale.x;
+      halo.scale.set(1 + 2 * margin / size.x, 1 + 2 * margin / size.y, 1 + 2 * margin / size.z);
+      // Scaled about the crayon's centre: p' = centre + scale · (p − centre).
+      halo.position.copy(center).sub(center.clone().multiply(halo.scale));
+      halo.visible = false;
+      crayon.add(halo);
+      return { halo, material, value: 0 };
+    }
+    // Visible while the crayon rests and can be picked up; it fades out when it becomes the
+    // tool or the palette is open. Returns true while it needs new frames.
+    updateCrayonGlow(time, dt) {
+      const glow = this.crayonGlow;
+      const on = this.interactions.mode === 'rest' && !this.palette.open && !app.runtime.transitioning;
+      glow.value += ((on ? 1 : 0) - glow.value) * (1 - Math.exp(-6 * dt));
+      const pulse = .5 + .5 * Math.sin(time * 2.4);
+      glow.material.uniforms.uOpacity.value = glow.value * (CRAYON_GLOW.min + (CRAYON_GLOW.max - CRAYON_GLOW.min) * pulse);
+      glow.halo.visible = glow.value > .005;
+      return glow.halo.visible;
+    }
+    // World width the camera keeps in view: every toy at both ends of the permitted yaw.
+    toysWidth() {
+      const maxYaw = app.Config.camera.maxYaw, models = this.props.metadata?.models || {};
+      const box = new THREE.Box3();
+      let half = 0;
+      [models.rings, models.xylophone, this.props.crayon].forEach(toy => {
+        if (!toy) return;
+        box.setFromObject(toy);
+        [box.min.x, box.max.x].forEach(x => [box.min.z, box.max.z].forEach(z => [-maxYaw, maxYaw].forEach(yaw => {
+          half = Math.max(half, Math.abs(x * Math.cos(yaw) - z * Math.sin(yaw)));
+        })));
+      });
+      return Math.max(21.5, 2 * half + 1);
+    }
     addLights() {
-      // World-space afternoon light: diagonal from the upper left, with warm
-      // bounce light keeping the shadowed side readable and the palette intact.
-      this.scene.add(new THREE.HemisphereLight(0xfff1db, 0x9b8062, 1.55));
-      const key = new THREE.DirectionalLight(0xffd39b, 1.85);
+      // World-space afternoon light: diagonal from the upper left, warm (amber sun, peach sky
+      // and bounce) while the light on the paper stays paler, so the drawing reads untinted.
+      this.scene.add(new THREE.HemisphereLight(0xffd7a4, 0xa8683a, 1.55));
+      const key = new THREE.DirectionalLight(0xffb470, 1.85);
       key.position.set(-12, 10, -9);
       key.target.position.set(0, this.props.floorY, 0);
       key.castShadow = true;
@@ -74,11 +195,11 @@
       key.shadow.radius = 4;
       key.shadow.blurSamples = 8;
       this.scene.add(key, key.target);
-      const fill = new THREE.DirectionalLight(0xffefdc, .55);
+      const fill = new THREE.DirectionalLight(0xffcf9c, .55);
       fill.position.set(8, 9, 5); this.scene.add(fill);
       // A broad, feathered patch favours the drawing without clipping the white
       // paper or projecting a competing pattern over the crayon outlines.
-      const paperLight = new THREE.SpotLight(0xffedcf, 80, 0, .62, 1, 2);
+      const paperLight = new THREE.SpotLight(0xffe4bd, 80, 0, .62, 1, 2);
       paperLight.position.set(-3, 10, -2);
       paperLight.target.position.copy(this.paper.position);
       this.scene.add(paperLight, paperLight.target);
@@ -181,9 +302,11 @@
     ready() { this.audio.enter(); this.interact(); }
     frame(now) {
       if (!this.active) return;
-      const changed = this.cameraRig.update((now - this.lastTime) / 1000);
+      const dt = Math.min(.1, Math.max(0, (now - this.lastTime) / 1000));
+      const changed = this.cameraRig.update(dt);
       this.lastTime = now;
-      if ((changed || this.dirty || this.interactions.held || this.interactions.toolActive) && !document.hidden) this.render();
+      const glowing = this.updateCrayonGlow(now / 1000, dt);
+      if ((changed || glowing || this.dirty || this.interactions.held || this.interactions.toolActive) && !document.hidden) this.render();
       this.tick = requestAnimationFrame(this.frame);
     }
     interact() {
@@ -205,6 +328,7 @@
       this.active = false;
       this.palette.close({ immediate: true });
       this.interactions.release();
+      this.interactions.restToys();
       cancelAnimationFrame(this.tick);
       clearTimeout(this.hintTimer); this.hint?.kill();
       this.audio.exit();
@@ -224,6 +348,8 @@
       this.exit(); this.interactions.dispose(); this.observer.disconnect();
       this.painting.dispose(); this.props.dispose();
       this.windowLight.userData.dispose();
+      this.crayonGlow.material.dispose();
+      this.toyEnvironment?.dispose();
       [this.paper, this.paperBody].forEach(mesh => { mesh.geometry.dispose(); mesh.material.dispose(); });
       this.keyLight.shadow.dispose();
       this.renderer.dispose();

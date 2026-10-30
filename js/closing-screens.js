@@ -18,34 +18,33 @@
     });
     return node;
   }
-  function svg(markup, className) {
+  // Gold paperclip of the contribute cards, drawn in its own frame (wide end up, neck of its
+  // narrow end at y = 33) and tilted 41° over the card's top-left corner. The front part goes
+  // over the paper; the back leg goes under it, so the clip looks clipped onto the sheet.
+  const CLIP = { front: 'M4 0A4 4 0 0 0-4 0V33A2.5 2.5 0 0 0 1 33V13', back: 'M4 0V24' };
+  function paperclip(index, part) {
+    const gold = `clip-gold-${index}-${part}`, path = CLIP[part];
     const holder = document.createElementNS(SVG_NS, 'svg');
-    holder.setAttribute('viewBox', '0 0 24 24');
+    holder.setAttribute('viewBox', '-18 -4 36 40');
     holder.setAttribute('aria-hidden', 'true');
-    if (className) holder.setAttribute('class', className);
-    holder.innerHTML = markup;
+    holder.setAttribute('class', `contribute-clip contribute-clip--${part}`);
+    holder.innerHTML = `
+      <defs><linearGradient id="${gold}" gradientUnits="userSpaceOnUse" x1="0" y1="-5" x2="0" y2="37">
+        <stop offset="0" stop-color="#b07d22"/><stop offset=".25" stop-color="#e6bf5e"/><stop offset=".5" stop-color="#a6751c"/>
+        <stop offset=".75" stop-color="#e2b955"/><stop offset="1" stop-color="#9a6a18"/>
+      </linearGradient></defs>
+      <g transform="rotate(41 0 16)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="${path}" stroke="#5c3d0a" stroke-width="1.7"/>
+        <path d="${path}" stroke="url(#${gold})" stroke-width="1.15"/>
+        <path d="${path}" stroke="#fff1b8" stroke-width=".36" stroke-opacity=".9" transform="translate(-.28 -.1)"/>
+      </g>`;
     return holder;
   }
-  // Title parts → text with the highlighted fragment wrapped in a <span>.
-  function titleParts(parts) {
-    return parts.map(part => part.highlight ? h('span', { class: 'closing-highlight' }, part.text) : part.text);
-  }
-
-  const ICONS = {
-    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/>',
-    infinity: '<path d="M12 12c-1.8-2.4-3.3-3.6-5-3.6a3.6 3.6 0 0 0 0 7.2c1.7 0 3.2-1.2 5-3.6Zm0 0c1.8 2.4 3.3 3.6 5 3.6a3.6 3.6 0 0 0 0-7.2c-1.7 0-3.2 1.2-5 3.6Z"/>',
-    heart: '<path d="M12 20s-7.5-4.6-7.5-10.1A4.3 4.3 0 0 1 12 7.3a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20Z"/>'
-  };
-  const ARROW = '<path d="M4 12h16m-6-6 6 6-6 6"/>';
-  const ARROW_UP = '<path d="M7 17 17 7M8 7h9v9"/>';
-  const REPEAT = '<path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v5h-5"/>';
-  const CLOSE = '<path d="m6 6 12 12M18 6 6 18"/>';
-  const STAR = '<path d="M12 3c.6 4.6 2.4 6.4 7 7-4.6.6-6.4 2.4-7 7-.6-4.6-2.4-6.4-7-7 4.6-.6 6.4-2.4 7-7Z"/>';
 
   /**
    * Final section of the experience, after scenario 3:
-   *   reflection ──«Sí, quiero conocer»──▶ contribute ──«Continuar al cierre»──▶ thanks
-   *        └────────────«Ahora no»─────────────────────────────────────────────▲
+   *   reflection ──«Quiero aprender»──▶ contribute ──«Continuar al cierre»──▶ thanks
+   *        └───────────«Ahora no.»────────────────────────────────────────────▲
    *   thanks: «Ver formas de aportar» → contribute · «Repetir experiencia» / «Salir» → callbacks.
    * Every screen is a full-viewport <section>; contents come from TimeExperience.ClosingContent.
    */
@@ -57,35 +56,42 @@
       this.onExit = onExit;
       this.current = null;
       this.timeline = null;
-      this.ambient = [];
-      this.modal = null;
+      this.openCard = null;
+      this.pointerType = 'mouse';
       this.reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
       this.buildReflection();
       this.buildContribute();
       this.buildThanks();
-      this.buildModal();
       document.addEventListener('keydown', event => {
-        if (event.key === 'Escape' && this.modal.open) this.closeModal();
+        if (event.key === 'Escape' && this.openCard) this.closeCards();
       });
     }
 
     get busy() { return Boolean(this.timeline) || app.runtime.transitioning; }
 
     // ---------- Construction ----------
+    // Like the start cover: the glowing hourglass on the left (it turns over a few seconds after
+    // the screen appears, see showHourglass) and, on the right, the title with its handwritten
+    // line, the description and, further down, the question with «Quiero aprender» and «Ahora no.».
     buildReflection() {
       const text = this.content.reflection;
       const section = this.sections.reflection;
+      this.reflectionHourglass = h('div', { class: 'reflection-hourglass hourglass-stage', role: 'img', 'aria-label': text.hourglass, 'data-reveal': 'art' });
       section.replaceChildren(
-        h('div', { class: 'reflection-art', 'data-reveal': 'art', 'aria-hidden': 'true' }, this.reflectionArt()),
+        this.reflectionHourglass,
         h('div', { class: 'reflection-copy' },
-          h('p', { class: 'closing-eyebrow', 'data-reveal': '' }, text.eyebrow),
-          h('h2', { class: 'closing-title reflection-title', id: 'reflectionTitle', tabindex: '-1', 'data-reveal': '' }, titleParts(text.title)),
-          h('p', { class: 'closing-lead', 'data-reveal': '' }, text.description),
-          h('hr', { class: 'closing-rule', 'data-reveal': '' }),
-          h('p', { class: 'reflection-question', 'data-reveal': '' }, text.question),
-          h('div', { class: 'closing-actions', 'data-reveal': '' },
-            h('button', { class: 'closing-button closing-button--primary', type: 'button', dataset: { closingGo: 'contribute' } }, text.accept, svg(ARROW)),
-            h('button', { class: 'closing-link', type: 'button', dataset: { closingGo: 'thanks' } }, text.decline)
+          h('div', { class: 'reflection-heading' },
+            h('h2', { class: 'closing-title reflection-title', id: 'reflectionTitle', tabindex: '-1', 'data-reveal': '' },
+              text.title, ' ', h('span', { class: 'reflection-script' }, text.script)),
+            h('p', { class: 'closing-lead', 'data-reveal': '' }, text.description)
+          ),
+          h('div', { class: 'reflection-call' },
+            h('p', { class: 'reflection-question', 'data-reveal': '' }, text.question),
+            h('div', { class: 'closing-actions', 'data-reveal': '' },
+              h('span', { class: 'reflection-glow' },
+                h('button', { class: 'reflection-start glow-button', type: 'button', dataset: { closingGo: 'contribute' } }, text.accept)),
+              h('button', { class: 'closing-link', type: 'button', dataset: { closingGo: 'thanks' } }, text.decline)
+            )
           )
         )
       );
@@ -93,88 +99,118 @@
       this.bindNavigation(section);
     }
 
-    // Large warm circle with two slow clock hands and faint orbits (time, without numbers).
-    reflectionArt() {
-      const art = document.createElementNS(SVG_NS, 'svg');
-      art.setAttribute('viewBox', '0 0 400 400');
-      art.innerHTML = `
-        <defs>
-          <radialGradient id="closingSun" cx="50%" cy="46%" r="55%">
-            <stop offset="0%" stop-color="#fbe3a2"/>
-            <stop offset="55%" stop-color="#f6c95a"/>
-            <stop offset="100%" stop-color="#f2bb31"/>
-          </radialGradient>
-          <radialGradient id="closingHalo" cx="50%" cy="50%" r="50%">
-            <stop offset="60%" stop-color="#c0dea4" stop-opacity=".18"/>
-            <stop offset="100%" stop-color="#c0dea4" stop-opacity="0"/>
-          </radialGradient>
-        </defs>
-        <circle cx="200" cy="200" r="198" fill="url(#closingHalo)"/>
-        <g class="art-orbits" fill="none" stroke-width="1.2">
-          <ellipse class="art-orbit art-orbit--a" cx="200" cy="200" rx="188" ry="150" stroke="#c0dea4" stroke-opacity=".45"/>
-          <ellipse class="art-orbit art-orbit--b" cx="200" cy="200" rx="170" ry="196" stroke="#47acc2" stroke-opacity=".4"/>
-        </g>
-        <circle class="art-sun" cx="200" cy="200" r="140" fill="url(#closingSun)"/>
-        <circle cx="200" cy="200" r="118" fill="none" stroke="#fff8e6" stroke-opacity=".35" stroke-width="1.5"/>
-        <g class="art-hand art-hand--long"><path d="M200 196 L352 186 Q360 192 352 202 L200 206 Z" fill="#c0dea4"/></g>
-        <g class="art-hand art-hand--short"><path d="M200 195 L80 172 Q70 180 78 190 L200 206 Z" fill="#a8835a"/></g>
-        <circle cx="200" cy="200" r="9" fill="#604427"/>
-        <path class="art-spark" d="M200 182c1.6 10.6 6.8 15.8 17.4 17.4-10.6 1.6-15.8 6.8-17.4 17.4-1.6-10.6-6.8-15.8-17.4-17.4 10.6-1.6 15.8-6.8 17.4-17.4Z" fill="#fffaf0"/>
-        <circle class="art-dot" cx="356" cy="122" r="6" fill="#47acc2"/>`;
-      return art;
+    // The start cover's hourglass (js/intro-hourglass.js), created the first time the reflection
+    // shows. It turns over Config.closing.hourglass.flipAfterSeconds after each appearance. It
+    // almost fills the height, as in the design; its canvas has room on both sides, so its flowers
+    // may go past its column and it is not cut while it turns.
+    showHourglass() {
+      if (this.hourglass !== undefined || !app.IntroHourglass) return;
+      try {
+        this.hourglass = new app.IntroHourglass(this.reflectionHourglass, {
+          cover: this.sections.reflection, overflow: .45, fit: { height: .92, width: 1.1 },
+          flipAfter: app.Config.closing?.hourglass?.flipAfterSeconds ?? 3
+        });
+      } catch (error) {
+        this.hourglass = null;
+        console.warn('No fue posible crear el reloj de arena del cierre', error);
+      }
     }
 
+    // The title with its handwritten line, three paper cards clipped at their corner and
+    // «Continuar al cierre» at the bottom right. Each card shows its title and description and,
+    // when it opens (bindCards), grows, loses its clip and shows its `detail` instead.
     buildContribute() {
       const text = this.content.contribute;
       const section = this.sections.contribute;
-      const cards = text.cards.map(card => h('article', { class: `closing-card closing-card--${card.accent}`, 'data-reveal': 'card', 'aria-labelledby': `card-${card.id}` },
-        h('p', { class: 'closing-card__number' }, card.number),
-        h('span', { class: 'closing-card__icon' }, svg(ICONS[card.icon] || ICONS.sun)),
-        h('p', { class: 'closing-card__category' }, card.category),
-        h('h3', { class: 'closing-card__title', id: `card-${card.id}` }, card.title),
-        h('p', { class: 'closing-card__description' }, card.description),
-        h('div', { class: 'closing-card__impact' },
-          h('p', { class: 'closing-card__impact-label' }, text.impactLabel),
-          h('p', { class: 'closing-card__impact-text' }, card.impact)
+      this.cards = text.cards.map((card, index) => h('article', { class: 'contribute-card', tabindex: '0', 'data-reveal': 'card', 'aria-labelledby': `card-${card.id}` },
+        paperclip(index + 1, 'back'),
+        h('div', { class: 'contribute-sheet' },
+          h('div', { class: 'contribute-summary' },
+            h('h3', { class: 'contribute-card__title', id: `card-${card.id}` }, card.title),
+            h('p', { class: 'contribute-card__text' }, card.description)
+          ),
+          h('div', { class: 'contribute-detail' },
+            h('p', { class: 'contribute-card__title' }, card.detail.title),
+            h('p', { class: 'contribute-card__text' }, card.detail.description),
+            h('ul', { class: 'contribute-card__list' }, card.detail.examples.map(example => h('li', {}, example)))
+          )
         ),
-        h('button', { class: 'closing-card__more', type: 'button', 'aria-haspopup': 'dialog', dataset: { card: card.id } }, card.action, svg(ARROW_UP))
+        paperclip(index + 1, 'front')
       ));
-      this.contributeBody = h('div', { class: 'contribute-body' },
-        h('header', { class: 'contribute-header' },
-          h('h2', { class: 'closing-title contribute-title', id: 'contributeTitle', tabindex: '-1', 'data-reveal': '' }, titleParts(text.title)),
-          h('p', { class: 'closing-lead', 'data-reveal': '' }, text.description)
-        ),
-        h('div', { class: 'closing-cards' }, cards),
-        h('div', { class: 'contribute-footer', 'data-reveal': '' },
-          h('button', { class: 'closing-button closing-button--dark', type: 'button', dataset: { closingGo: 'thanks' } }, text.continueLabel, svg(ARROW))
-        )
-      );
-      section.replaceChildren(this.contributeBody);
+      section.replaceChildren(h('div', { class: 'contribute-body' },
+        h('h2', { class: 'contribute-title', id: 'contributeTitle', tabindex: '-1', 'data-reveal': '' },
+          text.title, ' ', h('span', { class: 'contribute-script' }, text.script)),
+        h('div', { class: 'contribute-cards' }, this.cards),
+        h('button', { class: 'contribute-continue', type: 'button', 'data-reveal': 'after', dataset: { closingGo: 'thanks' } }, text.continueLabel)
+      ));
       section.setAttribute('aria-labelledby', 'contributeTitle');
-      section.addEventListener('click', event => {
-        const button = event.target.closest('[data-card]');
-        if (button) this.openModal(button.dataset.card, button);
-      });
+      this.bindCards(section);
       this.bindNavigation(section);
     }
 
+    // A card opens on mouse hover, on keyboard focus or with a tap (a second tap, or a tap
+    // elsewhere, closes it). Only one is open at a time.
+    bindCards(section) {
+      section.addEventListener('pointerdown', event => {
+        this.pointerType = event.pointerType;
+        if (event.pointerType === 'touch' && !event.target.closest('.contribute-card')) this.closeCards();
+      });
+      this.cards.forEach(card => {
+        card.addEventListener('pointerenter', event => { if (event.pointerType !== 'touch') this.setCard(card, true); });
+        card.addEventListener('pointerleave', event => {
+          if (event.pointerType !== 'touch' && !card.matches(':focus-visible')) this.setCard(card, false);
+        });
+        card.addEventListener('focus', () => { if (card.matches(':focus-visible')) this.setCard(card, true); });
+        card.addEventListener('blur', () => this.setCard(card, false));
+        card.addEventListener('click', () => { if (this.pointerType === 'touch') this.setCard(card, !card.hasAttribute('data-open')); });
+      });
+    }
+
+    // Opens or closes a card. The sheet grows from its centre (wider and as tall as its detail),
+    // animated from its current size (FLIP), so it can be interrupted at any moment; the clip,
+    // the text and the shadow fade in CSS. The section's data-active (1–3) moves the darker
+    // background shape and lightens «Continuar al cierre».
+    setCard(card, open, immediate = false) {
+      if (open === card.hasAttribute('data-open')) return;
+      if (open && this.openCard) this.setCard(this.openCard, false, immediate);
+      const sheet = card.querySelector('.contribute-sheet');
+      const box = () => {
+        const style = getComputedStyle(sheet);
+        return { left: parseFloat(style.left), right: parseFloat(style.right), height: sheet.offsetHeight };
+      };
+      const from = box();
+      gsap.killTweensOf(sheet);
+      gsap.set(sheet, { clearProps: 'left,right,height' });
+      card.toggleAttribute('data-open', open);
+      if (open) this.openCard = card;
+      else if (this.openCard === card) this.openCard = null;
+      const section = this.sections.contribute;
+      if (this.openCard) section.dataset.active = String(this.cards.indexOf(this.openCard) + 1);
+      else delete section.dataset.active;
+      if (immediate || this.reduced) return;
+      gsap.fromTo(sheet, from, { ...box(), duration: .55, ease: 'power3.out', clearProps: 'left,right,height' });
+    }
+
+    closeCards({ immediate = false } = {}) {
+      if (this.openCard) this.setCard(this.openCard, false, immediate);
+    }
+
+    // Everything centred: the eyebrow over a thin line, the title (one line per item), «Ver
+    // formas de aportar» with the two links and, below them, the description.
     buildThanks() {
       const text = this.content.thanks;
       const section = this.sections.thanks;
-      const rings = h('div', { class: 'thanks-rings', 'aria-hidden': 'true' }, [1, 2, 3, 4].map(index => h('span', { class: `thanks-ring thanks-ring--${index}` })));
+      const lines = [].concat(text.title).flatMap((line, index) => [index ? ' ' : null, h('span', { class: 'thanks-line' }, line)]);
       section.replaceChildren(
-        rings,
         h('div', { class: 'thanks-copy' },
-          h('span', { class: 'thanks-badge', 'data-reveal': '' }, svg(STAR)),
-          h('p', { class: 'closing-eyebrow', 'data-reveal': '' }, text.eyebrow),
-          h('h2', { class: 'closing-title thanks-title', id: 'thanksTitle', tabindex: '-1', 'data-reveal': '' }, titleParts(text.title)),
-          h('p', { class: 'closing-lead', 'data-reveal': '' }, text.description),
-          h('div', { class: 'closing-actions thanks-actions', 'data-reveal': '' },
-            h('button', { class: 'closing-button closing-button--dark', type: 'button', dataset: { closingAction: 'repeat' } }, svg(REPEAT), text.repeat),
-            h('button', { class: 'closing-button closing-button--light', type: 'button', dataset: { closingGo: 'contribute' } }, text.contribute),
-            h('button', { class: 'closing-link', type: 'button', dataset: { closingAction: 'exit' } }, text.exit)
+          h('p', { class: 'thanks-eyebrow', 'data-reveal': '' }, text.eyebrow),
+          h('h2', { class: 'thanks-title', id: 'thanksTitle', tabindex: '-1', 'data-reveal': '' }, lines),
+          h('div', { class: 'thanks-actions', 'data-reveal': '' },
+            h('button', { class: 'thanks-contribute', type: 'button', dataset: { closingGo: 'contribute' } }, text.contribute),
+            h('button', { class: 'thanks-link', type: 'button', dataset: { closingAction: 'repeat' } }, text.repeat),
+            h('button', { class: 'thanks-link', type: 'button', dataset: { closingAction: 'exit' } }, text.exit)
           ),
-          h('p', { class: 'thanks-line', 'data-reveal': '' }, text.closingLine)
+          h('p', { class: 'thanks-description', 'data-reveal': '' }, text.description)
         )
       );
       section.setAttribute('aria-labelledby', 'thanksTitle');
@@ -192,62 +228,6 @@
         const target = event.target.closest('[data-closing-go]')?.dataset.closingGo;
         if (target) this.go(target);
       });
-    }
-
-    // One dialog reused by the three cards; its text is filled from the card's `modal`.
-    buildModal() {
-      const title = h('h3', { class: 'closing-modal__title', id: 'closingModalTitle' });
-      const eyebrow = h('p', { class: 'closing-eyebrow closing-modal__eyebrow' });
-      const description = h('p', { class: 'closing-modal__description' });
-      const list = h('ul', { class: 'closing-modal__list' });
-      const close = h('button', { class: 'closing-modal__close', type: 'button', 'aria-label': this.content.closeLabel }, svg(CLOSE));
-      const dialog = h('div', { class: 'closing-modal__dialog', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'closingModalTitle' },
-        close, eyebrow, title, description, list);
-      const backdrop = h('div', { class: 'closing-modal', hidden: true }, dialog);
-      this.sections.contribute.append(backdrop);
-      close.addEventListener('click', () => this.closeModal());
-      backdrop.addEventListener('click', event => { if (event.target === backdrop) this.closeModal(); });
-      this.modal = { backdrop, dialog, title, eyebrow, description, list, close, open: false, trigger: null, tween: null };
-    }
-
-    // ---------- Modals ----------
-    openModal(cardId, trigger) {
-      const card = this.content.contribute.cards.find(item => item.id === cardId);
-      const modal = this.modal;
-      if (!card || this.busy || this.current !== 'contribute') return;
-      modal.eyebrow.textContent = card.modal.eyebrow;
-      modal.title.textContent = card.modal.title;
-      modal.description.textContent = card.modal.description;
-      modal.list.replaceChildren(...card.modal.examples.map(item => h('li', {}, item)));
-      modal.dialog.dataset.accent = card.accent;
-      modal.trigger = trigger || null;
-      modal.open = true;
-      modal.backdrop.hidden = false;
-      this.contributeBody.inert = true;
-      modal.tween?.kill();
-      const quick = this.reduced ? .12 : null;
-      modal.tween = gsap.timeline()
-        .fromTo(modal.backdrop, { autoAlpha: 0 }, { autoAlpha: 1, duration: quick || .35, ease: 'power1.out' })
-        .fromTo(modal.dialog, { autoAlpha: 0, scale: .94, y: 14 }, { autoAlpha: 1, scale: 1, y: 0, duration: quick || .45, ease: 'power3.out' }, '<.05');
-      modal.close.focus({ preventScroll: true });
-    }
-
-    closeModal({ immediate = false } = {}) {
-      const modal = this.modal;
-      if (!modal.open) return;
-      modal.open = false;
-      modal.tween?.kill();
-      const done = () => {
-        modal.backdrop.hidden = true;
-        gsap.set([modal.backdrop, modal.dialog], { clearProps: 'all' });
-        this.contributeBody.inert = false;
-        if (!immediate) modal.trigger?.focus({ preventScroll: true });
-        modal.tween = null;
-      };
-      if (immediate) { done(); return; }
-      modal.tween = gsap.timeline({ onComplete: done })
-        .to(modal.dialog, { autoAlpha: 0, scale: .96, y: 8, duration: this.reduced ? .1 : .28, ease: 'power2.in' })
-        .to(modal.backdrop, { autoAlpha: 0, duration: this.reduced ? .1 : .3, ease: 'power1.in' }, '<.08');
     }
 
     // ---------- Navigation ----------
@@ -272,14 +252,13 @@
     go(name) {
       if (this.busy || name === this.current || !this.sections[name]) return false;
       const from = this.sections[this.current];
-      this.closeModal({ immediate: true });
+      this.closeCards({ immediate: true });
       app.Interface.setLocked(true);
       app.Interface.setPhase(`closing-${name}`);
       this.timeline = gsap.timeline({ onComplete: () => this.settle(name) });
       if (from) {
         this.timeline.to(from, { autoAlpha: 0, y: -14, duration: this.reduced ? .12 : .55, ease: 'power2.in' })
           .call(() => {
-            this.stopAmbient();
             from.hidden = true;
             gsap.set(from, { clearProps: 'opacity,visibility,transform' });
           });
@@ -294,25 +273,26 @@
       section.hidden = false;
       section.scrollTop = 0;
       gsap.set(section.querySelectorAll('[data-reveal]'), { autoAlpha: 0 });
+      if (name === 'reflection') this.showHourglass();
     }
 
-    // Staggered, gentle entrance of the elements marked with data-reveal.
+    // Staggered, gentle entrance of the elements marked with data-reveal: the art, the text, the
+    // cards and, last, what is marked 'after'.
     reveal(name) {
       const section = this.sections[name];
       const timeline = gsap.timeline();
       const items = [...section.querySelectorAll('[data-reveal]')];
       const art = items.filter(item => item.dataset.reveal === 'art');
       const cards = items.filter(item => item.dataset.reveal === 'card');
-      const rest = items.filter(item => !art.includes(item) && !cards.includes(item));
+      const after = items.filter(item => item.dataset.reveal === 'after');
+      const rest = items.filter(item => !item.dataset.reveal);
       const d = this.reduced ? .1 : 1;
       timeline.call(() => gsap.set(section.querySelectorAll('[data-reveal]'), { autoAlpha: 0 }));
-      if (art.length) timeline.fromTo(art, { autoAlpha: 0, scale: .9, rotate: -4 }, { autoAlpha: 1, scale: 1, rotate: 0, duration: 1.4 * d, ease: 'power3.out' }, 0);
-      const header = name === 'contribute' ? rest.slice(0, 2) : rest;
-      timeline.fromTo(header, { autoAlpha: 0, y: 18 }, { autoAlpha: 1, y: 0, duration: .8 * d, stagger: .13 * d, ease: 'power2.out', clearProps: 'transform' }, art.length ? .35 * d : 0);
-      if (cards.length) {
-        timeline.fromTo(cards, { autoAlpha: 0, y: 26 }, { autoAlpha: 1, y: 0, duration: .75 * d, stagger: .14 * d, ease: 'power2.out', clearProps: 'transform' }, '-=.35');
-        timeline.fromTo(rest.slice(2), { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration: .6 * d, ease: 'power2.out', clearProps: 'transform' }, '-=.25');
-      }
+      // The transform is cleared at the end so the hourglass's light blends with the page again.
+      if (art.length) timeline.fromTo(art, { autoAlpha: 0, scale: .9, rotate: -4 }, { autoAlpha: 1, scale: 1, rotate: 0, duration: 1.4 * d, ease: 'power3.out', clearProps: 'transform' }, 0);
+      timeline.fromTo(rest, { autoAlpha: 0, y: 18 }, { autoAlpha: 1, y: 0, duration: .8 * d, stagger: .13 * d, ease: 'power2.out', clearProps: 'transform' }, art.length ? .35 * d : 0);
+      if (cards.length) timeline.fromTo(cards, { autoAlpha: 0, y: 26 }, { autoAlpha: 1, y: 0, duration: .75 * d, stagger: .14 * d, ease: 'power2.out', clearProps: 'transform' }, '-=.35');
+      if (after.length) timeline.fromTo(after, { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration: .6 * d, ease: 'power2.out', clearProps: 'transform' }, '-=.25');
       return timeline;
     }
 
@@ -320,43 +300,14 @@
       this.timeline = null;
       app.Interface.setLocked(false);
       app.Interface.setPhase(`closing-${name}`);
-      this.startAmbient(name);
       this.sections[name].querySelector('h2')?.focus({ preventScroll: true });
-    }
-
-    // Slow, contemplative motion: the hands turn, the orbits drift, the rings breathe.
-    startAmbient(name) {
-      this.stopAmbient();
-      if (this.reduced) return;
-      const section = this.sections[name];
-      if (name === 'reflection') {
-        const q = selector => section.querySelector(selector);
-        this.ambient.push(
-          gsap.to(q('.art-hand--long'), { rotation: 360, svgOrigin: '200 200', duration: 90, ease: 'none', repeat: -1 }),
-          gsap.to(q('.art-hand--short'), { rotation: 360, svgOrigin: '200 200', duration: 240, ease: 'none', repeat: -1 }),
-          gsap.to(q('.art-orbit--a'), { rotation: 360, svgOrigin: '200 200', duration: 120, ease: 'none', repeat: -1 }),
-          gsap.to(q('.art-orbit--b'), { rotation: -360, svgOrigin: '200 200', duration: 160, ease: 'none', repeat: -1 }),
-          gsap.to(q('.art-sun'), { scale: 1.025, svgOrigin: '200 200', duration: 5, ease: 'sine.inOut', yoyo: true, repeat: -1 }),
-          gsap.to(q('.art-spark'), { opacity: .45, duration: 2.6, ease: 'sine.inOut', yoyo: true, repeat: -1 })
-        );
-      } else if (name === 'thanks') {
-        section.querySelectorAll('.thanks-ring').forEach((ring, index) => {
-          this.ambient.push(gsap.to(ring, { scale: 1.035, duration: 6 + index, ease: 'sine.inOut', yoyo: true, repeat: -1, delay: index * .8 }));
-        });
-      }
-    }
-
-    stopAmbient() {
-      this.ambient.forEach(tween => tween.kill());
-      this.ambient = [];
     }
 
     // Hides the whole section and clears every animation (used by «Repetir» and «Salir»).
     reset() {
       this.timeline?.kill();
       this.timeline = null;
-      this.closeModal({ immediate: true });
-      this.stopAmbient();
+      this.closeCards({ immediate: true });
       Object.values(this.sections).forEach(section => {
         gsap.killTweensOf(section);
         gsap.set([section, ...section.querySelectorAll('[data-reveal]')], { clearProps: 'all' });

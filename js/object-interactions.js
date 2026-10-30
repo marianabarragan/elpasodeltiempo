@@ -4,10 +4,14 @@
   const CLICK_TOLERANCE = 6;
   // Height of the crayon tip over the sheet while it follows the mouse without painting.
   const HOVER_LIFT = .32;
+  // Hover state of the rings and the xylophone: how much they rise (scene units), grow and sway.
+  const TOY_HOVER = { lift: .35, grow: 1.08, sway: .05 };
 
   /**
-   * Crayon interaction of the childhood scene.
+   * Crayon and toy interaction of the childhood scene.
    *   rest  → the crayon lies on the floor; hovering makes it hop, a click opens the palette.
+   *           Hovering the rings or the xylophone lifts them a little while the pointer is on
+   *           them; a click on a toy (or the crayon) plays its sound (Config.childhood.audio).
    *   tool  → after choosing a colour the crayon follows the mouse (no button needed) and
    *           paints only while the left button is held down from a point on the sheet.
    *           A press outside the sheet still rotates the camera; a simple click outside the
@@ -29,6 +33,7 @@
       this.glide = null;
       this.hovered = false;
       this.hoverTween = null;
+      this.hoveredToy = null;
       this.lift = { y: HOVER_LIFT };
       this.lastPointer = null;
       this.toolQuaternion = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -.22, -.82));
@@ -36,7 +41,7 @@
       const options = { signal: this.listeners.signal };
       this.canvas.addEventListener('pointerdown', event => this.down(event), options);
       this.canvas.addEventListener('pointermove', event => this.move(event), options);
-      this.canvas.addEventListener('pointerleave', () => this.clearHover(), options);
+      this.canvas.addEventListener('pointerleave', () => { this.clearHover(); this.setToyHover(null); }, options);
       this.canvas.addEventListener('pointerup', event => this.up(event), options);
       this.canvas.addEventListener('pointercancel', event => this.up(event, true), options);
       this.canvas.addEventListener('lostpointercapture', () => this.release(), options);
@@ -83,6 +88,8 @@
       if (event.pointerType === 'touch' || this.mode !== 'rest' || this.releaseTween?.isActive()) return;
       this.ray(event);
       const hit = this.hitsCrayon(this.hovered);
+      // The crayon, when it is in front, wins over a toy behind it.
+      this.setToyHover(hit ? null : this.toyAt());
       if (!hit) { this.clearHover(); return; }
       if (this.hovered || this.hoverTween?.isActive()) return;
       this.hovered = true;
@@ -110,6 +117,64 @@
         onUpdate: () => this.world.invalidate(),
         onComplete: () => { this.hoverTween = null; }
       });
+    }
+
+    // ---------- Toys: hover state and click sound ----------
+    get toys() {
+      const models = this.world.props.metadata?.models || {};
+      return { rings: models.rings, xylophone: models.xylophone };
+    }
+
+    // Toy under the pointer, tested in its resting pose, so the lift of the hover never makes
+    // the pointer slip off it.
+    toyAt() {
+      let found = null, nearest = Infinity;
+      Object.entries(this.toys).forEach(([name, toy]) => {
+        const rest = toy?.userData.rest;
+        if (!rest) return;
+        const pose = [toy.position.clone(), toy.quaternion.clone(), toy.scale.clone()];
+        toy.position.copy(rest.position); toy.quaternion.copy(rest.quaternion); toy.scale.copy(rest.scale);
+        toy.updateMatrixWorld(true);
+        const hit = this.raycaster.intersectObject(toy, true)[0];
+        toy.position.copy(pose[0]); toy.quaternion.copy(pose[1]); toy.scale.copy(pose[2]);
+        toy.updateMatrixWorld(true);
+        if (hit && hit.distance < nearest) { nearest = hit.distance; found = name; }
+      });
+      return found;
+    }
+
+    setToyHover(name) {
+      if (name === this.hoveredToy) return;
+      if (this.hoveredToy) this.poseToy(this.hoveredToy, false);
+      this.hoveredToy = name;
+      if (name) { this.poseToy(name, true); this.world.interact(); }
+    }
+
+    // Hovered: the toy rises a little, grows and sways once. Otherwise it settles back on the
+    // floor (at once with `immediate`).
+    poseToy(name, hovered, immediate = false) {
+      const toy = this.toys[name], rest = toy?.userData.rest;
+      if (!rest) return;
+      gsap.killTweensOf([toy.position, toy.scale, toy.rotation]);
+      const y = rest.position.y + (hovered ? TOY_HOVER.lift : 0), scale = rest.scale.x * (hovered ? TOY_HOVER.grow : 1);
+      const onUpdate = () => this.world.invalidate();
+      if (immediate) {
+        toy.position.y = y; toy.scale.setScalar(scale); toy.rotation.z = 0;
+        onUpdate();
+        return;
+      }
+      const motion = hovered ? { duration: .4, ease: 'back.out(2.2)' } : { duration: .3, ease: 'power2.out' };
+      gsap.to(toy.position, { y, ...motion, onUpdate });
+      gsap.to(toy.scale, { x: scale, y: scale, z: scale, ...motion, onUpdate });
+      if (hovered) {
+        gsap.to(toy.rotation, { keyframes: [{ z: TOY_HOVER.sway, duration: .16 }, { z: -TOY_HOVER.sway * .6, duration: .2 }, { z: 0, duration: .22 }], ease: 'sine.inOut', onUpdate });
+      } else gsap.to(toy.rotation, { z: 0, duration: .2, ease: 'power2.out', onUpdate });
+    }
+
+    // Every toy back in its resting pose at once (scene exit and reset).
+    restToys() {
+      this.hoveredToy = null;
+      Object.keys(this.toys).forEach(name => this.poseToy(name, false, true));
     }
 
     // ---------- Pointer ----------
@@ -142,12 +207,14 @@
       }
       const hit = this.hitsCrayon(this.hovered);
       this.clearHover(!hit);
+      const toy = hit ? null : this.toyAt();
       if (hit) this.press = { kind: 'crayon', x: event.clientX, y: event.clientY };
+      else if (toy) this.press = { kind: 'toy', toy, x: event.clientX, y: event.clientY };
       this.world.cameraRig.startDrag(event.clientX, event.clientY);
     }
 
     move(event) {
-      if (!this.enabled) { this.clearHover(); return; }
+      if (!this.enabled) { this.clearHover(); this.setToyHover(null); return; }
       this.lastPointer = { x: event.clientX, y: event.clientY };
       if (this.pointerId === null) {
         if (this.mode === 'tool') this.followPointer(event);
@@ -169,7 +236,8 @@
       this.release();
       if (cancelled || !press || !this.enabled) return;
       if (Math.hypot(event.clientX - press.x, event.clientY - press.y) > CLICK_TOLERANCE) return;
-      if (press.kind === 'crayon') this.world.openPalette();
+      if (press.kind === 'crayon') { this.world.audio.playEffect('crayon'); this.world.openPalette(); }
+      else if (press.kind === 'toy') this.world.audio.playEffect(press.toy);
       else if (press.kind === 'drop') this.setRest();
     }
 
@@ -230,6 +298,7 @@
     // Picks up the crayon: it glides from where it is to the pointer, then follows it.
     setTool(pointer) {
       this.clearHover(false);
+      this.setToyHover(null);
       this.releaseTween?.kill();
       this.glide?.kill();
       gsap.killTweensOf(this.world.props.crayon.position);
@@ -314,6 +383,7 @@
     reset() {
       this.release();
       this.setRest(true);
+      this.restToys();
     }
 
     dispose() {
@@ -321,6 +391,7 @@
       this.releaseTween?.kill();
       this.hoverTween?.kill();
       this.glide?.kill();
+      Object.values(this.toys).forEach(toy => { if (toy) gsap.killTweensOf([toy.position, toy.scale, toy.rotation]); });
       this.listeners.abort();
     }
   }
