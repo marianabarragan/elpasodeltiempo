@@ -130,9 +130,9 @@ export const AJUSTES = {
     // Al soltarla baja hasta el piso del escenario: segundos mínimos y máximos según la altura.
     bajar: [.28, .6]
   },
-  // Mano virtual que oculta lo virtual detrás de la mano real (oclusion.js). Ya no se usa el sensor de
-  // profundidad del visor (ni se pide en la sesión): la oclusión se limita a las manos y se arma cada cuadro
-  // con las 25 articulaciones de WebXR Hand Input y el radio que el visor da a cada una.
+  // Mano virtual al estilo de los paneles de Meta (oclusion.js): silueta suave sobre lo virtual y contorno
+  // blanco, sin recortar lo virtual alrededor de la mano real. Se arma cada cuadro con las 25 articulaciones de
+  // WebXR Hand Input y el radio que el visor da a cada una. No se usa el sensor de profundidad del visor.
   manos: {
     // Multiplica el radio de cada articulación: menos de 1 ajusta la silueta, más de 1 la engruesa.
     ajuste: 1,
@@ -140,8 +140,15 @@ export const AJUSTES = {
     aplanado: .62,
     // Membrana entre el pulgar y el índice (fracción del radio del pulgar).
     membrana: .55,
-    // Contorno suave que deja ver dónde están los dedos (grosor en m y opacidad; 0 lo apaga).
-    contorno: { grosor: .0015, opacidad: .35 }
+    // Contorno blanco que marca el borde de los dedos (grosor en m y opacidad; 0 lo apaga).
+    contorno: { grosor: .0025, opacidad: .7 },
+    // Silueta de la mano sobre lo virtual (paneles, objetos, superficies): color y opacidad. Sobre la habitación
+    // real no se pinta. Opacidad 0 la apaga.
+    silueta: { color: '#2b2620', opacidad: .42 },
+    // Se detiene en la cara de paneles, tablero y superficie base del escenario: margen (m) alrededor de cada cara,
+    // hundimiento máximo (m) que se corrige (más hondo, la mano queda oculta detrás) y suavizado al soltarse (1/s).
+    // Con la muñeca detrás de un panel (a menos de `detras` m) y dentro de su contorno, la mano no se dibuja.
+    superficie: { margen: .02, max: .12, suavizado: 25, detras: .6 }
   },
   // Sombras de contacto: una mancha suave bajo cada objeto (sin mapas de sombra ni un segundo dibujo de la
   // escena). Se encoge y se aclara cuando el objeto se levanta.
@@ -336,5 +343,5 @@ export const AJUSTES = {
 };
 
 // Capas de dibujo de three.js. `vision`: lo que entra al dibujo aparte que se desenfoca en la vejez
-// (objetos del escenario, luces y la mano virtual que los oculta). La cámara del visor usa la capa 0.
+// (objetos del escenario y luces). La cámara del visor usa la capa 0.
 export const CAPAS = { vision: 3 };

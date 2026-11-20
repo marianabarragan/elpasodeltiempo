@@ -4,6 +4,8 @@ import gsap from 'gsap';
 import { texturaHojas } from './hojas.js';
 
 const temporal = new Vector3(), giro = new Quaternion(), ARRIBA = new Vector3(0, 1, 0);
+// Todos los paneles creados: la mano virtual se detiene en la cara de los que están a la vista (superficies.js).
+export const PANELES = new Set();
 
 /*
  * Crea un panel UIKitML (public/ui) como entidad que responde al rayo y al toque del índice.
@@ -15,6 +17,7 @@ export async function crearPanel(world, assetId, { padre = null, hojas = null } 
   objeto.visible = false;
   objeto.scale.setScalar(.001);
   const panel = { entidad, objeto, visible: false, el: id => objeto.getElementById(id) };
+  PANELES.add(panel);
   if (hojas) texturaHojas(...hojas).then(textura => panel.el('hojas')?.setProperties({ src: textura }));
   return panel;
 }

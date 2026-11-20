@@ -68,7 +68,7 @@ const dentroDe = (objeto, lista) => { for (let o = objeto; o; o = o.parent) if (
  *    imagen con los dos ojos lado a lado, con la pose y la proyección reales de cada ojo; esa imagen pasa por
  *    un filtro gaussiano (dos pasadas horizontales y verticales) y se compone sobre la vista. Mientras la vista
  *    está borrosa del todo, esos objetos no se dibujan nítidos (salen de la capa 0 de la cámara y quedan en
- *    CAPAS.vision). La mano virtual también entra a ese dibujo: recorta la imagen donde está la mano real.
+ *    CAPAS.vision). La mano virtual (silueta y contorno) se dibuja después, encima de esta imagen.
  *    WebXR no deja aplicar un posprocesado convencional (EffectComposer) a la vista estéreo; así se logra el
  *    mismo efecto con un costo acotado: un dibujo pequeño de unas decenas de objetos y una sola pasada de
  *    pantalla completa, que además lleva el velo (B). 'material' es un respaldo sin dibujo aparte.

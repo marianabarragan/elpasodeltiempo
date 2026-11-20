@@ -11,6 +11,7 @@ import { aEscena, aMundo, cabezaLocal, crearEspacio, medirFrente } from './mesa/
 import { crearManos } from './manos.js';
 import { crearOclusion } from './oclusion.js';
 import { crearMovilidad } from './mover-paneles.js';
+import { crearSuperficies } from './superficies.js';
 import { crearSombras } from './escena/sombras.js';
 import { crearManipulacion } from './escena/manipulacion.js';
 import { crearLuces } from './escena/luces.js';
@@ -51,9 +52,15 @@ export async function iniciarExperiencia(world) {
   const sonido = crearSonido(world);
   const transicion = crearTransicion(world);
   const reticula = crearReticula(world);
-  // Postura de las manos (gestos y toma de la crayola) y mano virtual que oculta lo virtual tras la mano real.
+  // Postura de las manos (gestos y toma de la crayola) y mano virtual (silueta y contorno, al estilo de Meta), que
+  // se detiene en la cara de los paneles, del tablero y de la superficie del escenario activo.
   const manos = crearManos(world);
-  const oclusion = crearOclusion(world, manos);
+  const oclusion = crearOclusion(world, manos, {
+    superficies: crearSuperficies({
+      tablero: () => e.tablero?.raiz ?? null,
+      escenario: () => ({ ninez: e.manipNinez, adultez: e.manipAdultez, vejez: e.manipVejez })[e.fase] ?? null
+    })
+  });
   // Paneles de texto con botón de mover (instrucción, confirmación, pregunta inicial y barras de progreso).
   const movilidad = crearMovilidad(world, manos);
   const cabeza = () => world.player.head.getWorldPosition(new THREE.Vector3());
@@ -483,7 +490,7 @@ export async function iniciarExperiencia(world) {
   sistema.alActualizar = dt => {
     avanzarGsap();
     manos.actualizar();
-    oclusion.actualizar();
+    oclusion.actualizar(dt);
     movilidad.actualizar(dt);
     e.sombrasMesa?.actualizar();
     e.reloj?.paso(dt);

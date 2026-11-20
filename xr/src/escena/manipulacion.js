@@ -186,7 +186,7 @@ export function crearManipulacion({ manos, espacio, raiz, area, cabeza, superfic
   }
 
   return {
-    estado, raiz, contorno, pellizcos,
+    estado, raiz, contorno, pellizcos, area, superficie,
     get activo() { return estado.modo !== null; },
     get escalando() { return estado.modo === 'escalar' && !!estado.inicio?.escalando; },
     // Para las pruebas: distancia de un punto al borde de la superficie y si cuenta como borde.
