@@ -12,14 +12,14 @@ const MEDIA_HOJA = { x: 4.1, y: 3.075 }; // medio ancho y medio fondo de la hoja
  * del seguimiento de manos no corte ni inicie trazos. La pintura usa PaintingSystem sin cambios.
  * Mientras pinta, informa al sonido procedural la velocidad de la punta y si va hacia adelante
  * (alejándose del usuario, hacia el borde superior del dibujo) o hacia atrás.
- * Sostenida, su pose la da la mano que la tiene (agarre.js): toma palmar con la punta hacia abajo,
- * con la mano derecha o con la izquierda.
+ * Sostenida, su pose la da la mano que la tiene (agarre.js): toma de escritura como la del lapicero (entre
+ * el pulgar, el índice y el medio, sostenida un poco más arriba de la punta), con la derecha o la izquierda.
  */
 export function crearCrayola({ world, manos, ninez, sonido, alPintar }) {
   const { props, pintura, hoja, crayon, entidades } = ninez;
-  // Toma palmar: la crayola está centrada en su origen y su punta en +X (afinarCrayola en ninez.js).
+  // La crayola está centrada en su origen y su punta en +X (afinarCrayola en ninez.js).
   const agarre = crearAgarre({
-    world, manos, objeto: crayon, perfil: 'palmar', ajustes: AJUSTES.crayola.agarre,
+    world, manos, objeto: crayon, perfil: AJUSTES.crayola.agarre.perfil ?? 'escritura', ajustes: AJUSTES.crayola.agarre,
     medida: { centro: new THREE.Vector3(), eje: new THREE.Vector3(1, 0, 0), lateral: new THREE.Vector3(0, 1, 0), largo: 2 * props.crayonTip.x }
   });
   const estado = { modo: 'reposo', contacto: false, previo: null, filtrado: null, regreso: null, friccion: 0 };

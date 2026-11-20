@@ -8,6 +8,7 @@ import { crearAparatos } from './aparatos.js';
 import { crearHoja } from './hoja.js';
 import { crearTermo } from './termo.js';
 import { crearCalendario } from './calendario.js';
+import { crearBordeSombra, crearSombras } from '../sombras.js';
 
 // Hitos de la adultez, sin orden entre sí; cada uno vale 20 %. 'vaso' es beber café con el termo.
 export const HITOS_ADULTEZ = ['hoja', 'monitor', 'reloj', 'vaso', 'calendario'];
@@ -144,13 +145,10 @@ export function crearAdultez(world, espacio, base, { sonido, hielo, cabeza, mano
   props.group.scale.setScalar(s);
   // La cara inferior del escritorio se apoya en la mesa real.
   props.group.position.set(-centro.x * s, -(props.deskTopY - grosor) * s + .001, -centro.z * s);
-  // La sombra del escritorio cae sobre la mesa real (plano invisible que solo recibe sombra).
-  const sombra = new THREE.Mesh(new THREE.PlaneGeometry(area.ancho * 1.15, area.fondo * 1.15), new THREE.ShadowMaterial({ opacity: .22 }));
-  sombra.rotation.x = -Math.PI / 2;
-  sombra.position.y = .0005;
-  sombra.receiveShadow = true;
-  sombra.name = 'sombra-sobre-la-mesa';
-  escena.add(sombra);
+  // El escritorio se apoya en la mesa real con un borde de sombra suave alrededor (sin mapas de sombra).
+  const bordeSombra = crearBordeSombra(area.ancho, area.fondo);
+  bordeSombra.position.set(((limites.minX + limites.maxX) / 2 - centro.x) * s, .0005, ((limites.minZ + limites.maxZ) / 2 - centro.z) * s);
+  escena.add(bordeSombra);
   const entidadEscena = world.createTransformEntity(escena, { parent: espacio.entidad });
   const entidadProps = world.createTransformEntity(props.group, { parent: entidadEscena });
 
@@ -166,12 +164,12 @@ export function crearAdultez(world, espacio, base, { sonido, hielo, cabeza, mano
     calendario: tocar(models.wallCalendar, 'adultez-calendario')
   };
 
-  // Objetos que se paran sobre el escritorio y se ocultan tras lo real con la profundidad del visor (si la hay).
-  // Quedan fuera el escritorio y la hoja (planos y a ras de la mesa real) y el plano de sombra.
-  const ocluibles = [entidades.lapicero, entidades.vaso, entidades.calendario,
-    ...[models.monitor, models.keyboard, models.clockDigital, models.plant, { root: repisa }]
-      .filter(({ root }) => root.parent === props.group)
-      .map(({ root }) => world.createTransformEntity(root, { parent: entidadProps }))];
+  // Sombras de contacto sobre el escritorio de lo que se apoya en él (no de la repisa ni del calendario, que
+  // están suspendidos, ni de la hoja, que es plana). Las del termo y el lapicero los siguen al tomarlos.
+  const sombras = crearSombras(props.group, { superficie: () => props.deskTopY, metros: () => s * escena.scale.x });
+  [models.plant, models.monitor, models.keyboard, models.clockDigital, models.coffeeThermos, models.pen]
+    .filter(({ root }) => root.parent === props.group)
+    .forEach(({ root }) => sombras.agregar(root));
 
   // Lo sostenido no atraviesa el escritorio: si su punto más bajo queda bajo la cara superior (estando
   // sobre el escritorio), sube lo necesario.
@@ -227,8 +225,10 @@ export function crearAdultez(world, espacio, base, { sonido, hielo, cabeza, mano
   const manoDelTermo = () => (termo.estado.modo === 'envolvente' ? termo.estado.lado : termo.estado.modo ? world.getSystem(GrabSystem)?.getHolderHand(entidades.vaso) : null);
 
   return {
-    escena, props, entidades, ocluibles, hechos, dedos, aparatos, hoja, termo, calendario, estado, paneles, limites, area,
+    escena, props, entidades, sombras, hechos, dedos, aparatos, hoja, termo, calendario, estado, paneles, limites, area,
     get escala() { return escalaActual(); },
+    // Altura de la cara superior del escritorio (m, en el espacio de `escena`): el contorno del escalado va sobre ella.
+    superficie: E.grosor + .001,
     // Un gesto de dos manos es de la hoja (o el termo está en la mano): no se toma el escenario completo.
     get ocupado() { return hoja.manipulando || hoja.reclama() || termo.envuelto; },
     // La frase final espera a que se suelte el lapicero.
@@ -263,6 +263,10 @@ export function crearAdultez(world, espacio, base, { sonido, hielo, cabeza, mano
       hoja.update(dt, activo, [conLapicero, conTermo].filter(Boolean));
       termo.update(dt, activo, [conLapicero].filter(Boolean));
       calendario.update(activo);
+      sombras.actualizar();
+      // El borde de sombra del escritorio aparece con él.
+      const crecido = THREE.MathUtils.clamp(escritorio.root.scale.x / escalas.get(escritorio.root).x, 0, 1);
+      bordeSombra.material.opacity = bordeSombra.userData.opacidad * crecido;
     },
     ocultar() {
       habilitar(false);

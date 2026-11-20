@@ -31,6 +31,8 @@ export function crearTransicion(world) {
 
   return {
     get oscuro() { return cupula.visible && material.opacity > .99; },
+    // Luz de la escena virtual (1 normal, baja al oscurecer): el velo de la vejez se oscurece con ella.
+    get nivelLuz() { return luz.nivel; },
     // Oscurece el entorno y la escena virtual. La cúpula se centra en la cabeza al empezar.
     cubrir() {
       const { oscurecer, luzMinima } = AJUSTES.transicion;

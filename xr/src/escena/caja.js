@@ -125,6 +125,8 @@ export function crearCaja(colores) {
   };
   return {
     grupo, crayolas,
+    // Medidas de la caja (unidades del escenario): la zona de agarre es la parte alta de sus paredes.
+    medidas: { ...MEDIDA },
     // Señalar una crayola la asoma un poco; la elegida queda más arriba que las demás.
     senalar(i, activo, alturas) {
       if (i === elegida) return;

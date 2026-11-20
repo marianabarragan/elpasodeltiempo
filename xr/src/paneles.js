@@ -19,8 +19,10 @@ export async function crearPanel(world, assetId, { padre = null, hojas = null } 
   return panel;
 }
 
-// Ubica el panel en `posicion` (mundo) mirando a `objetivo` solo con giro horizontal.
+// Ubica el panel en `posicion` (mundo) mirando a `objetivo` solo con giro horizontal. Un panel que el usuario
+// ya acomodó con el botón de mover (mover-paneles.js) se queda donde lo dejó.
 export function colocar(panel, posicion, objetivo) {
+  if (panel.movidoPorUsuario) return;
   setWorldPosition(panel.objeto, posicion);
   orientarHacia(panel.objeto, objetivo);
 }
@@ -57,13 +59,14 @@ export function ocultar(panel, { duracion = .3 } = {}) {
 
 // Pulsación de un botón del panel (rayo con pellizco o gatillo, o toque del índice). Se activa al soltar
 // sobre el mismo botón: el evento «click» exige soltar antes de 300 ms y un pellizco pausado lo supera.
+// Con el modo de mover activo (mover-paneles.js) los botones del panel no responden.
 export function alPulsar(panel, id, accion) {
   const elemento = panel.el(id);
   const presionados = new Set();
   elemento?.addEventListener('pointerdown', evento => presionados.add(evento.pointerId));
   elemento?.addEventListener('pointerleave', evento => presionados.delete(evento.pointerId));
   elemento?.addEventListener('pointerup', evento => {
-    if (presionados.delete(evento.pointerId) && panel.visible) accion();
+    if (presionados.delete(evento.pointerId) && panel.visible && !panel.moviendo) accion();
   });
   return elemento;
 }

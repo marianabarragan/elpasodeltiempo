@@ -18,8 +18,10 @@ const ARRIBA = new THREE.Vector3(0, 1, 0);
  */
 export function crearManos(world) {
   const M = AJUSTES.manipulacion;
+  // `radios`: radio de cada articulación (m), del centro a la piel, en el orden de `puntos` (XRFrame.fillJointRadii;
+  // depende del tamaño real de la mano). `conRadios` indica si el visor los entregó en este cuadro.
   const nueva = lado => ({
-    lado, seguida: false, control: false, puntos: new Map(),
+    lado, seguida: false, control: false, puntos: new Map(), radios: new Map(), conRadios: false,
     nudillos: new THREE.Vector3(), dedos: new THREE.Vector3(), palma: new THREE.Vector3(),
     pinza: new THREE.Vector3(), centro: new THREE.Vector3(), abierta: false, bandeja: false, pellizco: false
   });
@@ -30,11 +32,20 @@ export function crearManos(world) {
     return mano.puntos.get(nombre);
   };
 
+  const radios = new Float32Array(25);
+  function leerRadios(mano, adaptador) {
+    const cuadro = world.renderer.xr.getFrame?.();
+    const n = adaptador.jointSpaces.length;
+    mano.conRadios = n <= radios.length && !!cuadro?.fillJointRadii?.(adaptador.jointSpaces, n === radios.length ? radios : radios.subarray(0, n));
+    if (mano.conRadios) adaptador.jointSpaces.forEach((articulacion, i) => mano.radios.set(articulacion.jointName, radios[i]));
+  }
+
   function leerArticulaciones(mano, adaptador, agarre) {
     agarre.updateWorldMatrix(true, false);
     adaptador.jointSpaces.forEach((articulacion, i) => {
       punto(mano, articulacion.jointName).setFromMatrixPosition(matriz.fromArray(adaptador.jointTransforms, i * 16)).applyMatrix4(agarre.matrixWorld);
     });
+    leerRadios(mano, adaptador);
     const p = nombre => mano.puntos.get(nombre);
     const muneca = p('wrist'), indice = p('index-finger-phalanx-proximal'), menique = p('pinky-finger-phalanx-proximal'), medio = p('middle-finger-phalanx-proximal');
     if (!muneca || !indice || !menique || !medio) return false;

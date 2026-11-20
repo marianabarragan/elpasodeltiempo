@@ -1,9 +1,10 @@
 import * as THREE from 'three';
 import gsap from 'gsap';
-import { GrabSystem, Grabbed, OneHandGrabbable, PokeInteractable, RayInteractable } from '@iwsdk/core';
+import { PokeInteractable, RayInteractable } from '@iwsdk/core';
 import { Tocable } from '../componentes.js';
 import { AJUSTES } from '../config.js';
 import { crearCaja } from './caja.js';
+import { crearSombras } from './sombras.js';
 import { cajaLocal } from './adultez/dedos.js';
 
 // Distribución compacta para mesas angostas: juguetes más cerca de la hoja, en unidades originales.
@@ -163,7 +164,7 @@ export function evaluarMesa(base, ancho, fondo) {
  * crayola y caja de crayolas. Todo empieza oculto; revelar() hace crecer el piso desde el centro y luego
  * los objetos. Todo cuelga de `escena` (EscenarioNiñez): manipulacion.js la traslada, gira y escala con
  * las dos manos y cada objeto conserva su lugar sobre el piso. El piso es del escenario, no de la mesa:
- * su recorte acompaña a `escena`. La caja de crayolas se puede tomar por su cuerpo y deslizar sobre el piso.
+ * su recorte acompaña a `escena`. La caja de crayolas se toma por la parte alta de su cuerpo, se lleva y baja al piso.
  */
 export function crearNinez(world, espacio, base, encaje) {
   const app = window.TimeExperience;
@@ -212,19 +213,31 @@ export function crearNinez(world, espacio, base, encaje) {
     planos.forEach((plano, i) => plano.copy(local[i]).applyMatrix4(escena.matrixWorld));
   };
 
-  // Caja de crayolas reubicable: se desliza sobre el piso sin salir de él ni montarse en la hoja, los
-  // juguetes o la crayola. Todo en unidades del escenario (espacio de props.group); la caja no gira.
-  const C = AJUSTES.caja;
-  const yCaja = caja.grupo.position.y;
+  // ---------- Caja de crayolas ----------
+  // Se toma con un pellizco (o con el botón lateral del control) sobre la parte alta de su cuerpo, nunca sobre
+  // las puntas de las crayolas: se alza un poco, sigue a la mano y gira solo alrededor de la vertical. Al soltarla
+  // baja suavemente hasta el piso del escenario en el lugar donde quedó; si queda sobre la hoja, un juguete o la
+  // crayola, se corre lo justo a un lado. Todo en unidades del escenario (espacio de props.group), así funciona
+  // igual con el escenario movido, girado o escalado.
+  const C = AJUSTES.caja, M = caja.medidas;
+  const yCaja = caja.grupo.position.y, giroOriginal = caja.grupo.rotation.y;
   const huella = (objeto, holgura = 0) => {
     const b = cajaLocal(props.group, objeto);
-    return { minX: b.min.x - holgura, maxX: b.max.x + holgura, minZ: b.min.z - holgura, maxZ: b.max.z + holgura };
+    return { minX: b.min.x - holgura, maxX: b.max.x + holgura, minZ: b.min.z - holgura, maxZ: b.max.z + holgura, alto: b.max.y - props.floorY };
   };
   const obstaculos = [cuerpo, rings, xylophone, crayon].map(objeto => huella(objeto, C.holgura));
-  const propia = huella(caja.grupo), inicio = caja.grupo.position;
-  const extension = { x0: propia.minX - inicio.x, x1: propia.maxX - inicio.x, z0: propia.minZ - inicio.z, z1: propia.maxZ - inicio.z };
+  // Caja de la caja de crayolas en su propio espacio (sin giro): su huella se calcula con cualquier giro.
+  const propia = cajaLocal(caja.grupo, caja.grupo);
+  const centroPropio = propia.getCenter(new THREE.Vector3()), mitadPropia = propia.getSize(new THREE.Vector3()).multiplyScalar(.5);
+  const extension = { x0: 0, x1: 0, z0: 0, z1: 0 };
+  function extensionCon(g) {
+    const c = Math.cos(g), sn = Math.sin(g);
+    const cx = centroPropio.x * c + centroPropio.z * sn, cz = -centroPropio.x * sn + centroPropio.z * c;
+    const hx = Math.abs(c) * mitadPropia.x + Math.abs(sn) * mitadPropia.z, hz = Math.abs(sn) * mitadPropia.x + Math.abs(c) * mitadPropia.z;
+    Object.assign(extension, { x0: cx - hx, x1: cx + hx, z0: cz - hz, z1: cz + hz });
+  }
   const piso = { minX: centro.x - medio.x + C.bordePiso, maxX: centro.x + medio.x - C.bordePiso, minZ: centro.z - medio.z + C.bordePiso, maxZ: centro.z + medio.z - C.bordePiso };
-  const ultimaValida = inicio.clone();
+  const ultimaValida = caja.grupo.position.clone();
   const dentroDelPiso = p => {
     p.x = THREE.MathUtils.clamp(p.x, piso.minX - extension.x0, Math.max(piso.minX - extension.x0, piso.maxX - extension.x1));
     p.z = THREE.MathUtils.clamp(p.z, piso.minZ - extension.z0, Math.max(piso.minZ - extension.z0, piso.maxZ - extension.z1));
@@ -235,27 +248,162 @@ export function crearNinez(world, espacio, base, encaje) {
     if (maxX <= o.minX || minX >= o.maxX || maxZ <= o.minZ || minZ >= o.maxZ) return null;
     return [[o.maxX - minX, 'x', 1], [maxX - o.minX, 'x', -1], [o.maxZ - minZ, 'z', 1], [maxZ - o.minZ, 'z', -1]].reduce((a, b) => (b[0] < a[0] ? b : a));
   };
-  function restringirCaja() {
-    // Se lee cada vez: al crear la entidad, IWSDK reemplaza el vector `position` del objeto.
-    const enCaja = caja.grupo.position;
-    enCaja.y = yCaja;
-    dentroDelPiso(enCaja);
+  // Corre `p` lo justo para no montarse en lo que sea más alto que `altura` (unidades sobre el piso) ni salir del
+  // piso, con la huella del giro actual. Devuelve false si no queda lugar libre.
+  function despejar(p, altura = 0) {
+    dentroDelPiso(p);
+    const activos = obstaculos.filter(o => o.alto > altura);
     for (let vuelta = 0; vuelta < 4; vuelta++) {
       let movida = false;
-      for (const o of obstaculos) {
-        const e = empuje(enCaja, o);
+      for (const o of activos) {
+        const e = empuje(p, o);
         if (!e) continue;
-        enCaja[e[1]] += e[0] * e[2];
+        p[e[1]] += e[0] * e[2];
         movida = true;
       }
       if (!movida) break;
-      dentroDelPiso(enCaja);
+      dentroDelPiso(p);
     }
-    // Si no hay lugar libre (encajonada entre el borde y un juguete), vuelve al último lugar válido.
-    if (obstaculos.some(o => empuje(enCaja, o))) enCaja.copy(ultimaValida);
-    else ultimaValida.copy(enCaja);
+    return !activos.some(o => empuje(p, o));
   }
-  const estadoCaja = { sostenida: false, soltadaEn: -Infinity, movimientos: 0 };
+
+  // `retirandose`: mano que acaba de soltar la caja; no elige color hasta alejarse de ella (sus dedos abiertos
+  // pueden rozar las crayolas al retirarse).
+  const estadoCaja = { sostenida: false, bajando: false, lado: null, soltadaEn: -Infinity, movimientos: 0, activa: false, retirandose: null };
+  const agarreCaja = { desfase: new THREE.Vector3(), giroMano: 0, giroCaja: 0, delta: 0, tiempo: 0, perdida: 0 };
+  const previoCaja = { left: false, right: false };
+  const enCaja = new THREE.Vector3(), enGrupo = new THREE.Vector3(), metaCaja = new THREE.Vector3(), direccion = new THREE.Vector3();
+  const inversaGrupo = new THREE.Matrix4(), ARRIBA = new THREE.Vector3(0, 1, 0);
+  const envolver = a => Math.atan2(Math.sin(a), Math.cos(a));
+  const unidadesPorMetro = () => 1 / (s * escena.scale.x);
+  let manosCaja = null, bajada = null;
+
+  // Con la mano: pellizco; con el control: botón lateral.
+  const apretando = lado => {
+    const mano = manosCaja?.[lado];
+    if (!mano) return false;
+    if (mano.seguida) return mano.pellizco;
+    return mano.control && !!world.input?.xr?.gamepads?.[lado]?.getButtonPressed?.('xr-standard-squeeze');
+  };
+  // Un punto (mundo) está en la zona de agarre: sobre la parte alta del cuerpo, entre `zona.desde` de la altura de
+  // las paredes y apenas por encima de su canto (que sube de la pared delantera a la trasera), sin salir más que
+  // `zona.costado` de su huella. Las puntas de las crayolas quedan por encima.
+  function enZona(mundo, conControl = false) {
+    caja.grupo.updateWorldMatrix(true, false);
+    if (caja.grupo.scale.x < .5) return false;
+    caja.grupo.worldToLocal(enCaja.copy(mundo));
+    const metro = unidadesPorMetro(), costado = (conControl ? C.zona.control : C.zona.costado) * metro;
+    const mx = M.ancho / 2 + M.pared, mz = M.fondo / 2 + M.pared;
+    if (Math.abs(enCaja.x) > mx + costado || Math.abs(enCaja.z) > mz + costado) return false;
+    const canto = THREE.MathUtils.lerp(M.alturaFrente, M.alturaAtras, THREE.MathUtils.clamp((mz - enCaja.z) / (2 * mz), 0, 1));
+    return enCaja.y >= canto * C.zona.desde && enCaja.y <= canto + (conControl ? C.zona.control : C.zona.arriba) * metro;
+  }
+  // Giro horizontal de la mano en el espacio del escenario: línea de los nudillos (o el frente del control).
+  function giroDeMano(lado) {
+    const mano = manosCaja[lado];
+    if (mano.seguida) direccion.copy(mano.nudillos);
+    else world.player.gripSpaces[lado].getWorldDirection(direccion);
+    direccion.transformDirection(inversaGrupo);
+    if (direccion.x * direccion.x + direccion.z * direccion.z < .09) return null;
+    return Math.atan2(direccion.x, direccion.z);
+  }
+  const prepararGrupo = () => { props.group.updateWorldMatrix(true, false); inversaGrupo.copy(props.group.matrixWorld).invert(); };
+
+  function tomarCaja(lado) {
+    bajada?.kill();
+    bajada = null;
+    prepararGrupo();
+    const posicion = caja.grupo.position;
+    enGrupo.copy(manosCaja[lado].pinza).applyMatrix4(inversaGrupo);
+    agarreCaja.desfase.copy(posicion).sub(enGrupo);
+    agarreCaja.giroMano = giroDeMano(lado) ?? 0;
+    agarreCaja.giroCaja = caja.grupo.rotation.y;
+    Object.assign(agarreCaja, { delta: 0, tiempo: 0, perdida: 0 });
+    Object.assign(estadoCaja, { sostenida: true, bajando: false, lado });
+    estadoCaja.movimientos += 1;
+  }
+
+  // En la mano: sigue a la pinza con su desfase inicial (girado con la mano), se alza un poco, gira solo
+  // alrededor de la vertical y no baja del piso ni sale de él; volando bajo, no se monta en los juguetes.
+  function seguirCaja(dt) {
+    const lado = estadoCaja.lado;
+    prepararGrupo();
+    const giroMano = giroDeMano(lado);
+    if (giroMano !== null) agarreCaja.delta = envolver(giroMano - agarreCaja.giroMano);
+    const giro = THREE.MathUtils.clamp(agarreCaja.giroCaja + agarreCaja.delta, giroOriginal - C.giroMax, giroOriginal + C.giroMax);
+    enGrupo.copy(manosCaja[lado].pinza).applyMatrix4(inversaGrupo);
+    metaCaja.copy(agarreCaja.desfase).applyAxisAngle(ARRIBA, giro - agarreCaja.giroCaja).add(enGrupo);
+    agarreCaja.tiempo += dt;
+    const alzado = C.alzar * unidadesPorMetro() * THREE.MathUtils.smoothstep(agarreCaja.tiempo, 0, .2);
+    metaCaja.y = Math.max(metaCaja.y, yCaja + alzado);
+    extensionCon(giro);
+    despejar(metaCaja, metaCaja.y - yCaja);
+    const alfa = 1 - Math.exp(-C.suavizado * dt), posicion = caja.grupo.position;
+    posicion.lerp(metaCaja, alfa);
+    caja.grupo.rotation.y += envolver(giro - caja.grupo.rotation.y) * alfa;
+  }
+
+  // Al soltarla baja hasta el piso del escenario (su altura en el espacio del escenario, no una altura fija del
+  // mundo), en el lugar donde quedó, derecha y con el giro que le dio el usuario.
+  function soltarCaja() {
+    if (!estadoCaja.sostenida) return;
+    estadoCaja.retirandose = { lado: estadoCaja.lado, desde: performance.now() };
+    Object.assign(estadoCaja, { sostenida: false, bajando: true, lado: null });
+    const posicion = caja.grupo.position, desde = posicion.clone(), destino = posicion.clone();
+    destino.y = yCaja;
+    extensionCon(caja.grupo.rotation.y);
+    if (!despejar(destino, 0)) destino.copy(ultimaValida);
+    const altura = Math.max(0, desde.y - yCaja) / unidadesPorMetro();
+    const duracion = THREE.MathUtils.clamp(C.bajar[0] + altura * 2, C.bajar[0], C.bajar[1]), t = { v: 0 };
+    bajada = gsap.to(t, {
+      v: 1, duration: duracion, ease: 'sine.inOut',
+      onUpdate: () => caja.grupo.position.lerpVectors(desde, destino, t.v),
+      onComplete: () => {
+        bajada = null;
+        estadoCaja.bajando = false;
+        estadoCaja.soltadaEn = performance.now();
+        ultimaValida.copy(destino);
+      }
+    });
+  }
+
+  // Cada cuadro: `activa` (escenario en uso), `manoLibre(lado)` (esa mano no sostiene otra cosa).
+  const cajaPropiaLocal = propia.clone();
+  function revisarRetiro() {
+    const r = estadoCaja.retirandose;
+    if (!r) return;
+    const mano = manosCaja[r.lado];
+    let lejos = !(mano.seguida || mano.control) || performance.now() - r.desde > C.retirarMax * 1000;
+    if (!lejos) {
+      caja.grupo.updateWorldMatrix(true, false);
+      lejos = cajaPropiaLocal.distanceToPoint(caja.grupo.worldToLocal(enCaja.copy(mano.pinza))) / unidadesPorMetro() > C.retirar;
+    }
+    if (lejos) estadoCaja.retirandose = null;
+  }
+
+  function actualizarCaja(dt, { manos: lista, activa, manoLibre = () => true }) {
+    manosCaja = lista;
+    if (!lista) return;
+    revisarRetiro();
+    const disponible = activa && estadoCaja.activa;
+    if (estadoCaja.sostenida) {
+      if (!disponible) soltarCaja();
+      else if (apretando(estadoCaja.lado)) agarreCaja.perdida = 0;
+      // El seguimiento de manos puede perder el pellizco un instante sin soltarla.
+      else if ((agarreCaja.perdida += dt) > C.gracia) soltarCaja();
+      if (estadoCaja.sostenida) seguirCaja(dt);
+    }
+    for (const lado of ['left', 'right']) {
+      const ahora = apretando(lado), empieza = ahora && !previoCaja[lado];
+      previoCaja[lado] = ahora;
+      if (!empieza || estadoCaja.sostenida || !disponible || !manoLibre(lado)) continue;
+      if (enZona(lista[lado].pinza, !lista[lado].seguida)) { tomarCaja(lado); break; }
+    }
+  }
+
+  // Sombras de contacto sobre el piso (y sobre la hoja: quedan apenas por encima de ella).
+  const sombras = crearSombras(props.group, { superficie: () => props.floorY, metros: () => s * escena.scale.x });
+  [rings, xylophone, caja.grupo, crayon].forEach(objeto => sombras.agregar(objeto));
 
   // Piezas del rompecabezas: cada instancia guarda su posición y su demora según la distancia al centro.
   // La demora se mide hasta la esquina de la mesa: las piezas de más allá (visibles solo al encoger) llegan al final.
@@ -306,14 +454,9 @@ export function crearNinez(world, espacio, base, encaje) {
   };
   const tocables = [entidades.rings, entidades.xylophone, ...entidades.colores];
   // Elegir un color y mover la caja son gestos distintos: las crayolas responden al toque del índice y al
-  // rayo, nunca al agarre; el cuerpo de la caja responde solo al agarre (pellizco o botón lateral), así un
-  // toque sobre el cartón no la desplaza. Sin trasladar en altura ni girar: se desliza sobre el piso.
-  const habilitarCaja = () => {
-    if (entidadCaja.hasComponent(OneHandGrabbable)) return;
-    entidadCaja.addComponent(OneHandGrabbable, { rotate: false, translate: true });
-    caja.grupo.pointerEventsType = { allow: 'grab' };
-    caja.crayolas.forEach(crayola => { crayola.pointerEventsType = { deny: 'grab' }; });
-  };
+  // rayo, nunca al agarre; la caja se toma solo con un pellizco sobre la parte alta de su cuerpo (actualizarCaja),
+  // así un toque sobre una crayola o el cartón no la desplaza.
+  caja.crayolas.forEach(crayola => { crayola.pointerEventsType = { deny: 'grab' }; });
   const interactuar = activo => {
     tocables.forEach(entidad => {
       for (const Componente of [RayInteractable, PokeInteractable]) {
@@ -321,8 +464,8 @@ export function crearNinez(world, espacio, base, encaje) {
         if (!activo && entidad.hasComponent(Componente)) entidad.removeComponent(Componente);
       }
     });
-    if (activo) habilitarCaja();
-    else if (entidadCaja.hasComponent(Grabbed)) world.getSystem(GrabSystem)?.forceRelease(entidadCaja);
+    estadoCaja.activa = activo;
+    if (!activo) soltarCaja();
   };
 
   // Cada tecla suena por separado: la que toca el dedo o el rayo (o la más cercana al punto, si cae entre dos).
@@ -352,20 +495,17 @@ export function crearNinez(world, espacio, base, encaje) {
   });
 
   const ninez = {
-    escena, props, pintura, hoja, crayon, halo, caja, entidades, estadoCaja,
+    escena, props, pintura, hoja, crayon, halo, caja, entidades, estadoCaja, sombras,
     // Rectángulo del piso (m, en el espacio de `escena`): zona donde las manos toman el escenario.
     area: { ancho: espacio.ancho, fondo: espacio.fondo },
     // Metros por unidad del escenario original, incluida la escala elegida con las manos.
     get escala() { return s * escena.scale.x; },
-    // Mientras se mueve la caja (y un instante después de soltarla) tocar una crayola no elige color.
-    get cajaOcupada() { return estadoCaja.sostenida || performance.now() - estadoCaja.soltadaEn < C.pausaColor * 1000; },
-    // Caja sostenida o soltada (lo avisa el sistema de la experiencia).
-    sostenerCaja(activo) {
-      if (activo === estadoCaja.sostenida) return;
-      estadoCaja.sostenida = activo;
-      if (activo) estadoCaja.movimientos += 1;
-      else { estadoCaja.soltadaEn = performance.now(); restringirCaja(); }
-    },
+    // Altura de la superficie del piso (m, en el espacio de `escena`): el contorno del escalado va sobre ella.
+    superficie: (BASE_PISO + props.floorY) * s,
+    // Mientras se mueve o baja la caja (y un instante después de apoyarla) tocar una crayola no elige color.
+    get cajaOcupada() { return estadoCaja.sostenida || estadoCaja.bajando || !!estadoCaja.retirandose || performance.now() - estadoCaja.soltadaEn < C.pausaColor * 1000; },
+    // Zona de agarre de la caja (para las pruebas) y soltarla desde fuera (al salir del escenario).
+    zonaCaja: enZona, soltarCaja,
     color: app.Config.colors.green,
     alTocarTecla: null,
     // Todo oculto y encogido, listo para la transformación.
@@ -403,11 +543,12 @@ export function crearNinez(world, espacio, base, encaje) {
       halo.halo.visible = halo.value > .005;
     },
     interactuar,
-    update() {
+    // `contexto`: { manos, activa (escenario en uso), manoLibre(lado) }.
+    update(dt = 0, contexto = {}) {
       if (!escena.visible) return;
       actualizarRecorte();
-      // La caja en la mano sigue al agarre solo sobre el piso: misma altura, dentro de él y sin montarse en nada.
-      if (estadoCaja.sostenida || entidadCaja.hasComponent(Grabbed)) restringirCaja();
+      actualizarCaja(dt, contexto);
+      sombras.actualizar();
     },
     ocultar() { interactuar(false); escena.visible = false; }
   };

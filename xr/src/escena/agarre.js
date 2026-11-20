@@ -12,9 +12,9 @@ const ABAJO = new THREE.Vector3(0, -1, 0);
  * que la toma es la misma para diestros y zurdos sin reflejar el modelo; cada mano admite un ajuste fino.
  *
  * Perfiles:
- * - 'palmar' (crayola): cruza el puño entre el pulgar y el índice; la punta sale por el lado del meñique, abajo.
- * - 'escritura' (lapicero): pasa por la pinza y se apoya en el pliegue entre pulgar e índice; la punta sale
- *   delante de la pinza, inclinada hacia el papel.
+ * - 'palmar': cruza el puño entre el pulgar y el índice; la punta sale por el lado del meñique, abajo.
+ * - 'escritura' (lapicero y crayola): pasa por la pinza y se apoya en el pliegue entre pulgar e índice; la punta
+ *   sale delante de la pinza, inclinada hacia el papel. Con `haciaMedio` se apoya además en el dedo medio.
  * - 'envolvente' (termo): el cilindro queda delante de la palma, con su eje a lo largo de los nudillos y la
  *   tapa hacia el lado del pulgar.
  * Con controles (sin articulaciones) se usa el espacio de agarre con una dirección configurable.
@@ -51,6 +51,13 @@ export function crearAgarre({ world, manos, objeto, perfil, ajustes: A, medida }
       eje.subVectors(mano.pinza, pliegue);
       if (eje.lengthSq() < 1e-8) eje.copy(mano.dedos);
       sujecion.copy(mano.pinza);
+      // Toma de trípode (opcional): el punto de sujeción se acerca a la falange distal del medio, donde descansa,
+      // como mucho `medioMax` m (si el medio está doblado lejos, la crayola no se aparta de la pinza).
+      const medio = A.haciaMedio ? mano.puntos.get('middle-finger-phalanx-distal') : null;
+      if (medio) {
+        const distancia = medio.distanceTo(sujecion);
+        if (distancia > 1e-6) sujecion.lerp(medio, Math.min(A.haciaMedio, (A.medioMax ?? .006) / distancia));
+      }
       lateral.copy(mano.palma);
     } else {
       eje.copy(mano.nudillos).negate();

@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import gsap from 'gsap';
 import { Tocable } from '../../componentes.js';
 import { AJUSTES } from '../../config.js';
-import { crearDesenfoque } from './desenfoque.js';
+import { crearVision } from './vision.js';
+import { crearSombras } from '../sombras.js';
 import { crearGafas } from './gafas.js';
 import { crearMacetas } from './macetas.js';
 import { crearRegadera } from './regadera.js';
@@ -58,11 +59,12 @@ export function prepararVejez() {
 
 /*
  * Escenario 3 sobre la mesa real: mesa pintada recortada a su rectángulo, marco de ventana detrás, gafas,
- * dos macetas, regadera, radio y taza. Empieza borroso (visión doble clara; solo las gafas se ven nítidas);
+ * dos macetas, regadera, radio y taza. Empieza con la vista deteriorada (vision.js: lo virtual desenfocado y un velo sobre toda la vista; solo
+ * las gafas se ven nítidas);
  * el orden es el de OldAgeActivity (gafas → maceta → regadera → riego), y la taza (con el índice) o la radio
  * (girando una perilla) suman el hito «extra» después de las gafas.
  */
-export async function crearVejez(world, espacio, base, { sonido, cabeza, manos, alHito, alTerminarActividad }) {
+export async function crearVejez(world, espacio, base, { sonido, cabeza, manos, luz, alHito, alTerminarActividad }) {
   const app = window.TimeExperience, cfg = app.Config.oldage, A = AJUSTES.vejez;
   const { props, caja: composicion, mantel, ventanaTam: tamVentana, grosorMesa: grosor, perillas } = base;
   const { glasses, pot1, pot2, wateringCan } = props.interactive, { radio, coffeeCup, window: ventana } = props.curiosities;
@@ -141,12 +143,15 @@ export async function crearVejez(world, espacio, base, { sonido, cabeza, manos, 
     regadera: tocar(wateringCan, 'vejez-regadera'), radio: tocar(radio, 'vejez-radio'), taza: tocar(coffeeCup, 'vejez-taza')
   };
 
-  // Halos de la web (OldAgeScene.buildGlows) y visión borrosa (todo menos las gafas; sin copias de la mesa).
+  // Halos de la web (OldAgeScene.buildGlows).
   const halos = app.OldAgeScene.prototype.buildGlows.call({ props });
-  const desenfoque = crearDesenfoque(props.group, { excluir: [glasses.root], sinCopias: [table.root] });
-  // Objetos que se paran sobre la mesa (y el marco de la ventana) para la oclusión por profundidad, si la hay.
-  // La mesa pintada queda fuera: es plana y está a ras de la mesa real.
-  const ocluibles = [...Object.values(entidades), ...(ventana.root.parent === props.group ? [world.createTransformEntity(ventana.root, { parent: entidadProps })] : [])];
+  // Sombras de contacto sobre la mesa pintada (no del marco de la ventana, que está suspendido).
+  props.group.updateMatrixWorld(true);
+  const techoMesa = Math.max(props.tableTopY, cubierta ? cajaLocal(props.group, cubierta).max.y : props.tableTopY);
+  const sombras = crearSombras(props.group, { superficie: () => techoMesa, metros: () => s * escena.scale.x });
+  [glasses, pot1, pot2, wateringCan, radio, coffeeCup].forEach(({ root }) => sombras.agregar(root));
+  // Visión deteriorada (desenfoque de lo virtual y velo sobre toda la vista); las gafas quedan nítidas.
+  const vision = crearVision(world, { raiz: escena, excluir: [glasses.root], luz });
 
   const actividad = new app.OldAgeActivity({ wateringSeconds: cfg.wateringSeconds });
   const hechos = new Set();
@@ -173,8 +178,8 @@ export async function crearVejez(world, espacio, base, { sonido, cabeza, manos, 
     // Con las gafas puestas la vista se aclara; después se habilitan las macetas, la taza y la radio.
     alPonerse: () => {
       actividad.set('wearing');
-      gsap.to(desenfoque, {
-        nivel: 0, duration: A.desenfoque.aclarar, ease: 'sine.inOut',
+      gsap.to(vision, {
+        nivel: 0, duration: A.vision.aclarar, ease: 'sine.inOut',
         onComplete: () => { hito('glasses'); actividad.set('choose'); macetas.habilitar(); cotidianos.habilitar(); radioPerillas.habilitar(); }
       });
     }
@@ -204,9 +209,11 @@ export async function crearVejez(world, espacio, base, { sonido, cabeza, manos, 
   const opacidades = new Map([...materialesMesa].map(m => [m, m.opacity]));
 
   const vejez = {
-    escena, props, actividad, gafas, macetas, regadera, cotidianos, radio: radioPerillas, desenfoque, indicador, entidades, ocluibles, hechos, paneles,
+    escena, props, actividad, gafas, macetas, regadera, cotidianos, radio: radioPerillas, vision, sombras, indicador, entidades, hechos, paneles,
     // Metros por unidad del escenario, incluida la escala que el usuario le dé con las manos.
     get escala() { return s * escena.scale.x; },
+    // Altura de la mesa pintada (m, en el espacio de `escena`): el contorno del escalado va sobre ella.
+    superficie: (techoMesa - props.tableTopY) * s + .001,
     // Área de la mesa pintada (m, en el espacio de `escena`): zona donde las manos toman el escenario.
     area,
     get completa() { return actividad.complete; },
@@ -219,7 +226,7 @@ export async function crearVejez(world, espacio, base, { sonido, cabeza, manos, 
       'vejez-taza': { senalar: activo => cotidianos.senalar('vejez-taza', activo), presionar: () => cotidianos.presionar('vejez-taza') }
     },
     preparar() {
-      desenfoque.nivel = gafas.estado.modo === 'puestas' ? 0 : 1;
+      vision.nivel = gafas.estado.modo === 'puestas' ? 0 : 1;
       objetos.forEach(({ root }) => root.scale.copy(escalas.get(root)).multiplyScalar(.0001));
       materialesMesa.forEach(m => { m.opacity = 0; });
       actualizarRecorte();
@@ -242,7 +249,7 @@ export async function crearVejez(world, espacio, base, { sonido, cabeza, manos, 
       if (!escena.visible) return;
       tiempo += dt;
       actualizarRecorte();
-      desenfoque.update(dt);
+      sombras.actualizar();
       gafas.update(dt);
       macetas.update();
       regadera.update(dt);
@@ -258,6 +265,7 @@ export async function crearVejez(world, espacio, base, { sonido, cabeza, manos, 
       regadera.detener();
       indicador.ocultar();
       escena.visible = false;
+      vision.actualizar(0, false);
     }
   };
   return vejez;

@@ -24,6 +24,8 @@ export class SistemaExperiencia extends createSystem({
     this.queries.senalados.subscribe('qualify', avisar('senalar', true));
     this.queries.senalados.subscribe('disqualify', avisar('senalar', false));
     this.queries.presionados.subscribe('qualify', avisar('presionar', true));
+    // Al soltar la pulsación (rayo o toque): las crayolas de la caja eligen su color al soltar.
+    this.queries.presionados.subscribe('disqualify', avisar('soltar', true));
     this.queries.sostenidos.subscribe('qualify', avisar('sostener', true));
     this.queries.sostenidos.subscribe('disqualify', avisar('sostener', false));
   }

@@ -70,24 +70,33 @@ export const AJUSTES = {
     espera: .2, gracia: .3,
     // Cambio mínimo de separación entre los pellizcos antes de escalar.
     zonaMuerta: .05,
+    // Escalar solo desde los bordes: cada pellizco debe empezar a menos de `bordeDentro` m hacia adentro o
+    // `bordeFuera` m hacia afuera del contorno de la superficie base, y entre `bordeAbajo` y `bordeArriba` m de
+    // su altura. Mientras dura, el gesto sigue aunque las manos se alejen del borde.
+    bordeDentro: .06, bordeFuera: .09, bordeAbajo: -.1, bordeArriba: .12,
+    // Contorno punteado que aparece con una mano cerca del borde: color del diseño, trazo, hueco y grosor (m),
+    // margen extra para que se apague (evita parpadeos) y rapidez del fundido (1/s).
+    contorno: { color: '#fa5200', trazo: .03, hueco: .007, grosor: .005, histeresis: .03, fundido: 9 },
     // Suavizado del movimiento (1/s; más alto sigue a las manos más de cerca).
     suavizado: 16
   },
   // Crayola principal: estiramiento del cuerpo y de la punta, y grosor (proporción del modelo original).
   crayola: {
     cuerpo: 1.42, punta: .62, grosor: .33,
-    // Toma palmar (la de las referencias): la crayola cruza el puño entre el pulgar y el índice y la punta
-    // sale por el lado del meñique, hacia abajo. Igual para las dos manos porque se calcula con las
-    // articulaciones de la mano que la sostiene; cada mano admite su propio ajuste.
+    // Toma de escritura, la misma del lapicero de la adultez (perfil 'escritura' de agarre.js): la crayola pasa
+    // entre las yemas del pulgar y el índice, se apoya en el pliegue entre ellos y en el dedo medio, y la punta
+    // sale delante, inclinada hacia la hoja. Igual para las dos manos porque se calcula con las articulaciones
+    // de la mano que la sostiene; cada mano admite su propio ajuste.
     agarre: {
-      // Fracción del largo, desde el extremo trasero, donde la sostienen el pulgar y el índice.
-      sujecion: .32,
-      // Cuánto se mete la crayola desde la pinza hacia el centro de la palma (0 en la pinza, 1 en la palma).
-      haciaPalma: .3,
-      // Inclinación de la punta hacia la muñeca (rad) respecto de la línea de los nudillos.
-      haciaMuneca: .35,
-      // Peso de la vertical: con la mano de lado la punta ya baja; con la palma hacia abajo se inclina hacia abajo.
-      haciaAbajo: .7,
+      perfil: 'escritura',
+      // Fracción del largo, desde el extremo trasero, donde la sostienen el pulgar y el índice: un poco más
+      // arriba de la punta (~3 cm de crayola asoman delante de los dedos).
+      sujecion: .76,
+      // Peso de la vertical en la dirección de la punta (más alto, más inclinada hacia la hoja).
+      haciaAbajo: .35,
+      // Cuánto se acerca el punto de sujeción a la falange distal del dedo medio (0 en la pinza), como mucho
+      // `medioMax` m: con el medio doblado lejos, la crayola sigue entre el pulgar y el índice.
+      haciaMedio: .2, medioMax: .006,
       // Ajuste fino por mano: desplazamiento en metros (x hacia el meñique, y hacia el dorso, z hacia los dedos).
       izquierda: { desplazamiento: [0, 0, 0] },
       derecha: { desplazamiento: [0, 0, 0] },
@@ -108,17 +117,52 @@ export const AJUSTES = {
     senalada: .16, elegida: .32,
     // Al moverla: holgura (unidades) con la hoja, los juguetes y la crayola, y con el borde del piso.
     holgura: .2, bordePiso: .3,
-    // Segundos tras soltarla en que tocar una crayola no elige color (la mano se está retirando).
-    pausaColor: .35
+    // Segundos tras soltarla en que tocar una crayola no elige color (la mano se está retirando). Además, la
+    // mano que la soltó no elige color hasta alejarse `retirar` m de la caja (o pasados `retirarMax` s).
+    pausaColor: .35, retirar: .06, retirarMax: 2,
+    // Agarre por la parte alta del cuerpo (pellizco con la mano, botón lateral con el control): el pellizco debe
+    // quedar entre `desde` (fracción de la altura de las paredes) y `arriba` m sobre su canto, y a menos de
+    // `costado` m fuera de su huella. Las puntas de las crayolas quedan por encima de esa zona.
+    zona: { desde: .4, arriba: .012, costado: .015, control: .03 },
+    // En la mano: se alza `alzar` m al tomarla, sigue a la mano con este suavizado (1/s), gira solo alrededor
+    // de la vertical hasta `giroMax` rad de su orientación original, y un pellizco puede perderse `gracia` s.
+    alzar: .012, suavizado: 22, giroMax: .9, gracia: .12,
+    // Al soltarla baja hasta el piso del escenario: segundos mínimos y máximos según la altura.
+    bajar: [.28, .6]
   },
-  // Oclusión de las manos reales y de los objetos virtuales.
-  oclusion: {
-    // Profundidad real del visor (WebXR Depth Sensing con DepthSensingSystem de IWSDK), si el navegador la
-    // entrega. Sin ella queda la máscara de las manos articuladas.
-    profundidad: true,
-    // Un objeto virtual se oculta solo si lo real queda más de `tolerancia` m delante de él (del todo a
-    // `tolerancia + fundido`): así la base de lo que se apoya en la mesa no se borra con el ruido del sensor.
-    tolerancia: .02, fundido: .03
+  // Mano virtual que oculta lo virtual detrás de la mano real (oclusion.js). Ya no se usa el sensor de
+  // profundidad del visor (ni se pide en la sesión): la oclusión se limita a las manos y se arma cada cuadro
+  // con las 25 articulaciones de WebXR Hand Input y el radio que el visor da a cada una.
+  manos: {
+    // Multiplica el radio de cada articulación: menos de 1 ajusta la silueta, más de 1 la engruesa.
+    ajuste: 1,
+    // La palma es más ancha que gruesa: su grosor es esta fracción del radio de sus articulaciones.
+    aplanado: .62,
+    // Membrana entre el pulgar y el índice (fracción del radio del pulgar).
+    membrana: .55,
+    // Contorno suave que deja ver dónde están los dedos (grosor en m y opacidad; 0 lo apaga).
+    contorno: { grosor: .0015, opacidad: .35 }
+  },
+  // Sombras de contacto: una mancha suave bajo cada objeto (sin mapas de sombra ni un segundo dibujo de la
+  // escena). Se encoge y se aclara cuando el objeto se levanta.
+  sombras: {
+    opacidad: .4, color: '#24170e',
+    // Cuánto excede la mancha la huella del objeto, y altura (m) a la que ya no se ve.
+    extension: 1.45, alturaMax: .22,
+    // Separación (m) entre la mancha y la superficie, para que no parpadee.
+    elevacion: .0015
+  },
+  // Paneles de texto que el usuario puede mover con el botón de mover (círculo bajo el panel).
+  paneles: {
+    // Diámetro del botón y separación entre el borde inferior del panel y el botón (m).
+    diametro: .046, separacion: .013,
+    // Un pellizco a menos de `alcance` m del botón lo pulsa; con el modo de mover activo, un pellizco a
+    // menos de `alcancePanel` m del panel lo toma. El modo se apaga solo tras `espera` s sin moverlo.
+    alcance: .035, alcancePanel: .05, espera: 8,
+    // Desplazamiento (m) por debajo del cual soltar cuenta como pulsar (activar el modo) y no como mover.
+    pulsar: .012,
+    // Suavizado del movimiento (1/s).
+    suavizado: 22
   },
   pintura: {
     // La punta pinta al acercarse a menos de `contacto` y deja de pintar al alejarse más de `separacion`.
@@ -230,14 +274,23 @@ export const AJUSTES = {
     // Barra de progreso y frase final por encima del marco de la ventana (m sobre su borde superior).
     paneles: { barra: .17, frase: .08, delante: .05 },
     aparecer: { mesa: 1.1, objetos: .55, intervalo: .12 },
-    desenfoque: {
-      // Copias desplazadas de cada objeto (visión doble), su separación máxima (m) y su opacidad. Antes eran
-      // dos copias a menos de 1 cm, casi transparentes, y parecía un error: ahora la visión doble es clara.
-      copias: 3, separacion: .02, opacidad: .42,
-      // Detalle de las texturas que se pierde (sesgo de mip) y velo claro sobre los colores.
-      sesgo: 8, velo: .5,
-      // Segundos que tarda la vista en aclararse, después de la animación de ponerse las gafas.
-      aclarar: 1.6
+    // Visión deteriorada al entrar (escena/vejez/vision.js). Todo menos las gafas.
+    vision: {
+      // 'posproceso': los objetos del escenario se dibujan aparte a baja resolución, se desenfocan y se
+      // componen sobre la vista (un desenfoque real de lo virtual). 'material': respaldo más simple, sin
+      // dibujo aparte (texturas sin detalle y colores apagados). Cambiar aquí si el visor tuviera problemas.
+      modo: 'posproceso',
+      // Resolución del dibujo aparte respecto de la del visor, paso del filtro (en píxeles de ese dibujo; más de
+      // ~1,2 deja bandas) y pasadas: más pasadas desenfocan más (cada una es un dibujo pequeño, barato).
+      resolucion: .2, radio: 1, pasadas: 4,
+      // Capa translúcida de «vista nublada» sobre todo (lo virtual y el entorno real del passthrough):
+      // color y opacidad inicial. No desenfoca la cámara del visor: es un velo superpuesto.
+      velo: { color: '#ece7dc', opacidad: .6 },
+      // Respaldo 'material': detalle de las texturas que se pierde (sesgo de mip) y velo sobre los colores.
+      sesgo: 8, apagado: .5,
+      // Segundos que tarda la vista en aclararse, después de la animación de ponerse las gafas. En el último
+      // tramo (`fundido` del nivel) la imagen desenfocada cede su lugar a los objetos nítidos.
+      aclarar: 1.6, fundido: .3
     },
     gafas: {
       // Distancia (m) entre el pellizco y un extremo de la montura para sujetarla.
@@ -281,3 +334,7 @@ export const AJUSTES = {
     velocidadMin: .008, velocidadMax: .14
   }
 };
+
+// Capas de dibujo de three.js. `vision`: lo que entra al dibujo aparte que se desenfoca en la vejez
+// (objetos del escenario, luces y la mano virtual que los oculta). La cámara del visor usa la capa 0.
+export const CAPAS = { vision: 3 };
