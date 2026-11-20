@@ -197,6 +197,16 @@ export function crearTermo({ world, manos, termo, entidad, hielo, sonido, cabeza
     },
     // Centro del cuerpo del termo en el mundo (pruebas).
     centroMundo: () => { root.updateWorldMatrix(true, false); return root.localToWorld(centro.clone()); },
-    medidas: () => ({ ...cilindro(), centro: centro.clone() })
+    medidas: () => ({ ...cilindro(), centro: centro.clone() }),
+    // En la mano (cualquier modo de agarre) y su cilindro en el mundo: la mano dibujada lo rodea en vez de atravesarlo.
+    get sostenido() { return !!estado.modo; },
+    cilindroMundo(destino = {}) {
+      const { radio, alto } = cilindro();
+      destino.centro = (destino.centro ?? new THREE.Vector3()).copy(base).addScaledVector(eje, alto / 2);
+      destino.eje = (destino.eje ?? new THREE.Vector3()).copy(eje);
+      destino.radio = radio;
+      destino.mitad = alto / 2;
+      return destino;
+    }
   };
 }

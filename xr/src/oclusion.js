@@ -47,9 +47,10 @@ const SIN_CONTORNO = new Set(['wrist']);
  *   superficies): sobre la habitación real no se pinta y se ve la mano tal cual. Lo virtual nunca se recorta
  *   alrededor de la mano (ya no hay «máscara» que deje ver el passthrough a través de un panel u objeto).
  * - Un contorno blanco que marca el borde de los dedos, también sobre la habitación.
- * - Cuando la mano se hunde en la cara de un panel, del tablero o de la superficie base del escenario (piso con su
- *   hoja, escritorio, mesa pintada), la mano dibujada se detiene en esa cara en vez de atravesarla, como al
- *   pulsar un botón en Meta. Solo cambia el dibujo: el rayo, el toque y los agarres siguen a la mano real.
+ * - Cuando la mano se hunde en la cara de un panel, del tablero, de la superficie base del escenario (piso con su
+ *   hoja, escritorio, mesa pintada) o en un objeto 3D (monitor, juguetes, macetas…), la mano dibujada se detiene
+ *   en su superficie en vez de atravesarla, como al pulsar un botón en Meta. Lo que se sostiene envolviéndolo (el
+ *   termo) lo rodean los dedos dibujados. Solo cambia el dibujo: el rayo, el toque y los agarres siguen a la mano real.
  *
  * La mano se arma cada cuadro con las 25 articulaciones de WebXR Hand Input y el radio que el visor mide en
  * cada una (XRFrame.fillJointRadii): una esfera por articulación y un cilindro por hueso, con la palma aplanada
@@ -116,8 +117,9 @@ export function crearOclusion(world, manos, { superficies = () => [] } = {}) {
   const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), eje = new THREE.Vector3();
   const x = new THREE.Vector3(), z = new THREE.Vector3(), d = new THREE.Vector3(), p = new THREE.Vector3(), q = new THREE.Vector3();
   const relativo = new THREE.Vector3(), matriz = new THREE.Matrix4(), CERO = new THREE.Matrix4().makeScale(0, 0, 0);
+  const NULO = new THREE.Vector3(), segunda = new THREE.Vector3(), extra = new THREE.Vector3();
   const puntos = new Map(ARTICULACIONES.map(nombre => [nombre, new THREE.Vector3()]));
-  const estado = { manos: 0, conRadios: false, apoyadas: 0, ocultas: 0 };
+  const estado = { manos: 0, conRadios: false, apoyadas: 0, ocultas: 0, rodeadas: 0, envolturas: 0 };
 
   function radio(mano, nombre, escalaMano) {
     const medido = mano.conRadios ? mano.radios.get(nombre) : 0;
@@ -143,26 +145,31 @@ export function crearOclusion(world, manos, { superficies = () => [] } = {}) {
   }
 
   /*
-   * Cuánto se hunde la mano en la superficie más comprometida: para cada cara (rectángulo con su normal), si la
-   * muñeca está de su lado de adelante y alguna articulación (con su radio) queda detrás de la cara, dentro de su
-   * contorno y a menos de `superficie.max`, la mano dibujada retrocede lo necesario a lo largo de la normal.
+   * Cuánto se hunde la mano en lo que tiene delante, con la mano desplazada `desplazamiento` (m):
+   * - Caras (paneles, tablero, superficie base): si la muñeca está de su lado de adelante y alguna articulación
+   *   (con su radio) queda detrás de la cara, dentro de su contorno y a menos de `superficie.max`, la corrección
+   *   es retroceder a lo largo de su normal.
+   * - Cuerpos 3D (una caja orientada por malla): si alguna articulación queda dentro de la caja y la muñeca está
+   *   fuera, la corrección es salir por la cara de la caja que la muñeca tiene delante y que pide menos recorrido.
+   * Se queda con la corrección mayor. Devuelve 'oculta' si la mano entera está detrás de un panel (el panel la
+   * tapa: no se dibuja), 'apoyada' si hay corrección, o null.
    */
-  // Devuelve 'oculta' si la mano entera está detrás de un panel (el panel la tapa: no se dibuja), 'apoyada' si
-  // se corrige su hundimiento, o null.
-  function hundimiento(mano, escalaMano, destino) {
+  const punto = new THREE.Vector3(), muneca = new THREE.Vector3(), t = [0, 0, 0];
+  function hundimiento(mano, escalaMano, desplazamiento, destino, conPaneles) {
     destino.set(0, 0, 0);
-    const S = cfg.superficie, muneca = mano.puntos.get('wrist');
+    const S = cfg.superficie;
+    muneca.copy(mano.puntos.get('wrist')).add(desplazamiento);
     let mayor = 0;
     for (const s of superficies()) {
       const frente = relativo.subVectors(muneca, s.centro).dot(s.normal);
       if (frente < -S.margen) {
         // Detrás de un panel y dentro de su contorno: el panel la tapa (los paneles no escriben profundidad).
-        if (s.tapa && frente > -S.detras && Math.abs(relativo.dot(s.u)) <= s.mu + S.margen && Math.abs(relativo.dot(s.v)) <= s.mv + S.margen) return 'oculta';
+        if (conPaneles && s.tapa && frente > -S.detras && Math.abs(relativo.dot(s.u)) <= s.mu + S.margen && Math.abs(relativo.dot(s.v)) <= s.mv + S.margen) return 'oculta';
         continue;
       }
       let dentro = 0;
       for (const nombre of ARTICULACIONES) {
-        relativo.subVectors(mano.puntos.get(nombre), s.centro);
+        relativo.subVectors(punto.copy(mano.puntos.get(nombre)).add(desplazamiento), s.centro);
         const r = radio(mano, nombre, escalaMano), adelante = relativo.dot(s.normal) - r;
         if (adelante >= 0 || adelante < -S.max) continue;
         if (Math.abs(relativo.dot(s.u)) > s.mu + S.margen || Math.abs(relativo.dot(s.v)) > s.mv + S.margen) continue;
@@ -170,7 +177,61 @@ export function crearOclusion(world, manos, { superficies = () => [] } = {}) {
       }
       if (dentro > mayor) { mayor = dentro; destino.copy(s.normal).multiplyScalar(dentro); }
     }
+    // Cuerpos 3D cercanos a la mano.
+    const caras = [0, 0, 0, 0, 0, 0];
+    for (const c of superficies.cajas?.(muneca, S.alcance) ?? []) {
+      // Caras de la caja que la muñeca tiene delante (por fuera); si está dentro de la caja, no se corrige.
+      relativo.subVectors(muneca, c.centro);
+      let permitidas = 0;
+      for (let i = 0; i < 3; i++) {
+        const t = relativo.dot(c.ejes[i]);
+        caras[2 * i] = t > c.mitad[i] ? 0 : -1;
+        caras[2 * i + 1] = t < -c.mitad[i] ? 0 : -1;
+        if (caras[2 * i] === 0) permitidas++;
+        if (caras[2 * i + 1] === 0) permitidas++;
+      }
+      if (!permitidas) continue;
+      let alguna = false;
+      for (const nombre of ARTICULACIONES) {
+        relativo.subVectors(punto.copy(mano.puntos.get(nombre)).add(desplazamiento), c.centro);
+        const r = radio(mano, nombre, escalaMano);
+        const t0 = relativo.dot(c.ejes[0]), t1 = relativo.dot(c.ejes[1]), t2 = relativo.dot(c.ejes[2]);
+        if (Math.abs(t0) > c.mitad[0] + r || Math.abs(t1) > c.mitad[1] + r || Math.abs(t2) > c.mitad[2] + r) continue;
+        alguna = true;
+        t[0] = t0; t[1] = t1; t[2] = t2;
+        for (let i = 0; i < 3; i++) {
+          if (caras[2 * i] >= 0) caras[2 * i] = Math.max(caras[2 * i], c.mitad[i] + r - t[i]);
+          if (caras[2 * i + 1] >= 0) caras[2 * i + 1] = Math.max(caras[2 * i + 1], c.mitad[i] + r + t[i]);
+        }
+      }
+      if (!alguna) continue;
+      let mejor = -1, recorrido = Infinity;
+      for (let k = 0; k < 6; k++) if (caras[k] > 0 && caras[k] < recorrido) { recorrido = caras[k]; mejor = k; }
+      if (mejor < 0 || recorrido > S.max || recorrido <= mayor) continue;
+      mayor = recorrido;
+      destino.copy(c.ejes[mejor >> 1]).multiplyScalar(mejor % 2 ? -recorrido : recorrido);
+    }
     return mayor > 0 ? 'apoyada' : null;
+  }
+
+  // Lo que se sostiene envolviéndolo (el termo): las articulaciones que quedan dentro de su cilindro salen hacia
+  // su superficie, así los dedos dibujados lo rodean (el pulgar por fuera) en vez de atravesarlo.
+  const radial = new THREE.Vector3();
+  function rodear(mano, escalaMano) {
+    for (const cil of superficies.envolturas?.() ?? []) {
+      for (const nombre of ARTICULACIONES) {
+        const p = puntos.get(nombre), r = radio(mano, nombre, escalaMano);
+        relativo.subVectors(p, cil.centro);
+        const a = relativo.dot(cil.eje);
+        if (Math.abs(a) > cil.mitad + r) continue;
+        radial.copy(relativo).addScaledVector(cil.eje, -a);
+        const d = radial.length(), minimo = cil.radio + r;
+        if (d >= minimo) continue;
+        if (d < 1e-5) radial.copy(mano.palma).addScaledVector(cil.eje, -mano.palma.dot(cil.eje));
+        p.addScaledVector(radial.normalize(), minimo - Math.max(d, 0));
+        estado.rodeadas += 1;
+      }
+    }
   }
 
   function armar(lado, dt) {
@@ -180,11 +241,14 @@ export function crearOclusion(world, manos, { superficies = () => [] } = {}) {
     if (!seguida) { m.apoyo.set(0, 0, 0); return false; }
     const escalaMano = mano.puntos.get('wrist').distanceTo(mano.puntos.get('middle-finger-phalanx-proximal')) / MANO_TIPICA;
     // Detenida en la superficie: la corrección crece de inmediato (no se ve hundida) y se suelta con suavidad.
-    const caso = hundimiento(mano, escalaMano, m.objetivo);
+    const caso = hundimiento(mano, escalaMano, NULO, m.objetivo, true);
     if (caso === 'oculta') { m.todas.forEach(malla => { malla.visible = false; }); m.apoyo.set(0, 0, 0); estado.ocultas += 1; return true; }
+    // Segunda pasada con la mano ya corregida: que al salir de un cuerpo no quede metida en otro.
+    if (caso && hundimiento(mano, escalaMano, segunda.copy(m.objetivo), extra, false)) m.objetivo.add(extra);
     if (m.objetivo.lengthSq() >= m.apoyo.lengthSq()) m.apoyo.copy(m.objetivo);
     else m.apoyo.lerp(m.objetivo, 1 - Math.exp(-cfg.superficie.suavizado * dt));
     ARTICULACIONES.forEach(nombre => puntos.get(nombre).copy(mano.puntos.get(nombre)).add(m.apoyo));
+    rodear(mano, escalaMano);
     const grosor = cfg.contorno.grosor;
     // Articulaciones: esferas (aplanadas en la palma, con el grosor según su normal).
     ARTICULACIONES.forEach((nombre, i) => {
@@ -241,11 +305,13 @@ export function crearOclusion(world, manos, { superficies = () => [] } = {}) {
   }
 
   return {
-    estado, grupo, modelos,
+    estado, grupo, modelos, superficies,
     actualizar(dt = 0) {
       apagarManoGenerica();
       estado.apoyadas = 0;
       estado.ocultas = 0;
+      estado.rodeadas = 0;
+      estado.envolturas = superficies.envolturas?.().length ?? 0;
       estado.manos = LADOS.filter(lado => armar(lado, dt)).length;
       estado.conRadios = LADOS.some(lado => manos[lado].seguida && manos[lado].conRadios);
     }

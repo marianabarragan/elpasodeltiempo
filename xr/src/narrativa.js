@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { GrabSystem, VisibilityState } from '@iwsdk/core';
+import { GrabSystem, Grabbed, VisibilityState } from '@iwsdk/core';
 import { AJUSTES } from './config.js';
 import { ADULTHOOD_FINAL_PHRASE, TEXTOS } from './textos.js';
 import { SistemaExperiencia } from './sistema.js';
@@ -27,8 +27,6 @@ import { crearAdultez, prepararAdultez, progresoAdultez } from './escena/adultez
 import { crearSonido } from './sonido.js';
 
 const ETAPAS = ['childhood', 'adulthood', 'oldage'];
-// Medidas (m) de la barra de progreso (public/ui/progreso.uikitml) para ubicar su botón de mover.
-const BARRA = { alto: .044, ancho: .48 };
 const limitar = THREE.MathUtils.clamp;
 // Acceso de desarrollo a un escenario sin completar los anteriores: solo con `npm run dev` y la dirección
 // terminada en ?escena=adultez (segunda foto) o ?escena=vejez (tercera foto), esa foto aparece
@@ -58,13 +56,40 @@ export async function iniciarExperiencia(world) {
   const oclusion = crearOclusion(world, manos, {
     superficies: crearSuperficies({
       tablero: () => e.tablero?.raiz ?? null,
-      escenario: () => ({ ninez: e.manipNinez, adultez: e.manipAdultez, vejez: e.manipVejez })[e.fase] ?? null
+      escenario: () => ({ ninez: e.manipNinez, adultez: e.manipAdultez, vejez: e.manipVejez })[e.fase] ?? null,
+      cuerpos: () => cuerposActivos(),
+      // El termo en la mano: los dedos dibujados lo rodean.
+      envolturas: () => (e.fase === 'adultez' && e.adultez?.termo.sostenido ? [e.adultez.termo.cilindroMundo(cilindroTermo)] : [])
     })
   });
-  // Paneles de texto con botón de mover (instrucción, confirmación, pregunta inicial y barras de progreso).
+  const cilindroTermo = {};
+  // Paneles de texto con botón de mover (instrucción, confirmación y pregunta inicial). Las barras de progreso no se
+  // mueven solas: acompañan a su escenario cuando se traslada.
   const movilidad = crearMovilidad(world, manos);
   const cabeza = () => world.player.head.getWorldPosition(new THREE.Vector3());
   const e = { fase: 'entrada', bloqueado: false, candidata: null, completo: false };
+  // Objetos 3D del escenario activo que la mano dibujada no atraviesa; lo que está en la mano no cuenta (`libre`).
+  const enLaMano = entidad => !!entidad?.hasComponent?.(Grabbed);
+  function cuerposActivos() {
+    if (e.fase === 'ninez' && e.ninez) {
+      const n = e.ninez, m = n.props.metadata.models;
+      return [{ objeto: m.rings }, { objeto: m.xylophone }, { objeto: n.caja.grupo, libre: !n.estadoCaja.sostenida },
+        { objeto: n.crayon, libre: ['reposo', 'lista'].includes(e.crayola?.estado.modo) }];
+    }
+    if (e.fase === 'adultez' && e.adultez) {
+      const a = e.adultez, m = a.props.models;
+      return [{ objeto: m.monitor.root }, { objeto: m.keyboard.root }, { objeto: m.clockDigital.root }, { objeto: m.plant.root }, { objeto: m.wallCalendar.root },
+        { objeto: m.coffeeThermos.root, libre: !a.termo.sostenido }, { objeto: m.pen.root, libre: !a.hoja.estado.sostenido }];
+    }
+    if (e.fase === 'vejez' && e.vejez) {
+      const v = e.vejez, i = v.props.interactive, c = v.props.curiosities;
+      return [{ objeto: i.glasses.root, libre: v.gafas.estado.modo === 'mesa' }, { objeto: i.pot1.root, libre: !enLaMano(v.entidades.pot1) },
+        { objeto: i.pot2.root, libre: !enLaMano(v.entidades.pot2) }, { objeto: i.wateringCan.root, libre: !enLaMano(v.entidades.regadera) },
+        { objeto: c.radio.root, libre: !v.radio.girando }, { objeto: c.coffeeCup.root }, { objeto: c.window.root }];
+    }
+    if (e.fase === 'introduccion' && e.reloj) return [{ objeto: e.reloj.soporte, libre: !enLaMano(e.reloj.entidad) }];
+    return [];
+  }
   // Alguna mano sostiene un objeto del escenario (crayola, caja, lapicero, vaso, maceta, regadera…) o un
   // extremo de las gafas de la vejez (que se toman con su propio pellizco a dos manos): entonces el gesto
   // de dos manos no toma el escenario completo.
@@ -248,7 +273,6 @@ export async function iniciarExperiencia(world) {
       crearProgreso(world, espacio, { sonido, alCompletar: completarNinez }),
       crearFinal(world, espacio, { alContinuar: volverAlTablero })
     ]);
-    movilidad.registrar(e.progreso.panel, BARRA);
     e.crayola = crearCrayola({ world, manos, ninez, sonido, alPintar: revisarFiguras });
     // Traslado, giro y escala del escenario completo con las dos manos.
     e.manipNinez = crearManipulacion({ manos, espacio, raiz: ninez.escena, area: ninez.area, superficie: ninez.superficie, cabeza });
@@ -366,7 +390,6 @@ export async function iniciarExperiencia(world) {
       // Frase en panel flotante con el color de .adulthood-message en la web; el texto es ADULTHOOD_FINAL_PHRASE.
       crearFinal(world, espacio, { alContinuar: salirDeAdultez, texto: ADULTHOOD_FINAL_PHRASE, colorTexto: '#4a3520', tarjeta: { maxWidth: 58 } })
     ]);
-    movilidad.registrar(e.progresoAdultez.panel, BARRA);
     e.adultez = crearAdultez(world, espacio, base, {
       sonido: sonido.adultez, hielo: sonido.hielo, cabeza, manos, alHito: paso => { e.progresoAdultez.marcar(paso); revisarFinAdultez(); }
     });
@@ -444,7 +467,6 @@ export async function iniciarExperiencia(world) {
         tarjeta: { backgroundColor: '#fffbef', borderWidth: .2, borderColor: '#fadd87', maxWidth: 64 }
       })
     ]);
-    movilidad.registrar(e.progresoVejez.panel, BARRA);
     e.vejez = await crearVejez(world, espacio, base, {
       sonido: sonido.vejez, cabeza, manos, luz: () => transicion.nivelLuz, alHito: paso => e.progresoVejez.marcar(paso), alTerminarActividad: revisarFinVejez
     });
@@ -490,7 +512,6 @@ export async function iniciarExperiencia(world) {
   sistema.alActualizar = dt => {
     avanzarGsap();
     manos.actualizar();
-    oclusion.actualizar(dt);
     movilidad.actualizar(dt);
     e.sombrasMesa?.actualizar();
     e.reloj?.paso(dt);
@@ -521,7 +542,10 @@ export async function iniciarExperiencia(world) {
       // El halo invita a tomar la crayola cuando ya tiene color y espera en la espuma.
       e.ninez.actualizarHalo(performance.now() / 1000, dt, enEscena && e.crayola.estado.modo === 'lista');
     }
-    // Al final, con todo en su lugar: la visión deteriorada de la vejez dibuja su imagen desenfocada.
+    // Al final, con todo en su lugar (IWSDK devuelve lo agarrado a su pose inicial al empezar el cuadro y los agarres
+    // lo llevan a la mano después): la mano dibujada, que rodea o no atraviesa los objetos donde quedaron.
+    oclusion.actualizar(dt);
+    // Y la visión deteriorada de la vejez dibuja su imagen desenfocada.
     e.vejez?.vision.actualizar(dt, e.vejez.escena.visible);
   };
 

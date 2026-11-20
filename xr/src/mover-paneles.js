@@ -38,8 +38,8 @@ function texturaBoton(fondo, flechas) {
 }
 
 /*
- * Paneles de texto que el usuario puede reubicar (instrucción, confirmación de la superficie, pregunta inicial
- * y barras de progreso). Cada uno lleva debajo, centrado, el botón de mover del diseño (círculo blanco con
+ * Paneles de texto que el usuario puede reubicar (instrucción, confirmación de la superficie y pregunta
+ * inicial). Cada uno lleva debajo, centrado, el botón de mover del diseño (círculo blanco con
  * flechas). Las frases finales y la flecha de continuar no lo llevan.
  *
  * - Pulsar el botón (rayo con pellizco o gatillo, toque con la yema del índice o pellizco junto a él) activa el
