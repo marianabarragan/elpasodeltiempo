@@ -2,31 +2,17 @@
   'use strict';
   const app = window.TimeExperience = window.TimeExperience || {};
 
-  // Mandatory palette of scenario 3. Every prop color is this set or a tone of it.
+  // Todos los objetos usan la paleta de la vejez o sus variantes.
   const PALETTE = Object.freeze({
     butter: '#fadd87', lime: '#cee24c', clay: '#cc7d44', sage: '#cee59d',
     plum: '#5a323a', olive: '#5c5832', sky: '#b7c7ed'
   });
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // MODELOS .GLB (Blender), cargados por js/oldage-models.js
-  // Cada prop es un par { root, visual }:
-  //   root   → colocación (pivote en el centro de la base). Lo mueve la escena.
-  //   visual → contenido gráfico: el modelo de Blender, en el lugar y del tamaño que tiene en
-  //            la escena exportada, solo apoyado sobre la mesa. Si un modelo no carga, ese
-  //            objeto usa su versión provisional. Hover, brillo y animaciones solo usan
-  //            root/visual y estos anclajes, nunca las mallas internas:
-  //   glasses-temple-left / glasses-temple-right  → varillas (se despliegan al ponérselas)
-  //   watering-can-spout                         → boquilla (origen de las gotas)
-  //   plantN-sway, y cada hoja con userData.leaf = true → respuesta al riego
-  //   radio-antenna                              → gira en la interacción oculta de la radio
-  //   coffee-cup-body                            → la taza, que gira sobre su plato
-  // Las mallas transparentes de las lentes llevan userData.lens = true (sin contorno de brillo).
-  // ─────────────────────────────────────────────────────────────────────────────
+  // Usa modelos de Blender o sustitutos; las animaciones actúan sobre root/visual y sus anclajes.
   const MODEL_SLOTS = app.OldAgeModels?.SOURCES || Object.freeze({});
 
   const TABLE_TOP = 3.2;
-  // Front centre of the table where the chosen pot is placed (on the woven placemat).
+  // Centro delantero de la mesa donde se coloca la maceta elegida.
   const CENTER = Object.freeze({ x: .1, z: 1.75 });
   const tone = (hex, amount, toward = '#000000') => new THREE.Color(hex).lerp(new THREE.Color(toward), amount);
   const css = (hex, amount, toward) => tone(hex, amount, toward).getStyle();
@@ -53,7 +39,7 @@
       textures.add(texture);
       return texture;
     }
-    // Soft painted washes and brush grain on a neutral base, so material colors keep the palette.
+    // Añade pinceladas neutras para conservar la paleta del material.
     const painted = canvasTexture(128, 128, (ctx, w, h) => {
       ctx.fillStyle = '#fffdf7'; ctx.fillRect(0, 0, w, h);
       for (let i = 0; i < 26; i++) {
@@ -99,7 +85,7 @@
       shape.quadraticCurveTo(x, y, x + radius, y);
       return shape;
     }
-    // Box rounded in the top view (XZ), height along +Y, centred on its origin.
+    // Caja redondeada en XZ, centrada y con altura en +Y.
     function softBox(width, height, depth, radius = .12) {
       const bevel = Math.min(.04, height * .2);
       const geometry = new THREE.ExtrudeGeometry(roundedRectangle(width - bevel * 2, depth - bevel * 2, radius), {
@@ -109,7 +95,7 @@
       geometry.translate(0, -height / 2 + bevel, 0);
       return geometry;
     }
-    // Box rounded in the front view (XY), depth along Z, centred on its origin.
+    // Caja redondeada en XY, centrada y con profundidad en Z.
     function frontBox(width, height, depth, radius = .2) {
       const bevel = Math.min(.05, depth * .2);
       const geometry = new THREE.ExtrudeGeometry(roundedRectangle(width - bevel * 2, height - bevel * 2, radius), {
@@ -118,7 +104,7 @@
       geometry.translate(0, 0, -depth / 2 + bevel);
       return geometry;
     }
-    // Five-petal daisy drawn as flat discs (watering-can decal, cup motif).
+    // Margarita de cinco pétalos para decorar regadera y taza.
     function daisy(parent, radius, petalColor, heartColor) {
       const flower = new THREE.Group();
       parent.add(flower);
@@ -147,7 +133,7 @@
       models[name] = { root, visual };
       return models[name];
     }
-    // Rest an assembled model on a surface using its real bounds, never guessed pivots.
+    // Apoya el modelo en la superficie según sus límites reales.
     function settle(root, x, z, rotationY = 0, surfaceY = TABLE_TOP, clearance = .002) {
       root.position.set(x, 0, z);
       root.rotation.y = rotationY;
@@ -157,14 +143,11 @@
       root.updateMatrixWorld(true);
     }
 
-    // ---------- Blender models (js/oldage-models.js) ----------
-    // They come in the composition of the exported scene, whose table top is at `fileTop`:
-    // `lift` takes them to this table. Each one keeps the place, size and shape it has there.
+    // Conserva la composición exportada y ajusta su altura mediante lift.
     const blender = app.OldAgeModels?.status === 'ready' ? app.OldAgeModels.create() : {};
     const lift = TABLE_TOP - (blender.fileTop ?? 0);
     const fromFile = new Set();
-    // The model goes into `visual` with the prop's root on the centre of its base, then rests
-    // on the table. Returns how much it moved down or up to rest there.
+    // Centra el pivote de apoyo y devuelve el desplazamiento necesario para apoyar el modelo.
     function useModel(target, object, clearance) {
       object.position.y += lift;
       object.updateMatrixWorld(true);
@@ -189,7 +172,7 @@
       });
       return low;
     }
-    // A model placed straight in the room (wall, window), at the file's height over the table.
+    // Coloca paredes y ventanas según su altura original respecto a la mesa.
     function roomModel(object, name) {
       object.name = name;
       object.position.y += lift;
@@ -197,11 +180,11 @@
       return object;
     }
 
-    // ---------- Room: floral wallpaper and window with greenery ----------
+    // Habitación con pared floral y ventana hacia la vegetación.
     const room = prop('room');
     const wallpaper = canvasTexture(256, 256, (ctx, w, h) => {
       ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h);
-      // Small vine-and-bud motif, low contrast (tinted by the material color).
+      // Motivo tenue de enredadera teñido por el material.
       const motif = (x, y, flip) => {
         ctx.strokeStyle = 'rgba(92,88,50,.32)'; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + 10 * flip, y - 12, x, y - 26); ctx.stroke();
@@ -222,8 +205,7 @@
     }, [9, 5]);
     const floor = mesh(new THREE.PlaneGeometry(46, 40), material(tone(PALETTE.plum, .3, PALETTE.clay)), room.visual);
     floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, 9); floor.name = 'floor';
-    // The Blender wall hangs from the middle of its bottom front edge, so OldAgeScene.fitWall()
-    // can enlarge it uniformly when a very wide or tall screen sees past its edges.
+    // Escala la pared desde su borde inferior para cubrir la vista.
     let wallFit = null;
     if (blender.wall) {
       const wall = blender.wall;
@@ -240,11 +222,10 @@
       backWall.position.set(0, 13, -5.4); backWall.name = 'back-wall';
     }
 
-    // Window, upper left, with sunlit leaves outside: frame and view from Blender…
+    // Centra el pivote de la ventana para ampliarla desde su centro.
+    const roomWindow = prop('window', room.visual);
     if (blender.windowFrame || blender.windowView) {
-      // In the file the window stands in front of the wall, over the table. It slides back onto
-      // the wall along the camera's line of sight, so the resting view still shows it exactly
-      // where it was composed.
+      // Desliza la ventana hasta la pared siguiendo la mirada para conservar la composición.
       const parts = [];
       if (blender.windowFrame) parts.push(roomModel(blender.windowFrame, 'window-frame'));
       if (blender.windowView) parts.push(roomModel(blender.windowView, 'window-view'));
@@ -253,8 +234,14 @@
       const back = Math.min(...parts.map(part => new THREE.Box3().setFromObject(part, true).min.z));
       const shift = wallFront + .01 - back, slope = Math.tan(app.Config.oldage.camera.elevation);
       parts.forEach(part => { part.position.z += shift; part.position.y += shift * slope; });
+      group.updateMatrixWorld(true);
+      const bounds = new THREE.Box3();
+      parts.forEach(part => bounds.union(new THREE.Box3().setFromObject(part, true)));
+      const windowCenter = room.visual.worldToLocal(bounds.getCenter(new THREE.Vector3()));
+      roomWindow.root.position.copy(windowCenter);
+      parts.forEach(part => { part.position.sub(windowCenter); roomWindow.visual.add(part); });
     } else {
-      // …or the provisional one.
+      // Ventana provisional si no está disponible la de Blender.
       const outside = canvasTexture(256, 192, (ctx, w, h) => {
         const sky = ctx.createLinearGradient(0, 0, 0, h);
         sky.addColorStop(0, css(PALETTE.butter, .3, '#ffffff')); sky.addColorStop(1, PALETTE.sage);
@@ -274,15 +261,15 @@
         }
       });
       const windowGroup = new THREE.Group();
-      windowGroup.position.set(-6.2, TABLE_TOP + 3.3, -5.3);
-      room.visual.add(windowGroup);
+      roomWindow.root.position.set(-6.2, TABLE_TOP + 3.3, -5.3);
+      roomWindow.visual.add(windowGroup);
       const glass = mesh(new THREE.PlaneGeometry(6.6, 4.6), new THREE.MeshBasicMaterial({ map: outside }), windowGroup);
       materials.add(glass.material); glass.castShadow = false;
       const frameMaterial = material(tone(PALETTE.butter, .55, '#ffffff'));
       [[0, 2.45, 7.3, .34], [0, -2.45, 7.3, .34], [-3.45, 0, .34, 5.2], [3.45, 0, .34, 5.2], [0, 0, .26, 4.6]].forEach(([x, y, width, height]) => {
         mesh(new THREE.BoxGeometry(width, height, .26), frameMaterial, windowGroup).position.set(x, y, .12);
       });
-      // Thin mullions: a small grid on each sash.
+      // Travesaños finos sobre cada hoja de la ventana.
       [-1, 1].forEach(side => {
         [-.82, .82].forEach(x => mesh(new THREE.BoxGeometry(.08, 4.6, .12), frameMaterial, windowGroup).position.set(side * 1.65 + x * .5 * side, 0, .08));
         [-1.15, 0, 1.15].forEach(y => mesh(new THREE.BoxGeometry(3.2, .08, .12), frameMaterial, windowGroup).position.set(side * 1.65, y, .08));
@@ -305,10 +292,9 @@
       rod.rotation.z = Math.PI / 2; rod.position.set(0, 3.0, .55);
     }
 
-    // ---------- Table ----------
+    // Mesa.
     const table = prop('table');
-    // The painted table (js/oldage-models.js): its top at TABLE_TOP and the middle of its back
-    // edge where it is in the file; OldAgeScene.fitTable() gives it its uniform scale.
+    // Apoya la mesa pintada en TABLE_TOP y conserva su escala uniforme.
     const paintedTable = blender.table;
     let tableFit = null;
     if (paintedTable) {
@@ -316,7 +302,7 @@
       table.visual.add(paintedTable.object);
       tableFit = paintedTable;
     } else {
-      // Provisional table (wood planks), used while the painted one is not available.
+      // Usa la mesa provisional mientras la pintada no esté disponible.
       const TABLE_BACK = -4.4;
       const woodTexture = canvasTexture(512, 256, (ctx, w, h) => {
         ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h);
@@ -335,9 +321,7 @@
       });
       const wood = material(tone(PALETTE.clay, .05, '#ffffff'), { map: woodTexture });
       const woodDark = material(tone(PALETTE.clay, .38, PALETTE.plum));
-      // Far wider and deeper than any viewport (ultra-wide, short or portrait windows included):
-      // from the wall to beyond the bottom and both sides of the frame, so only the table shows,
-      // never the floor. Its far parts stay off-screen at every camera angle.
+      // Extiende la mesa fuera del encuadre para ocultar el piso en todos los ángulos.
       const TABLE_WIDTH = 100, TABLE_FRONT = 40;
       const top = mesh(softBox(TABLE_WIDTH, .5, TABLE_FRONT - TABLE_BACK, .3), wood, table.visual);
       top.position.set(0, TABLE_TOP - .25, (TABLE_FRONT + TABLE_BACK) / 2); top.name = 'table-top';
@@ -349,9 +333,9 @@
         leg.position.set(x, 0, z);
       });
     }
-    // The floor only runs under the table: looking down past its back edge, the view meets the wall.
+    // El piso queda bajo la mesa para que detrás se vea la pared.
     floor.position.z = (tableFit ? tableFit.back : -4.4) + 20;
-    // Placemat that marks the front centre (where the chosen pot goes, on top of it).
+    // El mantel marca el destino de la maceta elegida.
     const center = new THREE.Vector3(CENTER.x, TABLE_TOP + .05, CENTER.z);
     if (blender.placemat) {
       const placemat = blender.placemat;
@@ -370,12 +354,10 @@
       placematRing.rotation.x = -Math.PI / 2; placematRing.position.set(CENTER.x, TABLE_TOP + .055, CENTER.z);
     }
 
-    // ---------- Glasses, lying on the table (first mandatory interaction) ----------
-    // Canonical pose: lenses facing +Z, bridge at the origin, temples extending to -Z.
+    // Gafas: lentes hacia +Z, puente en el origen y varillas hacia -Z.
     const glasses = prop('glasses');
     if (blender.glasses) {
-      // Pivot on the frame centre with the glasses upright inside `visual`, which keeps the
-      // lean they have lying on the table in the file.
+      // Centra el pivote en la montura y conserva la inclinación de reposo en visual.
       const model = blender.glasses, { lean, center: middle } = model.userData;
       model.position.set(-middle.x, -middle.y, -middle.z);
       const upright = new THREE.Group();
@@ -408,19 +390,17 @@
         arm.position.z = -.75;
         const tip = mesh(new THREE.BoxGeometry(.065, .25, .07), frameDark, temple);
         tip.position.set(0, -.1, -1.48); tip.rotation.x = -.5;
-        // Folded: both temples behind the lenses.
+        // Ambas varillas quedan plegadas detrás de las lentes.
         temple.rotation.y = side < 0 ? -1.42 : 1.38;
         temple.position.z -= side < 0 ? .02 : .1;
       });
       const bridge = mesh(new THREE.TorusGeometry(.12, .05, 4, 6, Math.PI), frameDark, frame);
       bridge.position.y = .12;
-      // Resting on the folded temples and the bottom of the rims, leaning back a little.
+      // Apoya las gafas en las varillas y los aros con una leve inclinación.
       glasses.visual.rotation.set(-.35, 0, 0);
     }
 
-    // ---------- Pots and plants (free choice) ----------
-    // Plant roots live inside their pot's visual (they travel together); each plant has a
-    // `sway` pivot at soil level and leaves marked with userData.leaf for the watering response.
+    // La planta viaja con su maceta y sus hojas se balancean durante el riego.
     function potBody(target, color, rimColor, profile, segments) {
       mesh(lathe(profile, segments), material(color), target.visual).name = `${target.root.name}-body`;
       const top = profile[profile.length - 1];
@@ -447,8 +427,7 @@
       parent.add(pivot);
       return pivot;
     }
-    // Blender pot and its plant: the soil sits just under the rim or the lowest leaf, and each
-    // leaf sways on a pivot at its lowest point.
+    // Sitúa la tierra bajo el borde y hace pivotar cada hoja desde su base.
     function modelPot(target, plantName, model) {
       const body = model.getObjectByName('pot-body'), leaves = model.getObjectByName('plant-leaves');
       const moved = useModel(target, body);
@@ -472,7 +451,7 @@
     }
     const potTop = pot => new THREE.Box3().setFromObject(pot.visual.children[0]).max.y - pot.root.position.y;
 
-    // Pot 1: from Blender, or the provisional dark round pot with a tall, striped snake plant.
+    // Primera maceta: modelo de Blender o sustituto oscuro con sansevieria.
     const pot1 = prop('pot1');
     let plant1, soil1, rim1;
     if (blender.pot1) ({ plant: plant1, soilY: soil1, rimY: rim1 } = modelPot(pot1, 'plant1', blender.pot1));
@@ -492,7 +471,7 @@
       bladeShape.moveTo(-.17, 0); bladeShape.quadraticCurveTo(-.24, 1.15, 0, 2.2); bladeShape.quadraticCurveTo(.24, 1.15, .17, 0);
       const blade = new THREE.ExtrudeGeometry(bladeShape, { depth: .05, bevelEnabled: false, curveSegments: 3 });
       blade.translate(0, 0, -.025);
-      // Planar UVs for the stripes (ExtrudeGeometry UVs are in shape units).
+      // Normaliza las UV planas para dibujar las franjas.
       const bladeUv = blade.attributes.uv, bladePosition = blade.attributes.position;
       for (let i = 0; i < bladeUv.count; i++) bladeUv.setXY(i, bladePosition.getX(i) * 2 + .5, bladePosition.getY(i) / 2.2);
       const bladeColors = [tone(PALETTE.olive, .25, PALETTE.lime), tone(PALETTE.olive, .05, PALETTE.lime), tone(PALETTE.lime, .35, PALETTE.olive)];
@@ -503,13 +482,13 @@
         const height = .75 + random() * .5;
         const leaf = mesh(blade, material(bladeColors[i % bladeColors.length], { map: stripes, side: THREE.DoubleSide }), pivot);
         leaf.scale.set(1, height, 1);
-        // Yellow-green margin: a slightly wider blade just behind.
+        // Una hoja ligeramente más ancha detrás forma el borde verde amarillento.
         const edge = mesh(blade, bladeEdge, pivot);
         edge.scale.set(1.14, height * 1.01, .6); edge.position.z = -.012; edge.castShadow = false;
       }
     }
 
-    // Pot 2: from Blender, or the provisional plum octagonal pot with a broad-leaved plant.
+    // Segunda maceta: modelo de Blender o sustituto octagonal con hojas anchas.
     const pot2 = prop('pot2');
     let plant2, soil2, rim2;
     if (blender.pot2) ({ plant: plant2, soilY: soil2, rimY: rim2 } = modelPot(pot2, 'plant2', blender.pot2));
@@ -540,8 +519,7 @@
     if (!blender.pot1) rim1 = potTop(pot1);
     if (!blender.pot2) rim2 = potTop(pot2);
 
-    // ---------- Watering can (green with a daisy, as in the reference) ----------
-    // Canonical pose: spout pointing to -X. Its tip is the `watering-can-spout` anchor.
+    // Regadera con pico hacia -X y anclaje de gotas en watering-can-spout.
     const wateringCan = prop('wateringCan');
     let spoutTip;
     if (blender.wateringCan) {
@@ -572,9 +550,7 @@
       handle.position.set(.42, 1.3, 0); handle.rotation.z = -.32;
     }
 
-    // ---------- Complementary interactions: radio and coffee cup ----------
-    // From Blender (the antenna, if any, is `radio-antenna`; the cup turns on its saucer as
-    // `coffee-cup-body`), or the provisional ones.
+    // La antena de la radio y el cuerpo de la taza tienen pivotes propios.
     const radio = prop('radio');
     let antenna = null;
     if (blender.radio) {
@@ -624,7 +600,7 @@
       coffee.rotation.x = -Math.PI / 2; coffee.position.y = .55;
       const cupHandle = mesh(new THREE.TorusGeometry(.15, .045, 4, 8, Math.PI * 1.3), china, cup);
       cupHandle.position.set(.5, .38, 0); cupHandle.rotation.z = -Math.PI * .62;
-      // Painted rose motif on the cup's side.
+      // Motivo de rosa pintado en el lateral de la taza.
       [[0, .37, .44, PALETTE.clay], [-.17, .3, .4, tone(PALETTE.clay, .3, PALETTE.butter)]].forEach(([x, y, z, color]) => {
         const bud = mesh(new THREE.CircleGeometry(.07, 6), material(color, { side: THREE.DoubleSide }), cup);
         bud.position.set(x, y, z); bud.rotation.x = -.35; bud.castShadow = false;
@@ -638,10 +614,7 @@
       }
     }
 
-    // ---------- Placement on the table ----------
-    // Blender objects are already in their place (the composition of the exported scene).
-    // Provisional ones, left → right: radio (back) and glasses directly on the table (front),
-    // snake plant, watering can (back centre), leafy plant; cup front right.
+    // Conserva las posiciones de Blender y distribuye los sustitutos sobre la mesa.
     const place = (item, ...placement) => { if (!fromFile.has(item)) settle(item.root, ...placement); };
     place(radio, -6.4, -2.5, .2);
     place(glasses, -5.2, .95, .12, TABLE_TOP, .004);
@@ -652,18 +625,18 @@
     group.updateMatrixWorld(true);
 
     const interactive = { glasses, pot1, pot2, wateringCan };
-    const curiosities = { radio, coffeeCup };
+    const curiosities = { radio, coffeeCup, window: roomWindow };
     Object.entries({ ...interactive, ...curiosities }).forEach(([name, item]) => { item.root.userData.interactive = name; });
     const rest = {};
     Object.entries({ ...interactive, ...curiosities }).forEach(([name, item]) => {
       rest[name] = { position: item.root.position.clone(), quaternion: item.root.quaternion.clone() };
     });
-    // The watering gauge appears just right of the can (in the can's root space).
+    // Coloca el indicador de riego a la derecha de la regadera.
     const canRight = new THREE.Box3().setFromObject(wateringCan.visual, true).max.x - wateringCan.root.position.x;
 
     return {
       group, tableTopY: TABLE_TOP, tableFit, wallFit, models, interactive, curiosities, rest,
-      // Where the chosen pot travels (local to group, its base on the placemat).
+      // Destino de la maceta, con su base sobre el mantel.
       center,
       pots: {
         pot1: { pot: pot1, plant: { ...plant1 }, soilY: soil1, rimY: rim1 },
@@ -675,7 +648,7 @@
       coffeeCup: { ...coffeeCup, cup },
       metadata: { palette: PALETTE, modelSlots: MODEL_SLOTS, axis: 'Y-up', spoutAxis: '-X', glassesFront: '+Z' },
       dispose() {
-        // Blender models bring their own materials and textures.
+        // Los modelos de Blender incluyen materiales y texturas.
         group.traverse(object => {
           if (object.geometry) geometries.add(object.geometry);
           [].concat(object.material || []).forEach(surface => {

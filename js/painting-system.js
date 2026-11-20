@@ -8,11 +8,10 @@
   const BRUSH_RADIUS = 20;
   const BRUSH_SIZE = BRUSH_RADIUS * 2 + 1;
   const STAMP_SPACING = 4.5;
-  // Independent paint regions. They are drawn joined, but each stroke only colours the
-  // region where it starts, so the colour never crosses from the roof into the walls, etc.
+  // Cada trazo queda limitado a la región donde comienza.
   const REGION_IDS = Object.freeze({ sun: 1, walls: 2, roof: 3, trunk: 4, crown: 5 });
   const REGION_COUNT = 5;
-  // Progress is measured per whole figure: house = walls + roof, tree = trunk + crown.
+  // Mide el progreso por figura completa: casa y árbol incluyen todas sus partes.
   const FIGURES = Object.freeze({ sun: [1], house: [2, 3], tree: [4, 5] });
 
   function surface() {
@@ -38,8 +37,7 @@
     ctx.closePath();
   }
 
-  // Catmull-Rom samples retain the individual, uneven lobes of a child's tree.
-  // The very same samples define both the permitted paint area and its outline.
+  // Usa las mismas curvas para el área pintable y el contorno irregular del árbol.
   function rounded(points) {
     const result = [];
     for (let i = 0; i < points.length; i++) {
@@ -107,7 +105,7 @@
     ctx.strokeStyle = '#58554f';
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    // A readable dark backbone, plus broken, irregular wax around the edge.
+    // Combina una línea oscura con bordes irregulares de cera.
     ctx.globalAlpha = 0.82;
     ctx.lineWidth = width * 0.72;
     ctx.beginPath();
@@ -147,7 +145,7 @@
           const distance = Math.hypot(dx, dy * 1.07) / edge;
           if (distance > 1) continue;
           const grain = next();
-          // Discrete deposits and tiny gaps, without any smooth base stroke.
+          // Deposita pigmento con pequeños huecos, sin una base lisa.
           if (grain < 0.23) continue;
           const falloff = Math.min(1, Math.max(0, (1 - distance) * 4.5));
           const striation = 0.74 + Math.sin(x * 2.4 + variant * 0.6) * 0.26;
@@ -176,8 +174,7 @@
       this._paintContext = this.paintCanvas.getContext('2d');
       this._paintImage = this._paintContext.createImageData(WIDTH, HEIGHT);
 
-      // Region zero is the non-paintable paper. Arrays are exposed for inspection;
-      // callers must treat them as read-only. Only alpha >= coverageAlpha counts.
+      // La región cero no se pinta; los datos son de solo lectura y cuentan desde coverageAlpha.
       this.regionMask = new Uint8Array(WIDTH * HEIGHT);
       this.regionTotals = new Uint32Array(REGION_COUNT + 1);
       this.paintedCounts = new Uint32Array(REGION_COUNT + 1);
@@ -218,8 +215,7 @@
         pixels.data[offset + 1] = shade;
         pixels.data[offset + 2] = shade - 1;
         pixels.data[offset + 3] = 255;
-        // Some paper fibers accept less pigment. They can still build up during
-        // later passes, unlike permanently excluded pixels or a fake progress cap.
+        // Las fibras reciben pigmento de forma desigual y permiten acumularlo en pasadas posteriores.
         this._paperGrain[i] = fiber < 0.16 ? 14 + Math.round(fiber * 290) : 115 + Math.round(paperNoise * 140);
       }
       ctx.putImageData(pixels, 0, 0);
@@ -228,7 +224,7 @@
     _makeMasks(drawing) {
       const maskCanvas = surface();
       const ctx = maskCanvas.getContext('2d', { willReadFrequently: true });
-      // Later regions win where shapes overlap (roof over walls, crown over trunk).
+      // Las regiones posteriores prevalecen en las zonas superpuestas.
       const regions = [null, [drawing.sun], [drawing.walls], [drawing.roof], [drawing.trunk], [drawing.crown]];
       for (let id = 1; id <= REGION_COUNT; id++) {
         ctx.clearRect(0, 0, WIDTH, HEIGHT);
@@ -239,8 +235,7 @@
         });
         const pixels = ctx.getImageData(0, 0, WIDTH, HEIGHT).data;
         for (let index = 0; index < this.regionMask.length; index++) {
-          // Quantize antialiasing once. Rendering and counting subsequently use
-          // this identical binary mask, so partial edge pixels cannot disagree.
+          // Usa la misma máscara binaria para dibujar y contar los píxeles de borde.
           if (pixels[index * 4 + 3] >= 128) {
             const previous = this.regionMask[index];
             if (previous) this.regionTotals[previous]--;
@@ -264,7 +259,7 @@
       crayonLine(ctx, [[321, 441], [323, 439], [325, 442], [322, 444]], true, 95, 1.4);
       crayonLine(ctx, [[226, 298], [250, 276], [275, 298], [253, 320]], true, 111, 2.2);
 
-      // Trunk sides and branches join the foliage without a horizontal seam.
+      // Une tronco, ramas y follaje sin una línea horizontal de separación.
       crayonLine(ctx, [[548, 385], [546, 431], [535, 491], [563, 488], [593, 490], [581, 442], [577, 385]], false, 148, 2.8);
       crayonLine(ctx, [[562, 451], [562, 397], [548, 371], [525, 357]], false, 151, 2.0);
       crayonLine(ctx, [[562, 400], [591, 373], [608, 346]], false, 158, 2.0);
@@ -300,7 +295,7 @@
     }
 
     _stamp(x, y, rgb, dirty) {
-      // The stroke locks onto the first region its centre touches; until then nothing is painted.
+      // Fija la región del trazo al primer contacto de su centro.
       if (!this._strokeRegion) {
         const cx = Math.round(x), cy = Math.round(y);
         if (cx < 0 || cy < 0 || cx >= WIDTH || cy >= HEIGHT) return;
@@ -349,8 +344,7 @@
       }
     }
 
-    // Input coordinates are canvas pixels, obtained by the interaction layer from
-    // raycast UVs. No DOM events, camera state, sound, or unlock policy live here.
+    // Recibe píxeles del lienzo calculados desde las UV por la capa de interacción.
     stampSegment(from, to, color) {
       if (this._disposed || !to || !Number.isFinite(to.x) || !Number.isFinite(to.y)) return false;
       from = from || to;
@@ -365,8 +359,7 @@
         this._stamp(from.x, from.y, rgb, dirty);
         this._distanceToNextStamp = STAMP_SPACING;
       }
-      // Constant physical spacing keeps deposit density independent of pointer
-      // event frequency. Resting the mouse does not generate additional paint.
+      // El espaciado constante independiza el pigmento de los eventos y evita pintar en reposo.
       let travelled = this._distanceToNextStamp;
       while (distance > 0 && travelled <= distance) {
         const t = travelled / distance;
@@ -379,8 +372,7 @@
 
       const width = dirty.right - dirty.left;
       const height = dirty.bottom - dirty.top;
-      // Update only the changed rectangle. No full-canvas pixel readback occurs
-      // on pointer moves: counts are maintained alongside the actual alpha blend.
+      // Actualiza solo el área modificada y sus contadores, sin releer todo el lienzo.
       this._paintContext.putImageData(this._paintImage, 0, 0, dirty.left, dirty.top, width, height);
       this._compose(dirty.left, dirty.top, width, height);
       this.texture.needsUpdate = true;
@@ -395,7 +387,7 @@
       ctx.drawImage(this.outlineCanvas, x, y, width, height, x, y, width, height);
     }
 
-    // Percentages per whole figure (sun, house, tree) and the global coverage.
+    // Devuelve cobertura global y porcentajes de sol, casa y árbol.
     getProgress() {
       const percent = ids => {
         let total = 0, painted = 0;
@@ -407,13 +399,13 @@
       return { global: percent(all), sun: percent(FIGURES.sun), house: percent(FIGURES.house), tree: percent(FIGURES.tree) };
     }
 
-    // A new stroke (button pressed) chooses its region again.
+    // Cada trazo nuevo vuelve a elegir su región.
     beginStroke() {
       this.breakStroke();
       this._strokeRegion = 0;
     }
 
-    // Interrupts the line (e.g. the tip leaves the sheet) but keeps the stroke's region.
+    // Interrumpe la línea al salir de la hoja, conservando la región del trazo.
     breakStroke() {
       this._lastPoint = null;
       this._distanceToNextStamp = 0;

@@ -1,0 +1,18 @@
+<!-- Barra de progreso de la web (crema con relleno café) y control de sonido. Medidas en centímetros. -->
+<style>
+  @font-face { font-family: "Barlow"; src: url("../fuentes/Barlow-Bold.ttf"); font-weight: 700; }
+  .fila { flex-direction: row; align-items: center; gap: 1.4; }
+  .barra { width: 42.2; height: 4.1; flex-direction: row; align-items: center; padding-left: 1.2; border-radius: 99; background-color: #fff7e8; }
+  .pista { width: 34.2; height: 2.4; flex-direction: row; align-items: center; }
+  .relleno { width: 2.7; height: 2.4; border-radius: 1; border-width: 0.1; border-color: #87622e; background-color: #b28b4d; opacity: 0.55; }
+  .valor { margin-left: 1.3; font-family: "Barlow"; font-weight: 700; font-size: 1.7; color: #b28b4d; opacity: 0.7; }
+  .sonido { width: 4.4; height: 4.4; border-radius: 99; cursor: pointer; }
+  .icono { width: 4.4; height: 4.4; }
+</style>
+<div class="fila">
+  <div class="barra">
+    <div class="pista"><div id="relleno" class="relleno"></div></div>
+    <span id="valor" class="valor">0%</span>
+  </div>
+  <button id="sonido" class="sonido"><img id="icono" class="icono" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" /></button>
+</div>

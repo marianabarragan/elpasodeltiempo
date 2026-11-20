@@ -1,0 +1,8 @@
+# Dependencias y compilación de la app XR
+node_modules/
+dist/
+
+# Estado temporal del servidor de desarrollo de IWSDK
+.iwsdk/
+.mcp.json
+*.log

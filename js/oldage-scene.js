@@ -3,14 +3,16 @@
   const app = window.TimeExperience;
   const MASK_LAYER = 1;
   const POT_HOVER = { lift: .3, tilt: .14 };
-  // Complementary objects: the cup rises a little, the radio grows slightly in place.
+  // La taza se eleva y la radio crece ligeramente al señalarlas.
   const CUP_HOVER = { lift: .12, scale: 1.05 };
   const RADIO_HOVER = 1.045;
-  // Sun and fill intensities, and the sun's shadow map (texels and blur radius in texels).
+  const WINDOW_HOVER = 1.03;
+  // Prolonga el sonido del agua entre gotas para evitar cortes.
+  const WATER_HOLD = .15;
+  // Intensidades del sol y relleno, resolución y suavidad de sombras.
   const SHADOW = { sun: 1.95, ambient: 2, fill: .55, mapSize: [1536, 980], radius: 3 };
 
-  // Soft outline drawn behind an object (back faces pushed out along the normals).
-  // It is built from whatever meshes the prop's `visual` holds, so .glb models get it too.
+  // Dibuja un contorno suave detrás de las mallas del objeto.
   const GLOW_VERTEX = `
     uniform float uThickness;
     varying vec3 vNormal;
@@ -29,20 +31,13 @@
     }
   `;
 
-  /**
-   * Scenario 3 (old age): a table by the window, seen through deteriorated sight.
-   * Visual props come from OldAgeProps.build() (or Config.oldage.propsFactory),
-   * the narrative order from OldAgeActivity, pointer logic from OldAgeInteractions and the
-   * scene's progress bar from OldAgeProgress.
-   * This class owns every visual response: glow, hover, movements, water and blur.
-   */
+  /* Coordina actividad, progreso y respuestas visuales de la vejez. */
   class OldAgeScene {
-    // progressBar: the small watering gauge beside the can; sceneProgress: the scene's bar.
+    // progressBar indica el riego; sceneProgress, el progreso de la escena.
     constructor(container, { audio, progressBar, sceneProgress, onComplete } = {}) {
       this.container = container;
       this.audio = audio;
       this.progressBar = progressBar;
-      this.progressFill = progressBar?.querySelector('span');
       this.onComplete = onComplete;
       this.finished = false;
       this.active = false;
@@ -58,7 +53,7 @@
       this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
       this.renderer.toneMappingExposure = 1.05;
       this.renderer.shadowMap.enabled = true;
-      // PCF honours shadow.radius: the sun's shadows get a soft edge (see addLights).
+      // PCF permite suavizar los bordes mediante shadow.radius.
       this.renderer.shadowMap.type = THREE.PCFShadowMap;
       this.renderer.domElement.className = 'three-canvas';
       this.renderer.domElement.setAttribute('aria-hidden', 'true');
@@ -70,7 +65,7 @@
       this.scene.updateMatrixWorld(true);
       this.addLights();
 
-      // Glasses meshes also live on the mask layer: on hover only they are drawn sharp.
+      // La máscara mantiene nítidas las gafas al señalarlas.
       this.props.glasses.visual.traverse(object => { if (object.isMesh) object.layers.enable(MASK_LAYER); });
       this.firstPerson = new app.FirstPersonGlasses(this.props.glasses.visual);
       this.glows = this.buildGlows();
@@ -82,13 +77,13 @@
         plant.visual.traverse(object => { if (object.userData.leaf) leaves.push({ object, base: object.rotation.clone(), phase: Math.random() * 6 }); });
         this.leaves[id] = leaves;
       });
-      // Spout position in the can's visual space (used to place the can over the pot).
+      // Posición del pico usada para situar la regadera sobre la maceta.
       const can = this.props.wateringCan;
       this.spoutLocal = can.visual.worldToLocal(can.spout.getWorldPosition(new THREE.Vector3()));
 
       this.vision = new app.OldAgeVision(this.renderer, { maxBlurPx: config.vision.maxBlurPx, maskLayer: MASK_LAYER });
       this.visionState = { amount: config.vision.initialAmount, focus: 0 };
-      // Focus a little above the objects: close framing of the table with the window behind.
+      // Enfoca encima de los objetos, con la ventana al fondo.
       this.cameraRig = new app.OldAgeCamera(new THREE.Vector3(.1, this.props.tableTopY + 2.9, .35));
       this.activity = new app.OldAgeActivity({ wateringSeconds: config.wateringSeconds });
       this.progress = new app.OldAgeProgress({ element: sceneProgress, onComplete: () => this.finish() });
@@ -101,8 +96,7 @@
       this.time = 0;
     }
 
-    // Warm late-afternoon light entering through the window behind the table. Shadows are warm
-    // (the light that fills them is warm too) and medium-soft: a blurred edge, not too dark.
+    // Luz cálida de atardecer con sombras suaves sobre la mesa.
     addLights() {
       const palette = app.OldAgeProps.PALETTE;
       const top = this.props.tableTopY;
@@ -112,8 +106,7 @@
       sun.position.set(-7, 15, -9);
       sun.target.position.set(.5, top, 1);
       sun.castShadow = true;
-      // The shadow covers all the table that can be on screen (wide or tall windows, any camera
-      // angle), so the table reads as one even surface with no hard-edged lit patches.
+      // La sombra cubre toda la mesa visible para evitar cambios bruscos de iluminación.
       sun.shadow.mapSize.set(...SHADOW.mapSize);
       sun.shadow.radius = SHADOW.radius;
       Object.assign(sun.shadow.camera, { left: -22, right: 22, top: 15, bottom: -13, near: .5, far: 50 });
@@ -127,13 +120,13 @@
       this.scene.add(sun.target);
     }
 
-    // One glow per interactive id. Pots glow without their plant (the plant is its own prop).
-    // The cup and the radio get one too, lit only if they are the last thing missing.
+    // Cada objeto tiene su halo; taza y radio brillan si falta su hito.
     buildGlows() {
       const palette = app.OldAgeProps.PALETTE;
       const thickness = { glasses: .045, pot1: .07, pot2: .07, wateringCan: .065, radio: .06, coffeeCup: .04 };
       const glows = {};
       Object.entries({ ...this.props.interactive, ...this.props.curiosities }).forEach(([id, item]) => {
+        if (id === 'window') return;
         const material = new THREE.ShaderMaterial({
           vertexShader: GLOW_VERTEX, fragmentShader: GLOW_FRAGMENT,
           uniforms: { uColor: { value: new THREE.Color(palette.butter).lerp(new THREE.Color('#ffffff'), .35) }, uOpacity: { value: 0 }, uThickness: { value: thickness[id] } },
@@ -159,7 +152,7 @@
       return glows;
     }
 
-    // Small pool of low-poly drops reused while pouring.
+    // Reutiliza un pequeño conjunto de gotas durante el riego.
     buildWater() {
       const palette = app.OldAgeProps.PALETTE;
       const geometry = new THREE.IcosahedronGeometry(.075, 0);
@@ -172,12 +165,10 @@
         this.scene.add(mesh);
         return { mesh, velocity: new THREE.Vector3(), alive: false };
       });
-      return { drops, geometry, material, spawn: 0, floor: 0 };
+      return { drops, geometry, material, spawn: 0, floor: 0, lastHit: -Infinity };
     }
 
-    // The painted table (props.tableFit) is scaled uniformly, never stretched, just enough to
-    // cover everything the camera can show in front of the wall on this screen shape, at any
-    // permitted angle: the floor never shows and the painted wood stays as sharp as possible.
+    // Escala la mesa uniformemente para cubrir la vista y ocultar el piso.
     fitTable() {
       const fit = this.props.tableFit;
       if (!fit) return;
@@ -197,8 +188,7 @@
       Object.assign(rig.current, pose);
       rig.zoom = zoom;
       rig.apply();
-      // From its bounding box, grow the scale until every visible point lies on the real top
-      // outline, plus a little for the camera's slide while it turns.
+      // Amplía hasta cubrir el contorno visible, con margen para el movimiento de cámara.
       const inside = (x, z, outline) => {
         let hit = false;
         for (let a = 0, b = outline.length - 1; a < outline.length; b = a++) {
@@ -212,9 +202,7 @@
       fit.object.scale.setScalar(scale * 1.04);
     }
 
-    // The Blender wall (props.wallFit) keeps its size unless a very wide or tall screen sees
-    // past its edges: then it grows uniformly from the middle of its bottom edge, just enough
-    // to fill everything the camera shows behind the table, at any permitted angle.
+    // Amplía la pared desde el borde inferior solo cuando el encuadre lo exige.
     fitWall() {
       const fit = this.props.wallFit, table = this.props.tableFit;
       if (!fit) return;
@@ -230,7 +218,7 @@
         rig.apply();
         for (let i = 0; i <= 16; i++) for (let j = 0; j <= 16; j++) {
           ray.setFromCamera(screen.set(i / 8 - 1, j / 8 - 1), rig.camera);
-          // Rays that land on the table in front of its back edge never reach the wall.
+          // Los rayos que alcanzan la mesa no necesitan comprobar la pared.
           if (ray.ray.intersectPlane(top, point) && point.z >= back) continue;
           if (!ray.ray.intersectPlane(wall, point)) continue;
           const x = point.x - fit.object.position.x, y = point.y - fit.object.position.y;
@@ -269,7 +257,7 @@
       this.tick = requestAnimationFrame(this.frame);
     }
 
-    // Music starts with the scene and loops until the user leaves it.
+    // La música se repite desde la entrada hasta salir de la escena.
     ready() { this.audio.enter(); }
 
     frame(now) {
@@ -280,7 +268,7 @@
       this.time += dt;
       this.cameraRig.update(dt);
       this.updateGlows(dt);
-      // Held time counts in real seconds, so 4.5 s are 4.5 s at any frame rate.
+      // Mide el riego en segundos reales, independientemente de los fotogramas.
       this.updateWatering(Math.min(elapsed, .25));
       this.updateWater(dt);
       this.updateSway(dt);
@@ -288,9 +276,7 @@
       this.tick = requestAnimationFrame(this.frame);
     }
 
-    // Soft, slow blinking (≈2.6 s per cycle) on the objects that invite the next action, one
-    // step at a time. After the watering, if neither the cup nor the radio has been touched,
-    // those two glow so the last 20 % can be found; once one of them answers, both stop.
+    // El brillo indica el siguiente paso; tras regar, señala taza y radio si falta ese hito.
     updateGlows(dt) {
       const glowing = this.activity.complete && !this.progress.has('extra') ? ['radio', 'coffeeCup'] : this.activity.glowing;
       const pulse = .5 + .5 * Math.sin(this.time * 2.4);
@@ -301,7 +287,7 @@
       });
     }
 
-    // ---------- Hover ----------
+    // Respuesta al puntero.
     setHover(name) {
       const step = this.activity.step;
       gsap.to(this.visionState, { focus: name === 'glasses' && step === 'glasses' ? 1 : 0, duration: .35, ease: 'power2.out', overwrite: 'auto' });
@@ -314,23 +300,26 @@
       const can = this.props.wateringCan.visual;
       const scale = name === 'wateringCan' && step === 'can' ? 1.06 : 1;
       gsap.to(can.scale, { x: scale, y: scale, z: scale, duration: .3, ease: 'power2.out', overwrite: 'auto' });
-      // Complementary objects (only offered by the interactions once the glasses are on).
+      // Los objetos secundarios se habilitan después de ponerse las gafas.
       const cup = this.props.coffeeCup.visual, cupOn = name === 'coffeeCup';
       gsap.to(cup.position, { y: cupOn ? CUP_HOVER.lift : 0, duration: .3, ease: 'power2.out', overwrite: 'auto' });
       const cupScale = cupOn ? CUP_HOVER.scale : 1;
       gsap.to(cup.scale, { x: cupScale, y: cupScale, z: cupScale, duration: .3, ease: 'power2.out', overwrite: 'auto' });
       const radioScale = name === 'radio' ? RADIO_HOVER : 1;
       gsap.to(this.props.radio.visual.scale, { x: radioScale, y: radioScale, z: radioScale, duration: .3, ease: 'power2.out', overwrite: 'auto' });
+      // Amplía la ventana sobre el plano de la pared sin atravesarla.
+      const windowScale = name === 'window' ? WINDOW_HOVER : 1;
+      gsap.to(this.props.curiosities.window.visual.scale, { x: windowScale, y: windowScale, duration: .3, ease: 'power2.out', overwrite: 'auto' });
     }
 
-    // ---------- Complementary interactions: radio and coffee cup ----------
-    // Radio: a little rock on its base while the antenna swings. Cup: a slow turn on the saucer.
-    // The first click on either one adds the 'extra' milestone (only once for both).
+    // Radio y taza suman el hito extra una vez; la ventana solo reproduce sonido.
     poke(name) {
+      if (name === 'window') { this.audio.playEffect('window'); return; }
       this.progress.mark('extra');
       if (name === 'radio') {
         const { visual, antenna } = this.props.radio;
         if (gsap.isTweening(visual.rotation)) return;
+        this.audio.playEffect('radio');
         gsap.timeline()
           .to(visual.rotation, { z: .09, duration: .18, ease: 'power2.out' })
           .to(visual.rotation, { z: -.06, duration: .22, ease: 'sine.inOut' })
@@ -344,6 +333,7 @@
       } else if (name === 'coffeeCup') {
         const cup = this.props.coffeeCup.cup || this.props.coffeeCup.visual;
         if (gsap.isTweening(cup.rotation)) return;
+        this.audio.playEffect('cup');
         gsap.timeline()
           .to(cup.rotation, { y: cup.rotation.y + Math.PI * .5, duration: .9, ease: 'power2.inOut' })
           .to(cup.rotation, { x: .07, duration: .18, ease: 'sine.out' }, 0)
@@ -351,11 +341,11 @@
       }
     }
 
-    // ---------- 1. Glasses ----------
+    // Primer paso: gafas.
     wearGlasses(done) {
       const glasses = this.props.glasses;
       gsap.to(this.visionState, { focus: 0, duration: .3, overwrite: 'auto' });
-      // Picked up from the table: the table copy leaves while the first-person copy rises.
+      // Retira las gafas de la mesa mientras asciende la copia en primera persona.
       gsap.timeline()
         .to(glasses.visual.position, { y: .45, duration: .3, ease: 'power2.out' })
         .to(glasses.visual.scale, { x: .001, y: .001, z: .001, duration: .25, ease: 'power2.in' }, .12)
@@ -369,7 +359,7 @@
         reduced: this.reduced,
         onUnblur: t => { this.visionState.amount = start * (1 - t); },
         onComplete: () => {
-          // Fully sharp; the frame is no longer visible anywhere on screen.
+          // La vista queda nítida y la montura sale del encuadre.
           this.visionState.amount = 0;
           camera.zoom = 1;
           this.progress.mark('glasses');
@@ -378,8 +368,9 @@
       });
     }
 
-    // ---------- 2. Pots ----------
+    // Segundo paso: maceta.
     choosePot(id, done) {
+      this.audio.playEffect('pot');
       const { root, visual } = this.props.interactive[id];
       const target = this.props.center;
       const from = root.position.clone();
@@ -401,8 +392,7 @@
       });
     }
 
-    // ---------- 3. Watering can ----------
-    // Root pose that puts the tilted spout right above the chosen pot's soil.
+    // Tercer paso: coloca el pico inclinado sobre la tierra de la maceta elegida.
     pourPose(potId) {
       const pot = this.props.pots[potId];
       const tilt = this.config.pourAngle;
@@ -433,10 +423,7 @@
       const visual = this.props.wateringCan.visual;
       gsap.to(visual.rotation, { z: on ? this.config.pourAngle : 0, duration: on ? .45 : .4, ease: 'power2.out', overwrite: 'auto' });
       this.sway.target = on ? 1 : 0;
-      if (on) {
-        this.audio.playEffect('water');
-        this.showProgress();
-      }
+      if (on) this.showProgress();
     }
 
     updateWatering(dt) {
@@ -477,14 +464,14 @@
       });
     }
 
-    // The scene ends (phrase, then arrow) once the bar is at 100 % and the can is back.
+    // Completa la escena con la barra al 100 % y la regadera en reposo.
     finish() {
       if (this.finished || !this.progress.complete || !this.activity.complete) return;
       this.finished = true;
       this.onComplete?.();
     }
 
-    // ---------- Progress bar (DOM, beside the can) ----------
+    // Indicador de riego junto a la regadera.
     showProgress() {
       const bar = this.progressBar;
       if (!bar || !bar.hidden) return;
@@ -495,7 +482,7 @@
 
     setProgress(value) {
       if (!this.progressBar) return;
-      this.progressFill.style.transform = `scaleY(${value})`;
+      this.progressBar.style.setProperty('--progress', String(value));
       this.progressBar.setAttribute('aria-valuenow', String(Math.round(value * 100)));
     }
 
@@ -509,7 +496,7 @@
       bar.style.top = `${(.5 - point.y * .5) * rect.height}px`;
     }
 
-    // ---------- Water drops ----------
+    // Gotas de agua.
     updateWater(dt) {
       const water = this.water;
       const pouring = this.activity.pouring && this.activity.step === 'water';
@@ -536,11 +523,13 @@
         if (!drop.alive) return;
         drop.velocity.y -= 9.5 * dt;
         drop.mesh.position.addScaledVector(drop.velocity, dt);
-        if (drop.mesh.position.y <= water.floor) { drop.alive = false; drop.mesh.visible = false; }
+        if (drop.mesh.position.y <= water.floor) { drop.alive = false; drop.mesh.visible = false; water.lastHit = this.time; }
       });
+      // La regadera suena solo cuando el agua cae sobre la planta.
+      this.audio.setPainting(this.time - water.lastHit < WATER_HOLD);
     }
 
-    // ---------- Plant response ----------
+    // Respuesta de la planta al riego.
     updateSway(dt) {
       const sway = this.sway;
       sway.amount += (sway.target - sway.amount) * (1 - Math.exp(-(sway.target > sway.amount ? 2.5 : 1.1) * dt));
@@ -588,7 +577,9 @@
       radio.visual.rotation.z = 0;
       if (radio.antenna?.userData.restZ !== undefined) radio.antenna.rotation.z = radio.antenna.userData.restZ;
       (coffeeCup.cup || coffeeCup.visual).rotation.set(0, 0, 0);
-      gsap.killTweensOf([coffeeCup.visual.position, coffeeCup.visual.scale, radio.visual.scale]);
+      const windowVisual = this.props.curiosities.window.visual;
+      gsap.killTweensOf([coffeeCup.visual.position, coffeeCup.visual.scale, radio.visual.scale, windowVisual.scale]);
+      windowVisual.scale.set(1, 1, 1);
       coffeeCup.visual.position.set(0, 0, 0);
       coffeeCup.visual.scale.set(1, 1, 1);
       radio.visual.scale.set(1, 1, 1);
@@ -596,6 +587,7 @@
       this.finished = false;
       Object.values(this.glows).forEach(glow => { glow.value = 0; });
       this.water.drops.forEach(drop => { drop.alive = false; drop.mesh.visible = false; });
+      this.water.lastHit = -Infinity;
       Object.assign(this.sway, { amount: 0, target: 0 });
       Object.assign(this.visionState, { amount: this.config.vision.initialAmount, focus: 0 });
       if (this.progressBar) {

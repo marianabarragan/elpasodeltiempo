@@ -3,12 +3,7 @@
   const app = window.TimeExperience;
   const CLICK_TOLERANCE = 6;
 
-  /**
-   * Narrative order of scenario 3, independent of any mesh or animation:
-   *   glasses → (wearing) → choose → (moving-pot) → can → (moving-can) → water → (returning) → complete
-   * Steps in parentheses are animations driven by the scene; nothing is interactive meanwhile.
-   * Identifiers: 'glasses', 'pot1', 'pot2', 'wateringCan'; complementary: 'radio', 'coffeeCup'.
-   */
+  /* Orden de la actividad: gafas, maceta y riego; bloquea interacciones durante animaciones. */
   class OldAgeActivity {
     constructor({ wateringSeconds = 4.5, onChange } = {}) {
       this.wateringSeconds = wateringSeconds;
@@ -28,8 +23,7 @@
       this.onChange?.(step);
     }
 
-    // Objects that respond to the pointer in the current step. Before the glasses are on,
-    // only the glasses respond; once a pot is chosen the other one never responds again.
+    // Habilita solo los objetos del paso actual y conserva la maceta elegida.
     get interactive() {
       return {
         glasses: ['glasses'],
@@ -39,13 +33,12 @@
       }[this.step] || [];
     }
 
-    // Complementary objects ('radio', 'coffeeCup'): a subtle hover and a short response to a
-    // click, available once the glasses are on (nothing else responds before that).
+    // La taza, la radio y la ventana responden después de ponerse las gafas.
     get curiosities() {
-      return ['glasses', 'wearing'].includes(this.step) ? [] : ['radio', 'coffeeCup'];
+      return ['glasses', 'wearing'].includes(this.step) ? [] : ['radio', 'coffeeCup', 'window'];
     }
 
-    // Objects whose soft blinking glow invites the next action.
+    // Objetos cuyo brillo indica la siguiente acción.
     get glowing() {
       if (this.step === 'water') return this.pouring || this.watered > 0 ? [] : ['wateringCan'];
       return this.interactive;
@@ -54,7 +47,7 @@
     get progress() { return Math.min(1, this.watered / this.wateringSeconds); }
     get complete() { return this.step === 'complete'; }
 
-    // Adds held time while pouring; returns true exactly once, when the bar fills up.
+    // Acumula tiempo de riego y avisa una sola vez al completarlo.
     addWatering(dt) {
       if (this.step !== 'water' || !this.pouring) return false;
       this.watered = Math.min(this.wateringSeconds, this.watered + dt);
@@ -62,11 +55,7 @@
     }
   }
 
-  /**
-   * Pointer logic of the old-age scene. Works only with identifiers and the
-   * { root, visual } groups of the props, never with the meshes inside them.
-   * The scene (`world`) performs every visual response.
-   */
+  /* Gestiona interacciones por identificadores; la escena ejecuta las respuestas visuales. */
   class OldAgeInteractions {
     constructor(world) {
       this.world = world;
@@ -98,8 +87,7 @@
       this.raycaster.setFromCamera(this.pointer, this.world.cameraRig.camera);
     }
 
-    // Identifier under the pointer among the objects allowed in the current step (plus the
-    // cup and the radio once the glasses are on), or null.
+    // Devuelve el identificador del objeto permitido bajo el puntero o null.
     pick(withCuriosities = true) {
       const props = this.world.props;
       const allowed = this.activity.interactive.map(name => props.interactive[name]);
@@ -111,9 +99,16 @@
         let object = hit.object;
         if (object.userData.glowShell) continue;
         while (object && !object.userData.interactive) object = object.parent;
-        if (object) return object.userData.interactive;
+        if (object) return object.userData.interactive === 'window' && this.blocksWindow() ? null : object.userData.interactive;
       }
       return null;
+    }
+
+    // Los objetos de la mesa bloquean el acceso del puntero a la ventana.
+    blocksWindow() {
+      const { interactive, curiosities } = this.world.props;
+      const front = Object.values({ ...interactive, ...curiosities }).filter(item => item !== curiosities.window && item.root.visible).map(item => item.root);
+      return this.raycaster.intersectObjects(front, true).length > 0;
     }
 
     setHover(name) {
@@ -134,7 +129,7 @@
       this.canvas.setPointerCapture(event.pointerId);
       const target = this.pick();
       this.setHover(target);
-      // Watering: hold the click on the can positioned over the pot.
+      // Riega manteniendo el clic sobre la regadera colocada encima de la maceta.
       if (target === 'wateringCan' && this.activity.step === 'water') {
         this.world.cameraRig.freeze();
         this.activity.pouring = true;
@@ -169,7 +164,7 @@
       if (this.pick() === press.target) this.activate(press.target);
     }
 
-    // Single clicks advance the activity; each step accepts only its own objects.
+    // Cada clic avanza solo con los objetos habilitados en ese paso.
     activate(name) {
       const activity = this.activity;
       if (activity.curiosities.includes(name)) { this.world.poke(name); return; }
@@ -179,7 +174,7 @@
         this.setHover(null);
         this.world.wearGlasses(() => activity.set('choose'));
       } else if (activity.step === 'choose' && (name === 'pot1' || name === 'pot2')) {
-        // The choice is fixed for this run of the scene.
+        // Mantiene la elección durante toda la escena.
         activity.chosen = name;
         activity.set('moving-pot');
         this.setHover(null);

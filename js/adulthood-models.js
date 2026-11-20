@@ -2,11 +2,7 @@
   'use strict';
   const app = window.TimeExperience = window.TimeExperience || {};
 
-  // ► OBJETOS DEL ESCENARIO 2 (Blender, exportados en OBJ). Cada `.glb` es la conversión de
-  //   tu OBJ con el mismo nombre y carpeta (texturas dentro, en WebP de 1024 px como máximo).
-  //   La web conserva su forma y sus proporciones: AdulthoodProps escala cada uno de forma
-  //   uniforme al tamaño del objeto que reemplaza y lo pone en su lugar, con sus funciones.
-  //   Tras convertir de nuevo un OBJ, `npm run models` actualiza su copia .glb.js.
+  // Carga los GLB de la adultez; npm run models actualiza sus copias para abrir desde disco.
   const SOURCES = Object.freeze({
     desk: 'assets/models/adulthood/mesa/mesa.glb',
     wall: 'assets/models/adulthood/pared_fondo/pared_fondo.glb',
@@ -23,22 +19,20 @@
   });
   const ANISOTROPY = 8;
 
-  // Every node transform applied to its mesh (see ModelLoader.bake): all templates are flat
-  // groups in the coordinates of the exported scene.
+  // Aplica las transformaciones a las mallas en coordenadas de la escena exportada.
   const { bake } = app.ModelLoader;
   const boxOf = object => new THREE.Box3().setFromObject(object, true);
   const meshes = group => group.children.filter(child => child.isMesh);
   const glows = mesh => mesh.material.emissive && mesh.material.emissive.getHSL({}).l > .05;
   const moveGeometry = (mesh, matrix) => { mesh.geometry.applyMatrix4(matrix); return mesh; };
-  // Rotation about a vertical (or depth) axis through `center`, applied to every mesh.
+  // Gira todas las mallas alrededor del eje que pasa por center.
   function rotateAbout(group, center, axis, angle) {
     const matrix = new THREE.Matrix4().makeTranslation(center.x, center.y, center.z)
       .multiply(new THREE.Matrix4().makeRotationAxis(axis, angle))
       .multiply(new THREE.Matrix4().makeTranslation(-center.x, -center.y, -center.z));
     meshes(group).forEach(mesh => moveGeometry(mesh, matrix));
   }
-  // Angle (radians) that lines a flat piece up with the axes: the rotation of its
-  // smallest-area bounding rectangle in the plane of coordinates `a` and `b` ('x', 'y', 'z').
+  // Calcula el ángulo del rectángulo mínimo para alinear la pieza con los ejes.
   function squareAngle(mesh, a, b) {
     const position = mesh.geometry.attributes.position, points = [];
     for (let i = 0; i < position.count; i++) points.push([position[`get${a.toUpperCase()}`](i), position[`get${b.toUpperCase()}`](i)]);
@@ -54,7 +48,7 @@
     }
     return best;
   }
-  // A sub-part with its own pivot: root at `center` > visual > meshes (geometry around the pivot).
+  // Centra la geometría de cada pieza en su propio pivote.
   function pivotPart(name, parts, center) {
     const root = new THREE.Group(), visual = new THREE.Group();
     root.name = name; visual.name = `${name}-visual`;
@@ -64,7 +58,7 @@
     return root;
   }
 
-  // ---------- Room ----------
+  // Habitación.
   function prepareSurface(scene) {
     const group = bake([scene]);
     group.traverse(mesh => {
@@ -75,9 +69,7 @@
     return group;
   }
 
-  // ---------- Monitor ----------
-  // The power button (the little disc with the emissive ring) becomes `monitor-power`, with its
-  // own pivot, and the ring is `monitor-led` (lit while the screen is on).
+  // Separa el botón del monitor y su indicador luminoso.
   function prepareMonitor(scene) {
     const monitor = bake([scene]);
     const led = meshes(monitor).find(glows);
@@ -90,8 +82,7 @@
     return monitor;
   }
 
-  // The screen picture: unlit (it glows by itself) and centred on its own middle, so the hover
-  // zoom grows it in place. Both faces are drawn, as Blender does (its plane faces the wall).
+  // Centra la pantalla y dibuja ambas caras para ampliarla en su sitio.
   function prepareScreen(scene) {
     const group = bake([scene]);
     const screen = meshes(group)[0];
@@ -105,11 +96,7 @@
     return group;
   }
 
-  // ---------- Digital clock ----------
-  // Its display is an emissive backlight (`clock-backlight`) behind a transparent layer with the
-  // digits (`clock-digits`); switching the clock off darkens the first and hides the second.
-  // AdulthoodProps draws the digits on that layer, so its UVs are stretched to cover it exactly
-  // (0–1) and `userData.aspect` keeps its width / height.
+  // El reloj usa luz de fondo y dígitos separados para controlar su encendido.
   function prepareClock(scene) {
     const clock = bake([scene]);
     meshes(clock).forEach(mesh => {
@@ -123,8 +110,7 @@
     });
     return clock;
   }
-  // Remaps a flat piece's UVs to 0–1 over its whole face; returns its width / height in the
-  // directions of U and V (from the plane through three of its corners).
+  // Normaliza las UV de la cara y devuelve su proporción.
   function fillUV(mesh) {
     const uv = mesh.geometry.attributes.uv, position = mesh.geometry.attributes.position;
     const u = [Infinity, -Infinity], v = [Infinity, -Infinity];
@@ -132,7 +118,7 @@
       u[0] = Math.min(u[0], uv.getX(i)); u[1] = Math.max(u[1], uv.getX(i));
       v[0] = Math.min(v[0], uv.getY(i)); v[1] = Math.max(v[1], uv.getY(i));
     }
-    // P = P0 + Δu·A + Δv·B, solved with the first three corners.
+    // Resuelve P = P0 + Δu·A + Δv·B con las primeras tres esquinas.
     const p = [0, 1, 2].map(i => new THREE.Vector3().fromBufferAttribute(position, i));
     const du1 = uv.getX(1) - uv.getX(0), dv1 = uv.getY(1) - uv.getY(0), du2 = uv.getX(2) - uv.getX(0), dv2 = uv.getY(2) - uv.getY(0);
     const det = du1 * dv2 - du2 * dv1, e1 = p[1].clone().sub(p[0]), e2 = p[2].clone().sub(p[0]);
@@ -143,10 +129,7 @@
     return alongU.length() * (u[1] - u[0]) / (alongV.length() * (v[1] - v[0]));
   }
 
-  // ---------- Shelf and books ----------
-  // Book colours from Config.adulthood.books, by material: the white books turn pastel green or
-  // beige, the page edges cream, and the brown books (whose texture read as cork) light greyish
-  // blue, with the drawings of their texture in shades of that blue.
+  // Aplica a libros y cantos los colores de Config.adulthood.books.
   const BOOKS = {
     'Material.010': 'green', 'Material.018': 'beige', 'Material.023': 'green', Material: 'pages',
     'Material.011': 'brown', 'Material.019': 'brown', 'Material.022': 'brown'
@@ -161,8 +144,7 @@
     });
     return shelf;
   }
-  // Repaints a texture in `color`: its base tone (the most common brightness) becomes that colour
-  // and its speckles and drawings stay as lighter or darker shades of it, a little softened.
+  // Tiñe la textura conservando sus variaciones de brillo.
   function retint(texture, color) {
     const image = texture.image, canvas = document.createElement('canvas');
     canvas.width = image.width; canvas.height = image.height;
@@ -184,10 +166,7 @@
     texture.needsUpdate = true;
   }
 
-  // ---------- Checklist paper ----------
-  // The sheet (`paper-sheet`) is lined up with the axes, title toward the back (-Z). Its title,
-  // tasks and boxes are meshes; `userData.boxes` says where each box falls on the sheet's
-  // texture (u, v and half sizes): the checks are drawn there, on the sheet's own picture.
+  // Alinea la hoja y localiza sus casillas en la textura para dibujar las marcas.
   function preparePaper(scene) {
     const paper = bake([scene]);
     const sheet = meshes(paper).find(mesh => /pendientes/i.test(mesh.name));
@@ -214,15 +193,13 @@
     return paper;
   }
 
-  // ---------- Pen ----------
-  // Lined up along +X with its tip at +X and the clip on top (+Y), like the provisional pen;
-  // `userData.tip` is the tip, on the pen's axis.
+  // Alinea el lapicero con la punta en +X y el clip en +Y.
   function preparePen(scene) {
     const pen = bake([scene]);
     const clip = meshes(pen).find(mesh => /clip/i.test(mesh.name));
     const body = meshes(pen).find(mesh => mesh !== clip) || meshes(pen)[0];
     const center = boxOf(body).getCenter(new THREE.Vector3());
-    // Long axis on the desk: principal direction of the body's points (x, z).
+    // Obtiene el eje longitudinal del cuerpo sobre el plano XZ.
     const position = body.geometry.attributes.position;
     let xx = 0, xz = 0, zz = 0;
     for (let i = 0; i < position.count; i++) {
@@ -230,7 +207,7 @@
       xx += x * x; xz += x * z; zz += z * z;
     }
     let angle = .5 * Math.atan2(2 * xz, xx - zz);
-    // The tip is the end away from the clip.
+    // La punta está en el extremo opuesto al clip.
     if (clip) {
       const toClip = boxOf(clip).getCenter(new THREE.Vector3()).sub(center);
       if (toClip.x * Math.cos(angle) + toClip.z * Math.sin(angle) > 0) angle += Math.PI;
@@ -243,9 +220,7 @@
     return pen;
   }
 
-  // ---------- Wall calendar ----------
-  // The cork board, upright, with its blank sheet as `calendar-sheet`; the month pages are laid
-  // over that sheet (AdulthoodProps).
+  // Endereza el corcho y coloca los meses sobre calendar-sheet.
   function prepareCalendar(scene) {
     const calendar = bake([scene]);
     const all = meshes(calendar).map(mesh => ({ mesh, box: boxOf(mesh) }));
@@ -276,19 +251,16 @@
     shelf: prepareShelf
   };
 
-  /**
-   * Loads the scene 2 objects after the childhood toys (they are first needed in scenario 2).
-   * `AdulthoodProps.build()` uses every one that is ready; any missing one keeps its provisional prop.
-   */
+  /* Carga los modelos de la adultez y conserva sustitutos para los que fallen. */
   const models = {
     status: 'loading',
     templates: {},
-    // Calls back once loading has finished, successfully or not (at once if it already has).
+    // Avisa al terminar la carga, incluso si falla.
     whenSettled(callback) {
       if (this.status !== 'loading') callback();
       else this.settled.then(() => callback());
     },
-    // Fresh copies of the loaded objects, in the coordinates of the exported scene.
+    // Devuelve copias de los objetos en las coordenadas exportadas.
     create() {
       return Object.fromEntries(Object.entries(this.templates).map(([name, template]) => [name, template.clone(true)]));
     }

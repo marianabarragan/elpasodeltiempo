@@ -8,7 +8,7 @@
   <title>El paso del tiempo</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=DM+Sans:wght@400;500;600;700&family=Nunito:wght@500;600;700;800&family=Sofia&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=DM+Sans:wght@400;500;600;700&family=Barlow:wght@300;700&family=Nunito:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body class="intro-active">
@@ -18,13 +18,13 @@
       <div class="intro-stage" id="intro3d" role="img" aria-label="Tablero tridimensional de corcho con marco naranja y un hilo de cabuya del que cuelgan tres fotografías: niñez, adultez joven y vejez."></div>
       <div class="intro-veil" aria-hidden="true"></div>
       <div class="intro-copy">
-        <div class="intro-hourglass hourglass-stage" id="introHourglass" role="img" aria-label="Reloj de arena de madera con arena dorada luminosa que cae, rodeado por una enredadera con flores blancas."></div>
-        <div class="intro-text">
-          <p class="intro-label">El paso del tiempo</p>
-          <h1 id="intro-title"><span class="intro-line">¿Te has detenido a pensar</span> <span class="intro-line">cómo cambia la vida</span> <span class="intro-line">con <span class="intro-highlight">el paso del tiempo?</span></span></h1>
-          <button class="primary-button intro-start glow-button" id="startExperience" type="button">Iniciar</button>
+        <span class="design-leaves" aria-hidden="true"></span>
+        <div class="design-frame">
+          <h1 id="intro-title"><span>¿Te has detenido a pensar</span> <span>cómo cambia la vida</span> <span class="intro-highlight">con el paso del tiempo?</span></h1>
+          <button class="design-button intro-start" id="startExperience" type="button"><span>Iniciar</span></button>
+          <div class="intro-hourglass hourglass-stage" id="introHourglass" role="img" aria-label="Reloj de arena de madera con arena dorada luminosa que cae, rodeado por una enredadera con flores blancas."></div>
         </div>
-        <span class="intro-rule" aria-hidden="true"></span>
+        <p class="design-footer"><span>El paso del tiempo</span></p>
       </div>
     </section>
 
@@ -32,7 +32,7 @@
       <h2 class="sr-only" id="childhood-title">Niñez</h2>
       <div class="three-stage" id="childhood3d" role="application" aria-label="Habitación infantil 3D. Haz clic en la crayola para abrir la paleta y elige un color. La crayola seguirá el ratón; mantén el clic izquierdo sobre el dibujo para colorear. Un clic fuera de la hoja la devuelve a su lugar. Arrastra fuera de la hoja para girar la cámara."></div>
       <div class="childhood-progress" id="childhoodProgress" role="progressbar" aria-label="Progreso del escenario" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-        <div class="childhood-progress__track"><span class="childhood-progress__fill"></span><i></i><i></i><i></i><i></i></div>
+        <div class="childhood-progress__track"><span class="childhood-progress__fill"></span></div>
         <span class="childhood-progress__value">0%</span>
       </div>
       <div class="crayon-palette" id="crayonPalette" role="dialog" aria-label="Paleta de colores de la crayola" hidden>
@@ -40,11 +40,11 @@
         <div class="crayon-palette__grid"></div>
       </div>
       <button class="sound-toggle round-control" id="soundToggle" type="button" aria-label="Silenciar sonido" aria-pressed="true">
-        <svg class="sound-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15 9a4 4 0 0 1 0 6M18 6a8 8 0 0 1 0 12"/></svg>
-        <svg class="sound-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="m16 10 5 5m0-5-5 5"/></svg>
+        <img class="sound-on" src="assets/Iconos/cafe/boton volumen.svg" alt="">
+        <img class="sound-off" src="assets/Iconos/cafe/mute volumen.svg" alt="">
       </button>
       <div class="childhood-message" id="childhoodMessage" role="status" aria-live="polite" hidden><p>Cuando somos niños el tiempo parece infinito</p></div>
-      <button class="next-memory round-control" id="continueArrow" type="button" aria-label="Continuar a la adultez" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16m-7-7 7 7-7 7"/></svg></button>
+      <button class="next-memory round-control" id="continueArrow" type="button" aria-label="Continuar a la adultez" hidden><img src="assets/Iconos/cafe/botón de continuar.svg" alt=""></button>
     </section>
 
     <section class="scene adulthood-room" data-scene="adulthood" aria-labelledby="adulthood-title" hidden>
@@ -55,30 +55,30 @@
         <span class="childhood-progress__value">0%</span>
       </div>
       <button class="sound-toggle round-control" id="adulthoodSoundToggle" type="button" aria-label="Silenciar sonido" aria-pressed="true">
-        <svg class="sound-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15 9a4 4 0 0 1 0 6M18 6a8 8 0 0 1 0 12"/></svg>
-        <svg class="sound-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="m16 10 5 5m0-5-5 5"/></svg>
+        <img class="sound-on" src="assets/Iconos/cafe/boton volumen.svg" alt="">
+        <img class="sound-off" src="assets/Iconos/cafe/mute volumen.svg" alt="">
       </button>
       <div class="childhood-message adulthood-message" id="adulthoodMessage" role="status" aria-live="polite" hidden><p>Cuando crecemos, el tiempo parece ir más rápido que nosotros.</p></div>
-      <button class="next-memory round-control" id="adulthoodArrow" type="button" aria-label="Volver al tablero de fotografías" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16m-7-7 7 7-7 7"/></svg></button>
+      <button class="next-memory round-control" id="adulthoodArrow" type="button" aria-label="Volver al tablero de fotografías" hidden><img src="assets/Iconos/cafe/botón de continuar.svg" alt=""></button>
     </section>
 
     <section class="scene oldage-room" data-scene="oldage" aria-labelledby="oldage-title" hidden>
       <h2 class="sr-only" id="oldage-title">Vejez</h2>
       <div class="three-stage" id="oldage3d" role="application" aria-label="Mesa junto a una ventana, vista con la visión borrosa. Primero haz clic en las gafas para ponértelas. Después elige una de las dos macetas, haz clic en la regadera y mantén el clic sobre ella para regar la planta. Con las gafas puestas, la taza de café y la radio también responden al clic. La barra superior muestra el progreso. Arrastra el resto del escenario para girar la cámara."></div>
       <div class="childhood-progress oldage-scene-progress" id="oldageSceneProgress" role="progressbar" aria-label="Progreso del escenario" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-        <div class="childhood-progress__track"><span class="childhood-progress__fill"></span><i></i><i></i><i></i><i></i></div>
+        <div class="childhood-progress__track"><span class="childhood-progress__fill"></span></div>
         <span class="childhood-progress__value">0%</span>
       </div>
       <div class="oldage-progress" id="oldageProgress" role="progressbar" aria-label="Riego" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden><span></span></div>
       <button class="sound-toggle round-control" id="oldageSoundToggle" type="button" aria-label="Silenciar sonido" aria-pressed="true">
-        <svg class="sound-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15 9a4 4 0 0 1 0 6M18 6a8 8 0 0 1 0 12"/></svg>
-        <svg class="sound-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="m16 10 5 5m0-5-5 5"/></svg>
+        <img class="sound-on" src="assets/Iconos/cafe/boton volumen.svg" alt="">
+        <img class="sound-off" src="assets/Iconos/cafe/mute volumen.svg" alt="">
       </button>
       <div class="childhood-message oldage-message" id="oldageMessage" role="status" aria-live="polite" hidden><p>Con los años, aprendemos que los pequeños momentos también hacen grande la vida.</p></div>
-      <button class="next-memory round-control" id="oldageArrow" type="button" aria-label="Continuar a la reflexión final" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16m-7-7 7 7-7 7"/></svg></button>
+      <button class="next-memory round-control" id="oldageArrow" type="button" aria-label="Continuar a la reflexión final" hidden><img src="assets/Iconos/cafe/botón de continuar.svg" alt=""></button>
     </section>
 
-    <!-- Cierre: el contenido se construye desde js/closing-content.js (js/closing-screens.js). -->
+    <!-- Construye el cierre desde closing-content.js mediante closing-screens.js. -->
     <section class="scene closing-screen closing-reflection" data-scene="closing-reflection" hidden></section>
     <section class="scene closing-screen closing-contribute" data-scene="closing-contribute" hidden></section>
     <section class="scene closing-screen closing-thanks" data-scene="closing-thanks" hidden></section>

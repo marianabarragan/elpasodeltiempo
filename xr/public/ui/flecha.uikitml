@@ -1,0 +1,7 @@
+<!-- Flecha de continuar con el icono del proyecto. Medidas en centímetros. -->
+<style>
+  .flecha { width: 6.6; height: 6.6; border-radius: 99; cursor: pointer; }
+  .flecha:hover { transform-scale-x: 1.07; transform-scale-y: 1.07; }
+  .icono { width: 6.6; height: 6.6; }
+</style>
+<button id="flecha" class="flecha"><img id="icono" class="icono" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" /></button>

@@ -33,7 +33,7 @@
     }
   };
 
-  // Capture also blocks independent object/palette listeners while the scene changes.
+  // La captura bloquea las interacciones independientes durante la transición.
   ['click', 'pointerdown', 'pointermove', 'wheel', 'keydown'].forEach(type => {
     document.addEventListener(type, event => {
       if (!app.runtime.transitioning) return;

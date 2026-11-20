@@ -1,0 +1,35 @@
+{
+  "name": "el-paso-del-tiempo-xr",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Prototipo de realidad mixta de El paso del tiempo para Meta Quest 3 (IWSDK + Vite). La versión de computador está en la carpeta superior y no depende de esta.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:gestionado": "iwsdk dev restart --open --foreground",
+    "dev:down": "iwsdk dev down",
+    "dev:status": "iwsdk dev status",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@iwsdk/core": "1.0.1",
+    "@pmndrs/uikit": "^1.0.74",
+    "@pmndrs/uikit-horizon": "^1.0.74",
+    "@pmndrs/uikit-lucide": "^1.0.74",
+    "gsap": "^3.15.0",
+    "three": "npm:super-three@0.181.0"
+  },
+  "devDependencies": {
+    "@iwsdk/cli": "1.0.1",
+    "@iwsdk/vite-plugin-dev": "1.0.1",
+    "vite": "^7.1.4"
+  },
+  "overrides": {
+    "sharp": "0.35.4",
+    "three": "npm:super-three@0.181.0"
+  },
+  "engines": {
+    "node": ">=20.19.0 <21.0.0-0 || >=22.12.0 <23.0.0-0 || >=24.0.0"
+  }
+}

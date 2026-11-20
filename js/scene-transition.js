@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   const app = window.TimeExperience = window.TimeExperience || {};
-  // Warm sunset glow used as the veil while entering the childhood memory.
+  // Resplandor cálido durante la entrada al recuerdo infantil.
   const MEMORY_GLOW = 'radial-gradient(circle at 50% 46%, #fff8eb 0%, #ffe7bd 42%, #f6bd7c 100%)';
 
   class SceneTransition {
@@ -11,7 +11,7 @@
       this.prepareChildhood = prepareChildhood;
       this.enterAdulthood = enterAdulthood;
       this.enterOldAge = enterOldAge;
-      // Stages without a built scene only zoom in and request their scene.
+      // Sin escena construida, amplía la foto y solicita su entrada.
       this.requestScene = requestScene;
       this.showBoard = showBoard;
       this.afterEnter = afterEnter;
@@ -19,7 +19,7 @@
       this.button = document.getElementById('startExperience');
       this.copy = document.querySelector('.intro-copy');
       this.veil = document.getElementById('transitionVeil');
-      // Initial board blur comes from styles.css (--intro-blur) so reset() restores the same value.
+      // Restaura el desenfoque inicial definido en --intro-blur.
       this.initialBlur = getComputedStyle(this.intro.container).getPropertyValue('--intro-blur').trim() || '8px';
       this.running = false;
       this.state = 'idle';
@@ -53,7 +53,7 @@
     start() {
       if (this.state !== 'idle' || app.runtime.transitioning) return;
       if (!this.intro) return;
-      // Count real time from the start click, independently of GSAP's animation clock.
+      // Mide el tiempo real desde el clic, separado del reloj de animación.
       const waitStarted = performance.now();
       this.beforeStart?.();
       this.running = true;
@@ -72,7 +72,7 @@
         this.enableBoard();
       };
 
-      // Photographs accept the entry click only once this delay has passed since «Iniciar».
+      // Habilita las fotografías tras la espera desde Iniciar.
       const delay = app.Config.intro.photoDelayMs;
       const finishWait = () => {
         const remaining = delay - (performance.now() - waitStarted);
@@ -92,8 +92,7 @@
           boardRevealed = true;
           this.prepareChildhood();
           this.timeline = null;
-          // The clear board can respond to hover before the three-second gate.
-          // Photo presses/navigation still require the separate 'ready' state.
+          // El tablero responde al puntero antes de permitir entradas mediante ready.
           this.state = 'waiting';
           this.intro.container.classList.add('is-photo-interaction-ready');
           app.Interface.setLocked(false);
@@ -170,14 +169,11 @@
           .call(() => enterScene())
           .to(this.veil, { opacity: 0, duration: fade });
       }
-      // Until a stage's scene exists, retain the enlarged photograph and invoke its entry hook.
+      // Mantiene la fotografía ampliada mientras solicita una escena pendiente.
       return true;
     }
 
-    // Entry into the first photograph (childhood). The camera straightens onto the portrait
-    // and keeps gliding into it while the golden-hour light swells; a warm glow then covers
-    // the screen and the childhood room appears through it. It is added to the timeline built
-    // by enterPhoto(), so states, locks and callbacks are the same as before.
+    // Endereza la cámara y aumenta la luz al entrar desde la foto hasta la niñez.
     enterMemory(target, reduced) {
       const veil = this.veil;
       const glide = reduced ? .15 : 3.2;
@@ -205,7 +201,7 @@
         .set(veil, { clearProps: 'background' });
     }
 
-    // unlock: stage whose photograph becomes available on arrival ('adulthood', 'oldage').
+    // unlock indica la fotografía que se desbloquea al llegar.
     returnToBoard({ unlockAdulthood = false, unlock = unlockAdulthood ? 'adulthood' : null } = {}) {
       if (app.runtime.transitioning || this.running) return false;
       this.running = true;

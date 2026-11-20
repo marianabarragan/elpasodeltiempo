@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Capa_1" data-name="Capa 1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1920 1080">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #663616;
+        font-size: 75px;
+      }
+
+      .cls-1, .cls-2, .cls-3, .cls-4 {
+        font-family: Bahnschrift-Bold, Bahnschrift;
+        font-variation-settings: 'wght' 700, 'wdth' 100;
+        font-weight: 700;
+      }
+
+      .cls-5 {
+        fill: #442204;
+      }
+
+      .cls-6 {
+        fill: #d5bc93;
+        stroke: #7a5e40;
+        stroke-miterlimit: 10;
+      }
+
+      .cls-7 {
+        letter-spacing: 0em;
+      }
+
+      .cls-2 {
+        font-size: 62.45px;
+      }
+
+      .cls-2, .cls-8 {
+        fill: #fff7e8;
+      }
+
+      .cls-3 {
+        font-size: 62px;
+      }
+
+      .cls-9 {
+        letter-spacing: -.04em;
+      }
+
+      .cls-10 {
+        fill: none;
+      }
+
+      .cls-11 {
+        fill: #d3e59d;
+      }
+
+      .cls-12 {
+        opacity: .47;
+      }
+
+      .cls-13 {
+        fill: #7c652a;
+      }
+
+      .cls-14 {
+        filter: url(#drop-shadow-1);
+      }
+
+      .cls-15 {
+        letter-spacing: -.04em;
+      }
+
+      .cls-4 {
+        font-size: 25.82px;
+      }
+
+      .cls-4, .cls-16, .cls-17 {
+        fill: #6b440b;
+      }
+
+      .cls-18 {
+        letter-spacing: .02em;
+      }
+
+      .cls-19 {
+        fill: url(#Motivo_nuevo);
+        opacity: .12;
+      }
+
+      .cls-20 {
+        fill: #a4b75f;
+      }
+
+      .cls-17 {
+        letter-spacing: 0em;
+      }
+
+      .cls-21 {
+        letter-spacing: 0em;
+      }
+
+      .cls-22 {
+        fill: #c9d891;
+      }
+
+      .cls-23 {
+        letter-spacing: 0em;
+      }
+
+      .cls-24 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-25 {
+        letter-spacing: -.05em;
+      }
+    </style>
+    <pattern id="Motivo_nuevo" data-name="Motivo nuevo" x="0" y="0" width="65.58" height="103.44" patternTransform="translate(14633.48 15192.41) scale(3.03)" patternUnits="userSpaceOnUse" viewBox="0 0 65.58 103.44">
+      <g>
+        <rect class="cls-10" width="65.58" height="103.44"/>
+        <g>
+          <path class="cls-13" d="M27.42,49.05c-5.91-2.9-8.97-9.41-11.6-15.45,2.96,2.62,7.05,3.43,10.9,4.34s7.93,2.17,10.34,5.3c.85,1.11,1.45,2.4,2.24,3.55,1.8,2.62,4.86,4.99,7.78,6.19-2.26-1.86-6.99-1.61-9.82-1.84-3.35-.28-6.77-.58-9.84-2.08Z"/>
+          <path class="cls-13" d="M18.52,86.96c-1.67-1.91-3.55-3.65-5.14-5.63-5.25-6.53-7.06-15.67-4.7-23.71.58-.13,1.11.3,1.55.69,2.38,2.14,4.77,4.28,7.15,6.41,2.29,2.05,4.63,4.18,5.93,6.96,1.73,3.71,1.31,7.89.91,11.84-.28,2.79.38,7.64-1,9.99-1.63-2.11-2.91-4.51-4.7-6.55Z"/>
+          <path class="cls-13" d="M58.23,15.27c-2.37.39-4.7,1.02-7.08,1.31-7.86.95-16.09-2.16-21.36-8.07.19-.52.79-.75,1.33-.9,2.9-.84,5.81-1.69,8.71-2.53,2.79-.81,5.67-1.63,8.55-1.28,3.84.46,6.98,2.89,9.95,5.18,2.09,1.62,6.31,3.51,7.51,5.79-2.5.26-5.07.09-7.6.5Z"/>
+        </g>
+        <path class="cls-13" d="M-7.35,15.27c-2.37.39-4.7,1.02-7.08,1.31-7.86.95-16.09-2.16-21.36-8.07.19-.52.79-.75,1.33-.9,2.9-.84,5.81-1.69,8.71-2.53,2.79-.81,5.67-1.63,8.55-1.28,3.84.46,6.98,2.89,9.95,5.18,2.09,1.62,6.31,3.51,7.51,5.79-2.5.26-5.07.09-7.6.5Z"/>
+      </g>
+    </pattern>
+    <filter id="drop-shadow-1" x="308" y="658" width="371" height="152" filterUnits="userSpaceOnUse">
+      <feOffset dx="7" dy="7"/>
+      <feGaussianBlur result="blur" stdDeviation="5"/>
+      <feFlood flood-color="#000" flood-opacity=".31"/>
+      <feComposite in2="blur" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+  </defs>
+  <text/>
+  <text/>
+  <rect class="cls-11" x="1.85" y="2.45" width="1916.9" height="1073.36"/>
+  <rect class="cls-19" x="-111.17" y="4.74" width="1923.57" height="1002.64"/>
+  <text class="cls-1" transform="translate(118.66 562.77)"><tspan x="0" y="0">con el paso del tiempo?</tspan></text>
+  <text class="cls-3" transform="translate(118.66 418.15)"><tspan class="cls-16"><tspan x="0" y="0">¿</tspan><tspan class="cls-25" x="25.55" y="0">T</tspan><tspan x="52.07" y="0">e haz detenido a pensar </tspan></tspan><tspan class="cls-16" x="0" y="74.4">cómo cambia </tspan><tspan class="cls-17" x="384.11" y="74.4">l</tspan><tspan class="cls-16" x="401.76" y="74.4">a vida</tspan><tspan class="cls-5" x="564.39" y="74.4"> </tspan></text>
+  <g class="cls-14">
+    <rect class="cls-8" x="316.21" y="666.02" width="340.6" height="121.11" rx="60.55" ry="60.55"/>
+    <rect class="cls-6" x="331.13" y="677.89" width="311.42" height="99.74" rx="49.87" ry="49.87"/>
+  </g>
+  <text class="cls-2" transform="translate(388.17 750.49)"><tspan x="0" y="0">IN</tspan><tspan class="cls-23" x="60.92" y="0">CI</tspan><tspan class="cls-21" x="115.54" y="0">AR</tspan></text>
+  <polyline class="cls-11" points="932.06 1076.62 933.93 1070.42 1255.58 -.62 1916.57 6.2 1923.72 1079.89"/>
+  <rect class="cls-22" x="-.36" y="999.21" width="1917.96" height="81.7"/>
+  <g>
+    <g class="cls-12">
+      <text class="cls-4" transform="translate(1556.23 1050.01)"><tspan x="0" y="0">EL </tspan><tspan class="cls-9" x="37.17" y="0">P</tspan><tspan class="cls-15" x="52.11" y="0">A</tspan><tspan class="cls-24" x="67.82" y="0">S</tspan><tspan x="83.21" y="0">O </tspan><tspan class="cls-7" x="106.82" y="0">D</tspan><tspan x="123.51" y="0">EL </tspan><tspan class="cls-18" x="160.68" y="0">T</tspan><tspan x="173.62" y="0">IEM</tspan><tspan class="cls-7" x="216.28" y="0">P</tspan><tspan x="232.11" y="0">O</tspan></text>
+    </g>
+    <path class="cls-20" d="M1530.73,1054.19h-.35c-1.84.03-3.63-.74-4.67-2.16l-9.09-12.47c-1.58-2.18-.79-5.1,1.78-6.48.84-.46,1.78-.7,2.7-.73,1.9-.07,3.78.71,4.85,2.17l4.18,5.74,3.76-6.03c1.43-2.29,4.77-3.19,7.44-1.99,2.65,1.19,3.66,4.05,2.24,6.33l-8.16,13.09c-.93,1.49-2.66,2.38-4.5,2.49-.06.01-.12.01-.18.02Z"/>
+  </g>
+</svg>

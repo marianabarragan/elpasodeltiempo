@@ -2,21 +2,14 @@
   'use strict';
   const app = window.TimeExperience;
   const CLICK_TOLERANCE = 6;
-  // Height of the crayon tip over the sheet while it follows the mouse without painting.
+  // Altura de la punta sobre la hoja cuando sigue al puntero sin pintar.
   const HOVER_LIFT = .32;
-  // Hover state of the rings and the xylophone: how much they rise (scene units), grow and sway.
+  // Configura elevación, escala y balanceo de los juguetes al señalarlos.
   const TOY_HOVER = { lift: .35, grow: 1.08, sway: .05 };
+  // Prolonga brevemente el sonido entre marcas para evitar cortes en trazos lentos.
+  const FRICTION_HOLD = 250;
 
-  /**
-   * Crayon and toy interaction of the childhood scene.
-   *   rest  → the crayon lies on the floor; hovering makes it hop, a click opens the palette.
-   *           Hovering the rings or the xylophone lifts them a little while the pointer is on
-   *           them; a click on a toy (or the crayon) plays its sound (Config.childhood.audio).
-   *   tool  → after choosing a colour the crayon follows the mouse (no button needed) and
-   *           paints only while the left button is held down from a point on the sheet.
-   *           A press outside the sheet still rotates the camera; a simple click outside the
-   *           sheet (or the right button / Esc) puts the crayon back in its place.
-   */
+  /* Controla juguetes y crayola: elegir color, pintar con clic izquierdo y devolver con clic fuera o Esc. */
   class ObjectInteractions {
     constructor(world) {
       this.world = world;
@@ -25,7 +18,7 @@
       this.pointer = new THREE.Vector2();
       this.plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -world.paper.position.y);
       this.mode = 'rest';
-      this.held = false; // painting stroke in progress
+      this.held = false; // Trazo de pintura en curso.
       this.pointerId = null;
       this.press = null;
       this.previous = null;
@@ -67,9 +60,7 @@
       crayon.updateWorldMatrix(true, true);
       if (this.raycaster.intersectObject(crayon, true).length) return true;
       if (!includeRest) return false;
-      // Keep the resting silhouette pickable during the tiny hop. Otherwise
-      // lifting the geometry out from under the pointer could retrigger hover
-      // or make an immediate click miss the object being offered to the user.
+      // Detecta el juguete en reposo para que su salto no interrumpa el puntero.
       const origin = this.raycaster.ray.origin.clone();
       const restWorld = crayon.parent.localToWorld(this.world.props.crayonRest.position.clone());
       const offset = crayon.getWorldPosition(new THREE.Vector3()).sub(restWorld);
@@ -83,12 +74,12 @@
       return this.raycaster.intersectObject(this.world.paper, false)[0] || null;
     }
 
-    // ---------- Rest: hover hop (unchanged behaviour) ----------
+    // Salto al señalar en reposo.
     updateHover(event) {
       if (event.pointerType === 'touch' || this.mode !== 'rest' || this.releaseTween?.isActive()) return;
       this.ray(event);
       const hit = this.hitsCrayon(this.hovered);
-      // The crayon, when it is in front, wins over a toy behind it.
+      // La crayola situada delante tiene prioridad sobre el juguete de atrás.
       this.setToyHover(hit ? null : this.toyAt());
       if (!hit) { this.clearHover(); return; }
       if (this.hovered || this.hoverTween?.isActive()) return;
@@ -119,14 +110,13 @@
       });
     }
 
-    // ---------- Toys: hover state and click sound ----------
+    // Respuesta visual y sonido de los juguetes.
     get toys() {
       const models = this.world.props.metadata?.models || {};
       return { rings: models.rings, xylophone: models.xylophone };
     }
 
-    // Toy under the pointer, tested in its resting pose, so the lift of the hover never makes
-    // the pointer slip off it.
+    // Detecta el juguete en su pose de reposo para evitar perderlo al elevarse.
     toyAt() {
       let found = null, nearest = Infinity;
       Object.entries(this.toys).forEach(([name, toy]) => {
@@ -150,8 +140,7 @@
       if (name) { this.poseToy(name, true); this.world.interact(); }
     }
 
-    // Hovered: the toy rises a little, grows and sways once. Otherwise it settles back on the
-    // floor (at once with `immediate`).
+    // Eleva y balancea el juguete señalado; al salir vuelve al piso.
     poseToy(name, hovered, immediate = false) {
       const toy = this.toys[name], rest = toy?.userData.rest;
       if (!rest) return;
@@ -171,16 +160,16 @@
       } else gsap.to(toy.rotation, { z: 0, duration: .2, ease: 'power2.out', onUpdate });
     }
 
-    // Every toy back in its resting pose at once (scene exit and reset).
+    // Restaura todos los juguetes al salir o reiniciar.
     restToys() {
       this.hoveredToy = null;
       Object.keys(this.toys).forEach(name => this.poseToy(name, false, true));
     }
 
-    // ---------- Pointer ----------
+    // Puntero.
     down(event) {
       if (!this.enabled || this.pointerId !== null) return;
-      // Any press on the stage closes an open palette (choosing is done on the palette itself).
+      // Pulsar el escenario cierra la paleta abierta.
       if (this.world.palette.open) { this.world.palette.close(); return; }
       if (event.button === 2 && this.mode === 'tool') { this.setRest(); return; }
       if (event.button !== 0) return;
@@ -192,7 +181,7 @@
       if (this.mode === 'tool') {
         this.followPointer(event);
         if (this.hitsPaper() && !this.glide) {
-          // Pressing on the sheet paints: the tip comes down and a new stroke begins.
+          // Pulsar la hoja baja la punta e inicia un trazo.
           this.held = true;
           this.previous = null;
           this.world.painting.beginStroke();
@@ -236,13 +225,12 @@
       this.release();
       if (cancelled || !press || !this.enabled) return;
       if (Math.hypot(event.clientX - press.x, event.clientY - press.y) > CLICK_TOLERANCE) return;
-      if (press.kind === 'crayon') { this.world.audio.playEffect('crayon'); this.world.openPalette(); }
+      if (press.kind === 'crayon') this.world.openPalette();
       else if (press.kind === 'toy') this.world.audio.playEffect(press.toy);
       else if (press.kind === 'drop') this.setRest();
     }
 
-    // ---------- Tool mode ----------
-    // The tip follows the pointer on the sheet's plane, lifted while the button is up.
+    // La punta sigue el plano de la hoja y se eleva al soltar el botón.
     followPointer(event) {
       if (!event || this.mode !== 'tool') return;
       this.lastEvent = event;
@@ -261,13 +249,12 @@
       return local;
     }
 
-    // Moves the crayon only (used by the lift animation; never paints or breaks a stroke).
+    // Mueve la crayola sin pintar ni interrumpir el trazo.
     placeCrayon(event) {
       if (!event || this.mode !== 'tool' || this.glide) return false;
       const target = this.tipTarget(event);
       if (!target) return false;
-      // The transformed local tip lands exactly on the ray/plane intersection,
-      // independent of the uniform scale or the permitted camera rotation.
+      // Sitúa la punta en la intersección del rayo con el plano, considerando escala y giro.
       this.world.props.crayon.position.copy(target);
       this.world.invalidate();
       return true;
@@ -289,13 +276,14 @@
       const moving = Math.hypot(current.x - from.x, current.y - from.y) > .5;
       const painted = this.world.painting.stampSegment(from, current, this.world.color);
       this.previous = current;
-      this.world.audio.setPainting(painted && moving);
+      if (!painted || !moving) return;
+      this.world.audio.setPainting(true);
       clearTimeout(this.frictionTimer);
-      // Stop friction if the pointer stops, even with the mouse button still held.
-      this.frictionTimer = setTimeout(() => this.world.audio.setPainting(false), 95);
+      // Detiene la fricción si el puntero deja de moverse.
+      this.frictionTimer = setTimeout(() => this.world.audio.setPainting(false), FRICTION_HOLD);
     }
 
-    // Picks up the crayon: it glides from where it is to the pointer, then follows it.
+    // Desplaza la crayola hasta el puntero y comienza a seguirlo.
     setTool(pointer) {
       this.clearHover(false);
       this.setToyHover(null);
@@ -326,7 +314,7 @@
       });
     }
 
-    // Puts the crayon back in its resting place (the chosen colour stays).
+    // Devuelve la crayola a su lugar conservando el color elegido.
     setRest(immediate = false) {
       this.release();
       this.glide?.kill();
@@ -355,7 +343,7 @@
       });
     }
 
-    // Ends the current press (stroke or camera drag). The crayon stays a tool.
+    // Finaliza el trazo o arrastre sin soltar la crayola.
     release() {
       this.clearHover(false);
       clearTimeout(this.frictionTimer);
@@ -374,7 +362,7 @@
       if (this.mode === 'tool') {
         gsap.to(this.lift, { y: HOVER_LIFT, duration: .14, ease: 'power2.out', overwrite: true, onUpdate: () => this.placeCrayon(this.lastEvent) });
       } else if (!this.releaseTween?.isActive() && !this.hoverTween?.isActive()) {
-        // Cancelling a hover (blur, scene exit or reset) also restores contact.
+        // Al cancelar la respuesta al puntero, restaura el contacto con el piso.
         this.world.props.crayon.position.copy(this.world.props.crayonRest.position);
         this.world.invalidate();
       }

@@ -1,7 +1,7 @@
 (function (global) {
   'use strict';
 
-  // Provisional, replaceable artwork. Each caller owns and disposes its texture.
+  // Ilustraciones provisionales; cada consumidor libera su textura.
   const experience = global.TimeExperience = global.TimeExperience || {};
 
   function random(seed) {
@@ -167,7 +167,7 @@
     const cheekWidth = isChild ? 100 : 86;
     const chin = isChild ? 108 : 123;
 
-    // Hair is a layered silhouette; the face uses broad, gently faceted paint areas.
+    // Dibuja cabello por capas y rostro con áreas amplias de color.
     ellipse(ctx, -2, -26, isChild ? 113 : 108, isChild ? 119 : 140, p.hair, -0.05);
     if (isOld) ellipse(ctx, 78, -101, 34, 33, p.hairDark, 0.35);
     ellipse(ctx, -cheekWidth + 2, 9, 14, 26, p.skinDark, -0.12);
@@ -269,13 +269,13 @@
     brushwork(ctx, 512, 600, p.seed, 270, '#fff7d9', '#6d7970');
     drawBody(ctx, p, stage);
     drawFace(ctx, p, stage);
-    // One light glazing pass ties the hand-painted figure to its paper background.
+    // Una capa translúcida integra la figura con el papel.
     brushwork(ctx, 512, 600, p.seed + 62, 180, '#f4dfba', '#776753');
     grain(surface, p.seed + 1700, 7);
     return texture(surface, 'intro-portrait-' + stage);
   }
 
-  // Blurs a layer onto an opaque base so the projected light never gets hard edges.
+  // Difumina la capa sobre una base opaca para suavizar la luz.
   function soften(target, layer, radius) {
     const ctx = target.getContext('2d');
     if ('filter' in ctx) {
@@ -284,7 +284,7 @@
       ctx.filter = 'none';
       return;
     }
-    // Fallback without canvas filters: down- and up-sampling also diffuses the shapes.
+    // Sin filtros de lienzo, reduce y amplía para difuminar las formas.
     const small = canvas(Math.max(8, Math.round(layer.width / radius)), Math.max(8, Math.round(layer.height / radius)));
     const smallCtx = small.getContext('2d');
     smallCtx.imageSmoothingQuality = 'high';
@@ -293,10 +293,7 @@
     ctx.drawImage(small, 0, 0, layer.width, layer.height);
   }
 
-  // Sunlight cookie for the board's golden-hour SpotLight. Its RGB multiplies the light:
-  // a honey window patch, the soft shadow of the window bars and a few leaf silhouettes.
-  // Shapes are authored in board units (x: -9.5..9.5, y: -5.55..5.55) and mapped through
-  // `corners`, the board corners as seen from the light (0..1 texture coordinates).
+  // Genera el patrón de ventana y hojas en las coordenadas del tablero.
   function windowLight(corners) {
     const size = 1024;
     const next = random(5021);
@@ -335,11 +332,11 @@
 
     const surface = canvas(size, size);
     const ctx = surface.getContext('2d');
-    // Indirect room light outside the window opening: warm and only moderately dimmer.
+    // Luz cálida indirecta fuera de la ventana.
     ctx.fillStyle = '#c2967a';
     ctx.fillRect(0, 0, size, size);
 
-    // Window opening, its top edge sloping like late raking sunlight.
+    // Abertura inclinada según la luz del atardecer.
     const patch = canvas(size, size);
     const patchCtx = patch.getContext('2d');
     const [x0, y0] = toCanvas(-12, 7.5);
@@ -351,7 +348,7 @@
     shape(patchCtx, [[-13, 7.4], [6.8, 5.9], [8.9, -7.6], [-13, -7.6]], honey);
     soften(surface, patch, 26);
 
-    // Window bars: two slanted verticals and one horizontal transom, very diffuse.
+    // Barras de ventana con sombras difusas.
     const bars = canvas(size, size);
     const barsCtx = bars.getContext('2d');
     const barColor = 'rgba(140,96,64,0.66)';
@@ -360,7 +357,7 @@
     shape(barsCtx, [[3.8, 7.6], [4.45, 7.6], [5.85, -7.6], [5.2, -7.6]], 'rgba(140,96,64,0.5)');
     soften(surface, bars, 5);
 
-    // Leaves of a plant by the window: corners only, away from the portraits' faces.
+    // Coloca hojas en las esquinas sin cubrir los rostros.
     const leaves = canvas(size, size);
     const leavesCtx = leaves.getContext('2d');
     const leafColor = 'rgba(122,80,52,0.68)';
@@ -375,7 +372,7 @@
     return result;
   }
 
-  // Neutral fibre streaks for the twisted strands of the cabuya (tinted by each material).
+  // Fibras neutras teñidas por el material de la cabuya.
   function jute() {
     const surface = canvas(128, 32);
     const ctx = surface.getContext('2d');

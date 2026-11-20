@@ -2,13 +2,10 @@
   'use strict';
   const app = window.TimeExperience;
 
-  // Five milestones of 20 % each. Every milestone counts only once.
+  // Cinco hitos del 20 %, contados una sola vez.
   const STEPS = Object.freeze(['crayon', 'color', 'sun', 'house', 'tree']);
 
-  /**
-   * Progress of scenario 1 (childhood) and its bar, horizontal at the top for the whole
-   * interaction. At 100 % `onComplete` runs (phrase and continue arrow, in script.js).
-   */
+  /* Controla el progreso de la niñez y ejecuta onComplete al llegar al 100 %. */
   class ChildhoodProgress {
     constructor({ element, onComplete } = {}) {
       this.element = element;
@@ -24,7 +21,7 @@
     get complete() { return this.done.size === STEPS.length; }
     has(step) { return this.done.has(step); }
 
-    // Registers a milestone; repeated actions do not add progress again.
+    // Cada hito suma progreso una sola vez.
     mark(step) {
       if (!STEPS.includes(step) || this.done.has(step)) return false;
       this.done.add(step);

@@ -2,16 +2,7 @@
   'use strict';
   const app = window.TimeExperience;
 
-  /**
-   * Progress of scenario 3 (old age), horizontal at the top of the screen from the start.
-   * Four milestones with the weights of Config.oldage.progress:
-   *   'glasses'  → the glasses are on and the view is sharp
-   *   'pot'      → the chosen pot has reached the centre
-   *   'watering' → the 4.5 s of watering are complete
-   *   'extra'    → first interaction with the coffee cup or the radio (only once for both)
-   * Each milestone counts once and the bar never goes back. At 100 % `onComplete` runs after
-   * the fill animation. Same markup and look as the scenario 1 bar.
-   */
+  /* Suma gafas, maceta, riego y taza o radio; al completar la barra ejecuta onComplete. */
   class OldAgeProgress {
     constructor({ element, onComplete } = {}) {
       this.weights = new Map(Object.entries(app.Config.oldage.progress));
@@ -31,7 +22,7 @@
     get complete() { return this.value >= 99.999; }
     has(step) { return this.done.has(step); }
 
-    // Registers a milestone; repeated actions do not add progress again.
+    // Cada hito suma progreso una sola vez.
     mark(step) {
       if (!this.weights.has(step) || this.done.has(step)) return false;
       this.done.add(step);

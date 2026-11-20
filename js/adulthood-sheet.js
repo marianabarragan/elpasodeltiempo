@@ -2,7 +2,7 @@
   'use strict';
   const app = window.TimeExperience;
 
-  // Objects that stay sharp while the sheet is lifted (sheet, its glow and the pen).
+  // Capa nítida de la hoja, su halo y el lapicero.
   const FOCUS_LAYER = 1;
 
   const QUAD_VERTEX = `
@@ -27,16 +27,12 @@
     }
   `;
 
-  /**
-   * Background blur used while the sheet is lifted. The scene without the focus layer is
-   * rendered to a target, blurred in two passes to the screen, and then the focus layer
-   * (sheet + pen) is drawn on top, sharp. With amount 0 the scene is rendered directly.
-   */
+  /* Desenfoca el fondo y dibuja encima la hoja y el lapicero nítidos. */
   class SheetBlur {
     constructor(renderer) {
       this.renderer = renderer;
       this.size = new THREE.Vector2(1, 1);
-      // The background is blurred anyway: no multisampling, and the blur runs at half size.
+      // Desenfoca a media resolución y sin multimuestreo.
       this.sceneTarget = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType });
       this.blurTarget = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, depthBuffer: false });
       this.quadCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
@@ -66,7 +62,7 @@
         renderer.render(scene, camera);
         return;
       }
-      // 1. Everything except the focus layer, blurred.
+      // Dibuja el fondo desenfocado sin la capa de enfoque.
       camera.layers.set(0);
       renderer.setRenderTarget(this.sceneTarget);
       renderer.render(scene, camera);
@@ -80,7 +76,7 @@
       this.quad.material = this.vertical;
       renderer.setRenderTarget(null);
       renderer.render(this.quadScene, this.quadCamera);
-      // 2. The sheet and the pen on top, sharp. (A colour background would clear the screen.)
+      // Superpone la hoja y el lapicero sin borrar el fondo.
       camera.layers.set(FOCUS_LAYER);
       const autoClear = renderer.autoClear, background = scene.background;
       renderer.autoClear = false;
@@ -101,14 +97,7 @@
 
   const axisX = new THREE.Vector3(1, 0, 0);
 
-  /**
-   * The checklist sheet's reading mode. On the desk the sheet glows from its edges after
-   * `glowDelayMs`; a click lifts it (with the pen) in front of the view, almost at 90°
-   * to the line of sight, while the background blurs. The pen can then be taken with a
-   * click: it follows the pointer over the sheet and marks checkboxes. When the list is
-   * complete everything returns to the desk. Poses are computed from the camera every
-   * frame, so they stay right on any screen size.
-   */
+  /* Levanta la hoja para escribir y devuelve hoja y lapicero al completar la lista. */
   class SheetFocus {
     constructor(world) {
       this.world = world;
@@ -119,7 +108,7 @@
       this.blur = new SheetBlur(world.renderer);
       [this.paper.root, this.pen.root].forEach(root => root.traverse(object => object.layers.set(FOCUS_LAYER)));
       world.cameraRig.camera.layers.enable(FOCUS_LAYER);
-      // Lights must reach the focus layer; shadow cameras keep seeing every layer.
+      // Las luces alcanzan la capa de enfoque y las sombras conservan todas las capas.
       world.scene.traverse(object => {
         if (!object.isLight) return;
         object.layers.enable(FOCUS_LAYER);
@@ -127,15 +116,15 @@
       });
       this.penMeshes = [];
       this.pen.root.traverse(object => { if (object.isMesh) this.penMeshes.push(object); });
-      this.lift = { t: 0 };       // sheet: 0 on the desk → 1 in front of the view
-      this.carry = { t: 0 };      // pen: 0 on the desk → 1 beside the lifted sheet
-      this.grip = { t: 0 };       // pen: 0 beside the sheet → 1 held at the pointer
-      this.tap = { t: 0 };        // short press of the pen tip into the sheet
+      this.lift = { t: 0 };       // Hoja: 0 sobre la mesa, 1 frente a la cámara.
+      this.carry = { t: 0 };      // Lapicero: 0 sobre la mesa, 1 junto a la hoja.
+      this.grip = { t: 0 };       // Lapicero: 0 junto a la hoja, 1 en el puntero.
+      this.tap = { t: 0 };        // Presión breve de la punta sobre la hoja.
       this.tipTarget = new THREE.Vector3();
       this.state = 'desk';
       this.held = false;
       this.timeline = null;
-      // Scratch objects.
+      // Objetos temporales reutilizables.
       this.v = { right: new THREE.Vector3(), up: new THREE.Vector3(), back: new THREE.Vector3(), center: new THREE.Vector3(), a: new THREE.Vector3(), b: new THREE.Vector3(), c: new THREE.Vector3() };
       this.q = { sheet: new THREE.Quaternion(), float: new THREE.Quaternion(), held: new THREE.Quaternion() };
       this.basisMatrix = new THREE.Matrix4();
@@ -154,11 +143,11 @@
         this.world.renderer.render(scene, camera);
         return;
       }
-      // While lifting/lowering the sheet is always drawn last so nothing on the desk covers it.
+      // Dibuja la hoja al final durante el movimiento para evitar que otros objetos la tapen.
       this.blur.render(scene, camera, Math.max(radius, .06));
     }
 
-    // ---------- Call to action ----------
+    // Señal de interacción.
     scheduleGlow() {
       clearTimeout(this.glowTimer);
       if (this.world.checklist.complete || this.state !== 'desk' || this.glowTween) return;
@@ -166,8 +155,7 @@
         if (!this.world.active || this.state !== 'desk' || this.world.checklist.complete) return;
         const glow = this.paper.glow;
         glow.visible = true;
-        // Slow, gentle breathing of the edges (about 2.6 s per cycle, like the glow of the props
-        // in the other scenes).
+        // Anima lentamente el brillo de los bordes.
         this.glowTween = gsap.fromTo(glow.material, { opacity: .25 }, {
           opacity: .6, duration: this.reduced ? 2.6 : 1.3, ease: 'sine.inOut', yoyo: true, repeat: -1,
           onUpdate: () => this.world.invalidate()
@@ -184,7 +172,7 @@
       gsap.to(glow.material, { opacity: 0, duration: .25, onUpdate: () => this.world.invalidate(), onComplete: () => { glow.visible = false; } });
     }
 
-    // ---------- Lift / lower ----------
+    // Levantar y bajar la hoja.
     liftSheet() {
       if (this.state !== 'desk' || this.world.checklist.complete) return false;
       this.stopGlow();
@@ -219,11 +207,11 @@
         .to(this.lift, { t: 0, duration: 1.15 * k, ease: 'power2.inOut' }, .45 * k);
     }
 
-    // ---------- Pen ----------
+    // Lapicero.
     grabPen() {
       if (this.state !== 'lifted' || this.held) return;
       this.held = true;
-      // The hand cursor would cover the pen tip: the pen itself is the pointer now.
+      // Oculta la mano para que el lapicero sea el puntero.
       this.setPointerHidden(true);
       gsap.to(this.grip, { t: 1, duration: .16, ease: 'power2.out', overwrite: true, onUpdate: () => this.world.invalidate() });
     }
@@ -235,7 +223,7 @@
       gsap.to(this.grip, { t: 0, duration: .4, ease: 'power2.inOut', overwrite: true, onUpdate: () => this.world.invalidate() });
     }
 
-    // Moves the pen tip to where `ray` meets the sheet, kept within the sheet's surroundings.
+    // Coloca la punta donde el rayo cruza la hoja, dentro de sus alrededores.
     pointTo(ray) {
       const paper = this.paper;
       this.plane.setFromNormalAndCoplanarPoint(this.v.back, paper.root.position);
@@ -253,14 +241,14 @@
       gsap.fromTo(this.tap, { t: 0 }, { t: 1, duration: .09, yoyo: true, repeat: 1, ease: 'power1.out', overwrite: true, onUpdate: () => this.world.invalidate() });
     }
 
-    // Canvas coordinates of the checklist under `ray`, or null outside the sheet.
+    // Devuelve coordenadas del lienzo o null fuera de la hoja.
     sheetPoint(raycaster) {
       const hit = raycaster.intersectObject(this.paper.mesh, false)[0];
       if (!hit?.uv) return null;
       return this.world.checklist.uvToCanvas(hit.uv);
     }
 
-    // ---------- Poses ----------
+    // Posiciones y orientaciones.
     update() {
       if (!this.active) return;
       const { paper, pen, v, q } = this;
@@ -268,32 +256,31 @@
       const right = v.right.setFromMatrixColumn(camera.matrixWorld, 0);
       const up = v.up.setFromMatrixColumn(camera.matrixWorld, 1);
       const back = v.a.setFromMatrixColumn(camera.matrixWorld, 2);
-      // Leaned back a few degrees: almost, not exactly, perpendicular to the view.
+      // Inclina ligeramente la hoja hacia atrás respecto a la vista.
       const lean = 7 * Math.PI / 180;
       const normal = v.back.copy(back).multiplyScalar(Math.cos(lean)).addScaledVector(up, Math.sin(lean));
       const top = v.b.copy(up).multiplyScalar(Math.cos(lean)).addScaledVector(back, -Math.sin(lean));
       const scale = this.config.liftHeight * rig.viewSize / paper.height;
-      // In front of everything on the desk, slightly below the centre of the view.
+      // Coloca la hoja delante del escritorio, bajo el centro de la vista.
       v.center.copy(camera.position).addScaledVector(back, -(rig.distance - 9)).addScaledVector(up, -.02 * rig.viewSize);
       this.basisMatrix.makeBasis(right, normal, v.c.copy(top).negate());
       q.sheet.setFromRotationMatrix(this.basisMatrix);
 
-      // Sheet: from its resting pose to the reading pose, rising in a soft arc.
-      // (v.back keeps the sheet's normal: pointTo() uses it as the writing plane.)
+      // Eleva la hoja en arco; v.back conserva la normal del plano de escritura.
       const t = this.lift.t;
       paper.root.position.lerpVectors(paper.rest.position, v.center, t);
       paper.root.position.y += Math.sin(t * Math.PI) * 1.1;
       paper.root.quaternion.slerpQuaternions(paper.rest.quaternion, q.sheet, t);
       paper.root.scale.setScalar(1 + (scale - 1) * t);
       paper.root.updateMatrixWorld(true);
-      // Facing the viewer, away from the desk lamp-light, the sheet is brightened a little to read.
+      // Aclara la hoja orientada al usuario para facilitar la lectura.
       paper.material.emissive.setScalar(.2 * t);
 
-      // Pen beside the sheet: on its right, tip down and slightly toward the sheet.
+      // Lapicero a la derecha de la hoja, con la punta hacia abajo.
       const half = paper.width * scale / 2;
       const floatPosition = new THREE.Vector3().copy(v.center).addScaledVector(right, half + .55 * scale).addScaledVector(top, -.12 * scale);
       this.orient(q.float, new THREE.Vector3().copy(top).multiplyScalar(-.9).addScaledVector(right, -.4), normal);
-      // Held pen: tip on the pointer, body toward the lower right and the viewer, like writing.
+      // Sitúa la punta en el puntero y el cuerpo hacia la derecha y el usuario.
       const heldDirection = new THREE.Vector3().copy(top).multiplyScalar(.6).addScaledVector(right, -.5).addScaledVector(normal, -.42);
       this.orient(q.held, heldDirection, normal);
       const s = 1 + (scale - 1) * this.carry.t;
@@ -308,12 +295,12 @@
       pen.root.position.y += Math.sin(c * Math.PI) * .9;
       pen.root.quaternion.slerpQuaternions(pen.rest.quaternion, liftedQuaternion, c);
       pen.root.scale.setScalar(s);
-      // A pen floating near the viewer would throw a stray shadow on the blurred desk.
+      // Evita que el lapicero flotante proyecte sombras sobre el escritorio.
       const onDesk = c < .02;
       this.penMeshes.forEach(mesh => { mesh.castShadow = onDesk; });
     }
 
-    // Pen authored along +X (tip) with its clip on +Y: aim X along `direction`, Y toward `facing`.
+    // Orienta el eje X hacia direction y el eje Y hacia facing.
     orient(target, direction, facing) {
       const x = direction.clone().normalize();
       const y = facing.clone().addScaledVector(x, -facing.dot(x)).normalize();

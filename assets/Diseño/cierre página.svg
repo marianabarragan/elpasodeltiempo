@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Capa_1" data-name="Capa 1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1920 1080">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #d5bc93;
+        stroke: #7a5e40;
+      }
+
+      .cls-1, .cls-2 {
+        stroke-miterlimit: 10;
+      }
+
+      .cls-3 {
+        letter-spacing: 0em;
+      }
+
+      .cls-4 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-5 {
+        letter-spacing: -.04em;
+      }
+
+      .cls-6 {
+        font-size: 46.7px;
+      }
+
+      .cls-6, .cls-7, .cls-8 {
+        font-family: Bahnschrift-Bold, Bahnschrift;
+        font-variation-settings: 'wght' 700, 'wdth' 100;
+        font-weight: 700;
+      }
+
+      .cls-6, .cls-9 {
+        fill: #fff7e8;
+      }
+
+      .cls-10 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-11 {
+        letter-spacing: 0em;
+      }
+
+      .cls-12, .cls-2 {
+        fill: none;
+      }
+
+      .cls-13 {
+        fill: #d3e59d;
+      }
+
+      .cls-14 {
+        opacity: .47;
+      }
+
+      .cls-15 {
+        fill: #7c652a;
+      }
+
+      .cls-16 {
+        font-family: Bahnschrift-Light, Bahnschrift;
+        font-size: 46.8px;
+        font-variation-settings: 'wght' 300, 'wdth' 100;
+        font-weight: 300;
+      }
+
+      .cls-16, .cls-7, .cls-8 {
+        fill: #6b440b;
+      }
+
+      .cls-17 {
+        letter-spacing: 0em;
+      }
+
+      .cls-18 {
+        letter-spacing: -.04em;
+      }
+
+      .cls-7 {
+        font-size: 25.82px;
+      }
+
+      .cls-19 {
+        letter-spacing: .02em;
+      }
+
+      .cls-20 {
+        fill: url(#Motivo_nuevo);
+        opacity: .12;
+      }
+
+      .cls-21 {
+        fill: #a4b75f;
+      }
+
+      .cls-22 {
+        letter-spacing: -.04em;
+      }
+
+      .cls-23 {
+        letter-spacing: 0em;
+      }
+
+      .cls-24 {
+        letter-spacing: 0em;
+      }
+
+      .cls-25 {
+        fill: #c9d891;
+      }
+
+      .cls-26 {
+        filter: url(#drop-shadow-12);
+      }
+
+      .cls-27 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-8 {
+        font-size: 122px;
+      }
+
+      .cls-28 {
+        letter-spacing: 0em;
+      }
+
+      .cls-2 {
+        stroke: #6b440b;
+        stroke-width: 2px;
+      }
+
+      .cls-29 {
+        letter-spacing: 0em;
+      }
+    </style>
+    <pattern id="Motivo_nuevo" data-name="Motivo nuevo" x="0" y="0" width="65.58" height="103.44" patternTransform="translate(10605.13 14039.24) scale(3.01 3.03)" patternUnits="userSpaceOnUse" viewBox="0 0 65.58 103.44">
+      <g>
+        <rect class="cls-12" width="65.58" height="103.44"/>
+        <g>
+          <path class="cls-15" d="M27.42,49.05c-5.91-2.9-8.97-9.41-11.6-15.45,2.96,2.62,7.05,3.43,10.9,4.34s7.93,2.17,10.34,5.3c.85,1.11,1.45,2.4,2.24,3.55,1.8,2.62,4.86,4.99,7.78,6.19-2.26-1.86-6.99-1.61-9.82-1.84-3.35-.28-6.77-.58-9.84-2.08Z"/>
+          <path class="cls-15" d="M18.52,86.96c-1.67-1.91-3.55-3.65-5.14-5.63-5.25-6.53-7.06-15.67-4.7-23.71.58-.13,1.11.3,1.55.69,2.38,2.14,4.77,4.28,7.15,6.41,2.29,2.05,4.63,4.18,5.93,6.96,1.73,3.71,1.31,7.89.91,11.84-.28,2.79.38,7.64-1,9.99-1.63-2.11-2.91-4.51-4.7-6.55Z"/>
+          <path class="cls-15" d="M58.23,15.27c-2.37.39-4.7,1.02-7.08,1.31-7.86.95-16.09-2.16-21.36-8.07.19-.52.79-.75,1.33-.9,2.9-.84,5.81-1.69,8.71-2.53,2.79-.81,5.67-1.63,8.55-1.28,3.84.46,6.98,2.89,9.95,5.18,2.09,1.62,6.31,3.51,7.51,5.79-2.5.26-5.07.09-7.6.5Z"/>
+        </g>
+        <path class="cls-15" d="M-7.35,15.27c-2.37.39-4.7,1.02-7.08,1.31-7.86.95-16.09-2.16-21.36-8.07.19-.52.79-.75,1.33-.9,2.9-.84,5.81-1.69,8.71-2.53,2.79-.81,5.67-1.63,8.55-1.28,3.84.46,6.98,2.89,9.95,5.18,2.09,1.62,6.31,3.51,7.51,5.79-2.5.26-5.07.09-7.6.5Z"/>
+      </g>
+    </pattern>
+    <filter id="drop-shadow-12" x="391.38" y="681.09" width="661" height="121" filterUnits="userSpaceOnUse">
+      <feOffset dx="7" dy="7"/>
+      <feGaussianBlur result="blur" stdDeviation="5"/>
+      <feFlood flood-color="#000" flood-opacity=".31"/>
+      <feComposite in2="blur" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+  </defs>
+  <rect class="cls-13" x="3.83" y="2.3" width="1914.64" height="1075.4"/>
+  <rect class="cls-25" x="2.4" y="998.6" width="1917.96" height="81.7"/>
+  <g>
+    <g class="cls-14">
+      <text class="cls-7" transform="translate(110.83 1051.44)"><tspan x="0" y="0">EL </tspan><tspan class="cls-5" x="37.17" y="0">P</tspan><tspan class="cls-18" x="52.11" y="0">A</tspan><tspan class="cls-27" x="67.82" y="0">S</tspan><tspan x="83.21" y="0">O </tspan><tspan class="cls-3" x="106.82" y="0">D</tspan><tspan x="123.51" y="0">EL </tspan><tspan class="cls-19" x="160.68" y="0">T</tspan><tspan x="173.62" y="0">IEM</tspan><tspan class="cls-3" x="216.28" y="0">P</tspan><tspan x="232.11" y="0">O</tspan></text>
+    </g>
+    <path class="cls-21" d="M85.33,1055.62h-.35c-1.84.03-3.63-.74-4.67-2.16l-9.09-12.47c-1.58-2.18-.79-5.1,1.78-6.48.84-.46,1.78-.7,2.7-.73,1.9-.07,3.78.71,4.85,2.17l4.18,5.74,3.76-6.03c1.43-2.29,4.77-3.19,7.44-1.99,2.65,1.19,3.66,4.05,2.24,6.33l-8.16,13.09c-.93,1.49-2.66,2.38-4.5,2.49-.06.01-.12.01-.18.02Z"/>
+  </g>
+  <rect class="cls-20" x="5.87" y="-13.02" width="1911.83" height="1004.94"/>
+  <g class="cls-26">
+    <g>
+      <rect class="cls-9" x="399.57" y="689.27" width="630.13" height="90.57" rx="45.29" ry="45.29"/>
+      <rect class="cls-1" x="410.9" y="698.15" width="610.72" height="74.59" rx="37.3" ry="37.3"/>
+    </g>
+    <text class="cls-6" transform="translate(435.44 752.44)"><tspan class="cls-29" x="0" y="0">V</tspan><tspan x="27.64" y="0">ER F</tspan><tspan class="cls-17" x="124.65" y="0">O</tspan><tspan x="154.34" y="0">R</tspan><tspan class="cls-28" x="184.79" y="0">M</tspan><tspan class="cls-22" x="220.72" y="0">A</tspan><tspan x="249.14" y="0">S </tspan><tspan class="cls-17" x="290.44" y="0">D</tspan><tspan x="320.63" y="0">E A</tspan><tspan class="cls-28" x="391.33" y="0">PO</tspan><tspan x="449.64" y="0">R</tspan><tspan class="cls-4" x="480.08" y="0">T</tspan><tspan x="501.43" y="0">AR</tspan></text>
+  </g>
+  <text class="cls-16" transform="translate(1120.03 751.81)"><tspan class="cls-10" x="0" y="0">R</tspan><tspan class="cls-23" x="29.59" y="0">epetir</tspan></text>
+  <text class="cls-16" transform="translate(1351.98 753.34)"><tspan x="0" y="0">Salir</tspan></text>
+  <text class="cls-8" transform="translate(344.72 380.22)"><tspan x="0" y="0">Gracias por </tspan><tspan class="cls-11" x="665.88" y="0">r</tspan><tspan x="716.75" y="0">ega</tspan><tspan class="cls-24" x="912.86" y="0">l</tspan><tspan x="947.58" y="0">arnos </tspan><tspan x="3.04" y="146.4">un minuto de tu tiempo</tspan></text>
+  <line class="cls-2" x1="1119.06" y1="768" x2="1259.49" y2="768"/>
+  <line class="cls-2" x1="1337.36" y1="767.23" x2="1477.79" y2="767.23"/>
+</svg>

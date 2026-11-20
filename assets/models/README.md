@@ -2,9 +2,9 @@
 
 ## Portada: reloj de arena
 
-El reloj de arena de la portada viene de Blender en OBJ + MTL, en `assets/models/Inicio/reloj de arena/` (ver su `LEEME_para_Claude.md`). La web usa el reloj completo: `npm run obj` convierte `reloj_de_arena_completo/reloj_de_arena_completo.obj` en un `.glb` al lado, con las texturas dentro en WebP de 1024 px como máximo (1,5 MB), y actualiza su copia `.glb.js`. Las carpetas `partes/` y `fondo/` no se usan. `js/intro-models.js` lo carga antes que los demás modelos, porque es lo primero que se ve.
+El reloj de arena de la portada viene de Blender en OBJ + MTL, en `assets/models/Inicio/reloj de arena/` (ver su `LEEME_para_Claude.md`). La web usa el reloj completo: `npm run obj` convierte `reloj_de_arena_completo/reloj_de_arena_completo.obj` en un `.glb` al lado, con las texturas dentro en WebP de 1024 px como máximo (1,5 MB), y actualiza su copia `.glb.js`. `js/intro-models.js` lo carga antes que los demás modelos, porque es lo primero que se ve.
 
-- **Orientación y tamaño**: el frente es el lado de las flores (el -X de los OBJ, frente a la pared de `fondo/`), y en la web mira a la cámara. Se centra en el cuello del cristal y se escala de forma uniforme, sin cambiar sus proporciones.
+- **Orientación y tamaño**: el frente es el lado de las flores (el -X de los OBJ), y en la web mira a la cámara. Se centra en el cuello del cristal y se escala de forma uniforme, sin cambiar sus proporciones.
 - **Arena**: la pieza que queda dentro del cristal es la arena. La web no la muestra tal cual: toma su color y cuánta hay arriba y abajo, y dibuja su propia arena animada dentro del cristal (con la forma del cristal del modelo). Esa arena cae en un hilo con granos y pasa de arriba abajo conservando su cantidad. Además brilla: su luz cálida alumbra el reloj y la portada.
 - **Cristal**: la pieza transparente. Se cambia por un vidrio más claro, para que la arena luminosa se vea a través de él, con dos reflejos blancos en cada ampolla.
 - **Reflexión del cierre**: usa el mismo reloj, que a los 3 s se voltea. Gira sobre el cuello, así que sus flores quedan abajo, y su arena pasa a la ampolla de arriba y vuelve a caer.
@@ -78,7 +78,7 @@ La composición reserva `x ∈ [-5.74, 5.74]`, `z ∈ [-4.305, 4.305]` para la h
 
 ## Escenario 2: juventud / adultez joven
 
-Los objetos vienen de Blender en OBJ + MTL, una carpeta por objeto en `assets/models/adulthood/` (ver `LEEME_para_Claude.md` y `manifiesto.json`). `npm run obj` convierte cada OBJ en un `.glb` al lado, con Blender: texturas dentro, en WebP de 1024 px como máximo (todo el escenario pesa unos 4 MB). `js/adulthood-models.js` carga esos `.glb` (lista `SOURCES`) y `js/adulthood-props.js` los coloca. Si alguno no carga, ese objeto usa su versión provisional. `escena_completa/` es solo de referencia: la web no la usa.
+Los objetos vienen de Blender en OBJ + MTL, una carpeta por objeto en `assets/models/adulthood/` (ver `LEEME_para_Claude.md` y `manifiesto.json`). `npm run obj` convierte cada OBJ en un `.glb` al lado, con Blender: texturas dentro, en WebP de 1024 px como máximo (todo el escenario pesa unos 4 MB). `js/adulthood-models.js` carga esos `.glb` (lista `SOURCES`) y `js/adulthood-props.js` los coloca. Si alguno no carga, ese objeto usa su versión provisional.
 
 | Objeto | Archivo | Tamaño en la escena (medida mayor) |
 |---|---|---|
@@ -159,12 +159,7 @@ Todos los objetos son modelos de Blender, uno por carpeta en `assets/models/olda
 | Radio | `radio/radio.glb` |
 | Taza y plato | `taza/taza-web.glb`, `taza/platotaza.glb` |
 
-`matera1-web.glb` y `taza-web.glb` son copias corregidas de tus exportaciones:
-
-- a `matera1.glb` le faltaba la maceta (solo traía las hojas), así que se exportó de nuevo desde `escenario3.glb`;
-- la taza traía texturas de 4096 px (11,5 MB) y su copia las tiene a 1024 px (1 MB).
-
-`escenario3.glb` y la carpeta `taza PT` son archivos de trabajo: la web no los usa.
+`matera1-web.glb` incluye la maceta y las hojas. `taza-web.glb` usa texturas de 1024 px (1 MB). Estas son las versiones que conserva el proyecto para la web.
 
 ### Cómo se colocan
 

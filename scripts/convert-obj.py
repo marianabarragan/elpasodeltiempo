@@ -1,7 +1,4 @@
-# Blender script (run by scripts/convert-obj.cjs): converts each OBJ given as `source target`
-# pairs into a .glb with its textures inside, as WebP of at most 1024 px.
-# The OBJ is Y up, -Z forward (Blender's OBJ export default). Paths are made absolute so the
-# importer finds the images next to the OBJ.
+# Convierte pares OBJ/GLB con Blender y texturas WebP de hasta 1024 píxeles.
 import os
 import sys
 import bpy

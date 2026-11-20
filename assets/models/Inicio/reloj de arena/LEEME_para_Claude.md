@@ -8,16 +8,6 @@ PNG copiadas junto a cada OBJ. Sirven para reemplazar el reloj de arena de un pr
 | Archivo | Qué es |
 |---|---|
 | `reloj_de_arena_completo/reloj_de_arena_completo.obj` | **El reloj entero**, todas las piezas ya colocadas (lo normal es usar este) |
-| `partes/base_inferior.obj` | Base de madera de abajo |
-| `partes/base_superior.obj` | Base de madera de arriba |
-| `partes/columnas.obj` | Las columnas torneadas de madera |
-| `partes/cristal.obj` | Ampolla de cristal (semitransparente: `d 0.33` en el `.mtl`) |
-| `partes/arena.obj` | Arena dentro del cristal |
-| `partes/enredadera_tallo.obj` | Tallo de la enredadera que rodea el reloj |
-| `partes/enredadera_hojas.obj` | Hojas de la enredadera |
-| `partes/enredadera_esferas.obj` | Esferas/brotes verdes de la enredadera |
-| `partes/flores.obj` | 7 florecitas blancas |
-| `fondo/fondo_suelo_y_pared.obj` | Suelo y pared de fondo de la escena del reloj (opcional, no es parte del reloj) |
 | `manifiesto.json` | Por archivo: objetos de Blender que contiene, caja envolvente y tamaño |
 
 Cada carpeta es autónoma (`.obj` + `.mtl` + imágenes, rutas relativas). Mueve siempre la carpeta completa.
@@ -25,7 +15,7 @@ Cada carpeta es autónoma (`.obj` + `.mtl` + imágenes, rutas relativas). Mueve 
 ## Coordenadas y escala
 
 - Ejes de los OBJ: **Y arriba**, **-Z hacia delante**.
-- Cada OBJ conserva su posición: las partes cargadas juntas encajan sin moverlas.
+- El OBJ completo conserva las posiciones relativas de todas las piezas.
 - Tamaño del reloj completo: ~1.96 × 2.11 × 2.32 unidades de Blender (el manifiesto usa ejes de
   Blender, Z arriba). Si el código usa otra escala, aplica un mismo factor a todo.
 - El reloj no está centrado en el origen (está en X ≈ -1.15 en Blender). Si necesitas centrarlo,

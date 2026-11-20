@@ -1,17 +1,10 @@
 'use strict';
-// Converts the OBJ files the web uses into a .glb next to each one, with Blender
-// (scripts/convert-obj.py), then updates the .glb.js copies:
-// - scene 2: every OBJ in assets/models/adulthood, except the whole-scene export;
-// - start cover: the whole hourglass in assets/models/Inicio/reloj de arena (not its loose
-//   parts nor the background).
-// Run it after exporting OBJ files again:
-//   npm run obj
-// Blender is looked for in BLENDER, in "C:/Program Files/Blender Foundation" and on the PATH.
+// npm run obj convierte OBJ a GLB con Blender y actualiza sus copias; busca BLENDER o la instalación local.
 const fs = require('node:fs');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 const root = path.resolve(__dirname, '..');
-// Folders with OBJ files and the subfolders skipped in each (references or loose parts).
+// Carpetas de OBJ y subcarpetas excluidas de la conversión.
 const FOLDERS = [
   { dir: 'assets/models/adulthood', skip: ['escena_completa'] },
   { dir: 'assets/models/Inicio/reloj de arena', skip: ['partes', 'fondo'] }

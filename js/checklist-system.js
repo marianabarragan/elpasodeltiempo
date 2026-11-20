@@ -5,7 +5,7 @@
   const WIDTH = 900;
   const INK = '#2b3854';
   const HAND = '"Caveat", "Segoe Print", "Bradley Hand", cursive';
-  // Notebook ruling shared by the paper base and the handwriting (canvas pixels).
+  // Renglones compartidos por el papel y la escritura, en píxeles del lienzo.
   const RULE_TOP = 250, RULE_STEP = 72;
   const TEXT_X = 205, TEXT_RIGHT = WIDTH - 46;
   const BOX_X = 128, BOX_SIZE = 44, BOX_TOLERANCE = 34;
@@ -17,15 +17,7 @@
     };
   }
 
-  /**
-   * Handwritten checklist drawn on the paper texture, plus its checkbox logic.
-   * Coordinates are canvas pixels: x to the right, y down from the top edge of the sheet.
-   * Every task is visible from the start, left aligned, with its own checkbox. Only the
-   * checkbox of the first unchecked task can be marked; a checked task never fires again.
-   * A Blender sheet (`sheet`: { image, boxes }) brings its own paper picture, title, tasks and
-   * boxes as meshes: then only the checks (and the flash of the enabled box) are drawn, on that
-   * picture, at its boxes (given in texture coordinates: u, v and half sizes hu, hv).
-   */
+  /* Dibuja la lista y permite marcar solo la primera casilla pendiente. */
   class ChecklistSystem {
     constructor({ title, tasks, aspect = 1.28, sheet = null, onChange, onCheck, onComplete } = {}) {
       this.title = title;
@@ -42,20 +34,18 @@
       this.texture = new THREE.CanvasTexture(this.canvas);
       this.texture.colorSpace = THREE.SRGBColorSpace;
       this.texture.anisotropy = 8;
-      // glTF texture coordinates start at the picture's top edge.
+      // Las coordenadas de textura glTF parten del borde superior.
       if (sheet) this.texture.flipY = false;
       this.rows = tasks.map((text, index) => ({ text, index, seed: 811 + index * 97 }));
       this.tweens = new Set();
       this.complete = false;
       this.layout();
       this.reset();
-      // Redraw once the handwriting font is available (it is requested in index.html).
+      // Redibuja cuando la fuente manuscrita esté disponible.
       document.fonts?.load(`600 56px ${HAND}`).then(() => { this.layout(); this.invalidate(); }).catch(() => {});
     }
 
-    // Wraps every task inside the text column and places its lines on the ruling,
-    // with one empty ruled line between tasks. The size shrinks if the list would overflow.
-    // On a Blender sheet the boxes are its own.
+    // Ajusta los textos a los renglones; la hoja de Blender conserva sus casillas.
     layout() {
       if (this.sheet) {
         this.rows.forEach((row, index) => {
@@ -98,7 +88,7 @@
         ctx.fillStyle = `rgba(110,90,60,${.015 + random() * .035})`;
         ctx.fillRect(random() * this.width, random() * this.height, 1 + random() * 1.5, 1 + random() * 1.5);
       }
-      // Soft crumple patches and creases (a lit side and a shaded side per fold).
+      // Pliegues suaves con una cara iluminada y otra sombreada.
       for (let i = 0; i < 14; i++) {
         const x = random() * this.width, y = random() * this.height, r = 80 + random() * 200;
         const patch = ctx.createRadialGradient(x, y, 0, x, y, r);
@@ -119,14 +109,14 @@
           ctx.beginPath(); points.forEach(([px, py], k) => k ? ctx.lineTo(px + offset, py + offset) : ctx.moveTo(px + offset, py + offset)); ctx.stroke();
         });
       }
-      // Notebook ruling and margin, very faint, in the scene's steel/olive tones.
+      // Renglones y margen tenues con los tonos del escenario.
       ctx.strokeStyle = 'rgba(145,149,156,.42)'; ctx.lineWidth = 2;
       for (let y = RULE_TOP; y < this.height - 40; y += RULE_STEP) {
         ctx.beginPath(); ctx.moveTo(26, y); ctx.lineTo(this.width - 26, y); ctx.stroke();
       }
       ctx.strokeStyle = 'rgba(131,120,88,.45)';
       ctx.beginPath(); ctx.moveTo(104, 96); ctx.lineTo(104, this.height - 30); ctx.stroke();
-      // Torn-out spiral notebook holes (transparent: the desk shows through).
+      // Los agujeros del cuaderno son transparentes y dejan ver el escritorio.
       ctx.globalCompositeOperation = 'destination-out';
       for (let x = 58; x < this.width - 30; x += 64) {
         ctx.beginPath(); ctx.arc(x, 46, 18, 0, Math.PI * 2); ctx.fill();
@@ -135,7 +125,7 @@
       return canvas;
     }
 
-    // The Blender sheet's own paper picture, covering the whole texture.
+    // La imagen de la hoja de Blender cubre toda la textura.
     pictureBase(image) {
       const canvas = document.createElement('canvas');
       canvas.width = this.width; canvas.height = this.height;
@@ -146,7 +136,7 @@
       return canvas;
     }
 
-    // Canvas pixels of a point of the sheet given by its texture coordinates.
+    // Convierte coordenadas de textura a píxeles del lienzo.
     uvToCanvas(uv) {
       return { x: uv.x * this.width, y: (this.texture.flipY ? 1 - uv.y : uv.y) * this.height };
     }
@@ -159,7 +149,7 @@
       this.invalidate();
     }
 
-    // The only task whose checkbox can be marked now.
+    // Única tarea habilitada para marcar.
     get activeRow() {
       return this.rows.find(row => !row.checked) || null;
     }
@@ -169,7 +159,7 @@
       this.onChange?.();
     }
 
-    // Called by the scene once per frame; uploads the texture only when something changed.
+    // Actualiza la textura solo cuando cambia su contenido.
     update() {
       if (!this.needsDraw) return false;
       this.needsDraw = false;
@@ -185,7 +175,7 @@
       return tween;
     }
 
-    // Task whose checkbox is under (x, y), with a small margin around the box.
+    // Detecta la casilla bajo el punto con un pequeño margen.
     hit(x, y) {
       return this.rows.find(({ box }) => {
         const margin = BOX_TOLERANCE * box.size / BOX_SIZE;
@@ -193,8 +183,7 @@
       }) || null;
     }
 
-    // Marks `row` if it is the enabled task. Returns 'checked', 'locked' (an earlier task is
-    // still open; the enabled box flashes briefly) or 'done' (already checked: no effect).
+    // Devuelve checked al marcar, locked si hay pendientes previos o done si ya estaba marcada.
     mark(row) {
       if (!row || row.checked) return 'done';
       const active = this.activeRow;
@@ -202,7 +191,7 @@
         if (active) this.tween(active, { flash: 1, duration: .22, yoyo: true, repeat: 1, ease: 'sine.inOut' });
         return 'locked';
       }
-      row.checked = true; // Locks the task immediately: no repeated events.
+      row.checked = true; // Bloquea la tarea de inmediato para evitar marcas repetidas.
       this.onCheck?.(row.index, row.text);
       this.tween(row, { check: 1, duration: .34, ease: 'power2.out', onComplete: () => {
         if (!this.complete && this.rows.every(item => item.checked)) {
@@ -239,7 +228,7 @@
           return;
         }
         this.checkbox(row);
-        // A barely varying slant per line gives the handwriting a pen-on-paper feel.
+        // Varía ligeramente la inclinación para simular escritura a mano.
         const random = seeded(row.seed);
         row.lines.forEach((line, k) => {
           ctx.save();
@@ -265,7 +254,7 @@
       ctx.closePath(); ctx.stroke();
     }
 
-    // Pen check mark, drawn progressively while `row.check` goes from 0 to 1 (sized to the box).
+    // Dibuja la marca progresivamente según row.check.
     tick(row) {
       const ctx = this.ctx, { x, y } = row.box, k = row.box.size / BOX_SIZE;
       const points = [[x + 7 * k, y + 22 * k], [x + 19 * k, y + 38 * k], [x + 54 * k, y - 10 * k]];

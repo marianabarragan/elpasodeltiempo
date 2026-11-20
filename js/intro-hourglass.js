@@ -2,41 +2,33 @@
   'use strict';
   const app = window.TimeExperience = window.TimeExperience || {};
 
-  // ► COLORES del reloj de arena provisional (solo si el de Blender no carga).
+  // Colores del reloj provisional si falla el modelo de Blender.
   const COLORS = {
     wood: 0xdaa66a, glass: 0xfdf2d6, sand: 0xf9b421, vine: 0x8c6e2d,
     leafLight: '#c3cf80', leaf: '#aebe69', leafDark: '#597a06',
     violetCore: '#2a0d4a', violetDeep: '#3d1766', violet: '#592e8e', violetEdge: '#7d5bb5',
     lilacCore: '#f6f1ff', lilac: '#9b88c9', lilacTip: '#b9a9e3'
   };
-  // ► LUZ DE LA ARENA: color de la luz cálida que da al reloj (madera, enredadera y flores), del
-  //   resplandor alrededor de la arena, y sus intensidades. Todo se multiplica por
-  //   Config.intro.hourglass.glow.
+  // La luz de la arena y su resplandor se multiplican por Config.intro.hourglass.glow.
   const WARM = { light: 0xffae45, haloColor: 0xff8f24, sandGlow: .95, lamp: 5, halo: .3 };
   const TAU = Math.PI * 2;
-  // Provisional hourglass measures (units): each bulb is GLASS_HALF tall with the neck at y = 0;
-  // the caps (CAP_T thick, CAP_R radius) close it and three turned posts stand at POST_R from the
-  // axis. The Blender hourglass is brought to the same bulb height (js/intro-models.js).
+  // El reloj provisional y el de Blender comparten la altura de las ampollas.
   const GLASS_HALF = 2.3, CAP_T = .6, CAP_R = 1.85, POST_R = 1.5;
-  // Bulb outline (radius, height) from the neck to the cap; the lower bulb mirrors it.
+  // Perfil del cristal desde el cuello; la ampolla inferior es su reflejo.
   const BULB = [[.1, 0], [.13, .12], [.28, .38], [.55, .75], [.83, 1.12], [1.02, 1.5], [1.08, 1.8], [1.05, 2.05], [.94, 2.22], [.86, 2.3]];
   const PROFILE = new THREE.SplineCurve(BULB.map(([r, y]) => new THREE.Vector2(r, y))).getPoints(48);
-  // Provisional sand at the start, as in the illustration: little left on top, lower bulb almost full.
+  // La arena inicial deja poca cantidad arriba y casi llena la ampolla inferior.
   const PROVISIONAL_SAND = { top: .79, bottom: -.98, mound: .13 };
-  // Sand shape: gap to the glass wall, depth of the crater on top (share of its radius) and the
-  // falling stream and grains. It drains for Config.intro.hourglass.drainSeconds while the cover
-  // is on screen (keeping its amount: what leaves the top bulb fills the bottom one) and stops.
+  // Configura la arena y su caída, conservando el volumen durante drainSeconds.
   const SAND = { wall: .04, crater: .35, stream: .026, grain: .03 };
-  // Idle sway (radians, seconds) and how much the pointer tilts the hourglass.
+  // Configura el balanceo y la inclinación hacia el puntero.
   const SWAY = { yaw: .12, period: 16 }, POINTER_TILT = { x: .07, y: .16 };
   const ELEVATION = 11 * Math.PI / 180;
-  // Share of the canvas the model may use: height (as in the illustration) and width.
+  // Fracción del lienzo disponible para el modelo.
   const FIT = { height: .86, width: .8 };
-  // Offset of the point the camera aims at from the middle of the hourglass.
+  // Desplaza el punto de enfoque desde el centro del reloj.
   const AIM_Y = -.25;
-  // Turning over (reflection of the closing): duration (s), how much it shrinks and rises while
-  // it turns, as if lifted by hand, and the share of the turn in which the sand slides to the
-  // other end of each bulb.
+  // Configura duración, elevación, escala y desplazamiento de arena durante el giro.
   const FLIP = { duration: 1.8, dip: .26, lift: .3, slide: [.2, .85] };
   const easeInOut = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
@@ -46,7 +38,7 @@
   };
   const v2 = (r, y) => new THREE.Vector2(r, y);
 
-  // Inner radius of the provisional glass at height y (both bulbs).
+  // Radio interior del cristal provisional a la altura y.
   function bulbRadius(y) {
     y = Math.min(GLASS_HALF, Math.abs(y));
     for (let i = 1; i < PROFILE.length; i++) {
@@ -56,7 +48,7 @@
     return PROFILE[PROFILE.length - 1].x;
   }
 
-  // Linear interpolation in a table with increasing xs.
+  // Interpola una tabla con valores X crecientes.
   function interpolate(xs, ys, x) {
     if (x <= xs[0]) return ys[0];
     for (let i = 1; i < xs.length; i++) {
@@ -65,8 +57,7 @@
     return ys[ys.length - 1];
   }
 
-  // Sand volume of a bulb between `from` and each height up to `to` (from < to), and the
-  // height that holds a given volume.
+  // Calcula volumen de arena por altura y obtiene la altura para un volumen dado.
   function bulbVolume(radius, from, to, steps = 160) {
     const heights = [from], volumes = [0], step = (to - from) / steps;
     for (let i = 1; i <= steps; i++) {
@@ -77,7 +68,7 @@
     return { at: level => interpolate(heights, volumes, level), level: volume => interpolate(volumes, heights, volume) };
   }
 
-  // Canvas texture drawn in a 128 × 256 box (base at the bottom, tip at the top).
+  // Dibuja una textura de 128 × 256 con la base abajo.
   function paintTexture(draw, width = 128, height = 256) {
     const canvas = document.createElement('canvas');
     canvas.width = width; canvas.height = height;
@@ -88,7 +79,7 @@
     return texture;
   }
 
-  // Soft round glow: full at the centre, fading to nothing at the edge.
+  // Resplandor circular que se desvanece hacia el borde.
   function haloTexture() {
     return paintTexture((g, w, h) => {
       const fill = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
@@ -121,7 +112,7 @@
     });
   }
 
-  // Violet: broad rounded petal, dark at the heart and lighter at the edge.
+  // Pétalo de violeta redondeado, oscuro en el centro.
   function violetPetalTexture() {
     return paintTexture(g => {
       const outline = new Path2D('M64 254 C14 214 -4 92 22 30 C34 4 56 6 64 22 C72 6 94 4 106 30 C132 92 114 214 64 254 Z');
@@ -138,7 +129,7 @@
     });
   }
 
-  // Star flower (borage-like): pointed lilac petal with a pale base.
+  // Pétalo puntiagudo lila con base clara.
   function starPetalTexture() {
     return paintTexture(g => {
       const outline = new Path2D('M64 254 C16 196 20 82 64 2 C108 82 112 196 64 254 Z');
@@ -153,7 +144,7 @@
     });
   }
 
-  // Plane (base at the origin, pointing +y, facing +z) bent into a gentle cup and curl.
+  // Curva un plano orientado en +Y y +Z para formar un pétalo.
   function bentPlane(width, length, cup, curl) {
     const geometry = new THREE.PlaneGeometry(width, length, 6, 10);
     geometry.translate(0, length / 2, 0);
@@ -166,18 +157,7 @@
     return geometry;
   }
 
-  /**
-   * 3D hourglass of the start cover and of the closing reflection: the Blender model of
-   * js/intro-models.js (or, if it does not load, a provisional one with purple flowers). Its
-   * golden sand glows and falls through the neck, and its warm light reaches the frame, the vine
-   * and, through `--sand-x/y/size` on the container (.hourglass-stage in styles.css), the page
-   * around it. It sways slowly, leans towards the pointer over `cover` and only renders while
-   * `cover` is visible; each time it comes back the sand starts again.
-   * - overflow: extra canvas on each side, as a share of the container's width, so the hourglass
-   *   (framed for the container) is not cut while it turns over.
-   * - flipAfter: seconds on screen before it turns over once (null: never).
-   * - fit: share of the container's height and width the hourglass may use (FIT by default).
-   */
+  /* Muestra el reloj y su arena animada mientras la sección está visible; admite giro y margen lateral. */
   class IntroHourglass {
     constructor(container, { cover = container.closest('.intro-copy'), overflow = 0, flipAfter = null, fit = FIT } = {}) {
       this.container = container;
@@ -199,10 +179,10 @@
       }
       container.appendChild(this.renderer.domElement);
 
-      this.root = new THREE.Group();     // float and pointer tilt
-      this.turn = new THREE.Group();     // turning over, around the neck
-      this.spin = new THREE.Group();     // idle sway around the axis
-      this.shine = new THREE.Group();    // glass highlights: tilt with the root, never sway or turn
+      this.root = new THREE.Group();     // Flotación e inclinación hacia el puntero.
+      this.turn = new THREE.Group();     // Giro alrededor del cuello.
+      this.spin = new THREE.Group();     // Balanceo sobre su eje.
+      this.shine = new THREE.Group();    // Los reflejos siguen la inclinación, sin balancearse ni girar.
       this.turn.add(this.spin);
       this.root.add(this.turn, this.shine);
       this.scene.add(this.root);
@@ -227,7 +207,7 @@
       this.resizeObserver = new ResizeObserver(() => this.resize());
       this.resizeObserver.observe(container);
 
-      // The Blender hourglass as soon as it has loaded; the provisional one if it does not load.
+      // Usa el reloj de Blender al cargar o el provisional si falla.
       const models = app.IntroModels;
       const build = () => {
         try {
@@ -249,8 +229,7 @@
       this.frame = requestAnimationFrame(this.tick);
     }
 
-    // Soft daylight balanced so the surfaces keep their colours: lit tops show the base colour
-    // and the sides facing the viewer a darker shade. The sand adds its warm light (buildGlow).
+    // La luz ambiental conserva los colores y la arena añade iluminación cálida.
     buildLights() {
       const sky = new THREE.HemisphereLight(0xfffaf0, 0xc9da9c, .9);
       const key = new THREE.DirectionalLight(0xfff4e4, 2.35);
@@ -268,12 +247,11 @@
       return mesh;
     }
 
-    // ---------- Blender hourglass ----------
+    // Reloj de Blender.
     useModel({ group, glass, sand }) {
       const model = group.clone();
       this.spin.add(model);
-      // Clear glass, so the glowing sand reads through it, with the same white reflections as
-      // the provisional glass.
+      // El cristal transparente permite ver la arena luminosa.
       const mesh = model.getObjectByName(glass.name);
       mesh.material = new THREE.MeshStandardMaterial({
         color: 0xffffff, roughness: .06, transparent: true, opacity: .14, depthWrite: false, side: THREE.DoubleSide
@@ -283,7 +261,7 @@
       this.buildSand(glass, sand, sand.color);
     }
 
-    // ---------- Provisional hourglass ----------
+    // Reloj provisional.
     buildProvisional() {
       this.buildFrame();
       this.buildGlass();
@@ -293,7 +271,7 @@
 
     buildFrame() {
       const wood = new THREE.MeshStandardMaterial({ color: COLORS.wood, roughness: .86 });
-      // Caps: thick discs with rounded edges (profile from the bottom face to the top face).
+      // Tapas gruesas con bordes redondeados.
       const half = CAP_T / 2, bevel = .1;
       const capProfile = [
         v2(0, -half), v2(CAP_R - bevel, -half), v2(CAP_R - bevel * .3, -half + bevel * .3), v2(CAP_R, -half + bevel),
@@ -301,14 +279,14 @@
       ];
       const capGeometry = new THREE.LatheGeometry(capProfile, 72);
       for (const sign of [1, -1]) this.mesh(capGeometry, wood).position.y = sign * (GLASS_HALF + half);
-      // Turned posts with beads near the caps, two rings and a bead in the middle.
+      // Columnas torneadas con anillos y cuentas decorativas.
       const h = GLASS_HALF;
       const postProfile = [
         [0, -h], [.2, -h], [.2, -h + .1], [.13, -h + .18], [.17, -h + .36], [.11, -h + .52], [.095, -1.2], [.135, -1.05], [.095, -.9],
         [.09, -.26], [.15, -.12], [.15, .12], [.09, .26], [.095, .9], [.135, 1.05], [.095, 1.2], [.11, h - .52], [.17, h - .36], [.13, h - .18], [.2, h - .1], [.2, h], [0, h]
       ].map(([r, y]) => v2(r, y));
       const postGeometry = new THREE.LatheGeometry(postProfile, 18);
-      // Two posts flank the glass at the front and the third stands behind it.
+      // Dos columnas delante del cristal y una detrás.
       for (const angle of [-70, 70, 180]) {
         const a = angle * Math.PI / 180;
         this.mesh(postGeometry, wood).position.set(Math.sin(a) * POST_R, 0, Math.cos(a) * POST_R);
@@ -318,8 +296,7 @@
     buildGlass() {
       const outline = [...PROFILE.slice().reverse().map(p => v2(p.x, -p.y)), ...PROFILE.slice(1).map(p => v2(p.x, p.y))];
       const geometry = new THREE.LatheGeometry(outline, 72);
-      // The glass reads cream: its far inner wall is an opaque cream backdrop (the sand stands out
-      // against it) and the near wall only adds a light sheen.
+      // El fondo crema destaca la arena; la cara frontal añade brillo tenue.
       this.mesh(geometry, new THREE.MeshStandardMaterial({
         color: new THREE.Color(COLORS.glass).multiplyScalar(.35), emissive: COLORS.glass, emissiveIntensity: .8,
         roughness: .9, side: THREE.BackSide
@@ -330,7 +307,7 @@
       this.addReflections(bulbRadius, GLASS_HALF);
     }
 
-    // Two white reflections on the left of each bulb, just outside the glass of radius `radius`.
+    // Dos reflejos blancos sobre el lado izquierdo del cristal.
     addReflections(radius, top) {
       const shine = this.shineMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: .78, depthWrite: false, side: THREE.DoubleSide });
       const strip = (from, to) => {
@@ -350,13 +327,12 @@
     }
 
     buildVine() {
-      // Main stem: from behind the lower right, across the lower bulb, round the left post,
-      // behind the glass and up to the large violet over the upper right corner.
+      // El tallo rodea la ampolla y sube hasta la violeta superior.
       const path = new THREE.CatmullRomCurve3([
         [1.62, -2.24, -.55], [1.3, -2.2, .78], [.45, -1.95, 1.18], [-.5, -1.55, 1.1], [-1.22, -1.05, .82],
         [-1.36, -.35, .22], [-.92, .42, -.78], [.2, .95, -1.05], [1.1, 1.32, -.24], [1.22, 1.82, .76], [1.52, 1.86, 1.12]
       ].map(([x, y, z]) => new THREE.Vector3(x, y, z)));
-      // Short sprig that hangs in front of the neck on the right.
+      // Rama corta delante del cuello, a la derecha.
       const sprig = new THREE.CatmullRomCurve3([[1.08, 1.3, -.1], [.95, 1.0, .5], [.62, .66, .72], [.42, .4, .62]].map(([x, y, z]) => new THREE.Vector3(x, y, z)));
       const stem = new THREE.MeshStandardMaterial({ color: COLORS.vine, roughness: .8 });
       this.mesh(new THREE.TubeGeometry(path, 180, .045, 7, false), stem);
@@ -365,14 +341,14 @@
       this.leafMaterial = new THREE.MeshStandardMaterial({ map: leafTexture(), alphaTest: .5, side: THREE.DoubleSide, roughness: .75 });
       this.leafGeometry = bentPlane(.6, 1, .08, .16);
       const random = this.random;
-      // Leaves along the stem, alternating sides and turned outwards and towards the viewer.
+      // Alterna hojas a ambos lados del tallo, orientadas hacia fuera.
       for (let i = 0; i < 24; i++) {
         const t = .03 + i * .04 + (random() - .5) * .015;
         const side = i % 2 ? 1 : -1;
         this.addLeafOnCurve(path, t, side, .48 + random() * .24);
       }
       [.2, .42, .64, .84, .99].forEach((t, i) => this.addLeafOnCurve(sprig, t, i % 2 ? 1 : -1, .4 + random() * .14));
-      // Leaves that drape over the front edge of the lower cap and round the large violet.
+      // Hojas sobre la tapa inferior y junto a la violeta grande.
       const leaves = [
         [[.55, -2.24, 1.66], [.35, -1, .35], .66], [[1.0, -2.25, 1.45], [.65, -.9, .45], .58], [[.1, -2.22, 1.72], [-.4, -.95, .45], .52],
         [[1.18, 2.02, 1.12], [-.75, .55, .35], .55], [[1.95, 1.48, .88], [.85, -.5, .2], .52], [[-1.32, -.48, .62], [.35, .9, .3], .58],
@@ -380,7 +356,7 @@
       ];
       for (const [at, dir, size] of leaves) this.addLeaf(new THREE.Vector3(...at), new THREE.Vector3(...dir), size, 0);
 
-      // Purple flowers on the left, a large violet over the upper right corner and lilac stars.
+      // Distribuye violetas y flores lilas alrededor del reloj.
       this.petals = {
         violet: { geometry: bentPlane(.88, 1, .1, .1), material: new THREE.MeshStandardMaterial({ map: violetPetalTexture(), alphaTest: .5, side: THREE.DoubleSide, roughness: .6 }) },
         star: { geometry: bentPlane(.56, 1, .05, .06), material: new THREE.MeshStandardMaterial({ map: starPetalTexture(), alphaTest: .5, side: THREE.DoubleSide, roughness: .6 }) }
@@ -403,7 +379,7 @@
       this.addLeaf(at, dir, size);
     }
 
-    // Leaf with its base at `at`, pointing along `dir`, facing outwards and towards the viewer.
+    // Coloca la base de la hoja en at y la orienta según dir.
     addLeaf(at, dir, size, twist = (this.random() - .5) * .5) {
       const y = dir.clone().normalize();
       const facing = new THREE.Vector3(at.x, 0, at.z).normalize().multiplyScalar(.6).add(new THREE.Vector3(0, .15, .85));
@@ -424,7 +400,7 @@
         const pivot = new THREE.Group();
         pivot.rotation.z = turn + i * TAU / 5;
         const petal = new THREE.Mesh(geometry, material);
-        // Each petal opens a little differently and sits at its own depth (no flicker).
+        // Varía apertura y profundidad de los pétalos para evitar parpadeos.
         petal.rotation.x = (kind === 'violet' ? .2 : -.06) + i * .025;
         petal.position.z = i * .012;
         pivot.add(petal);
@@ -443,16 +419,12 @@
       this.spin.add(flower);
     }
 
-    // ---------- Sand ----------
-    // Glowing sand inside `glass` ({ radius(y), bottom, top }, neck at y = 0), starting at the
-    // levels of `start` ({ top, bottom, mound }): a pile in each bulb, the stream and its grains,
-    // plus the halos and the warm lights it casts (buildGlow). It lives in `sandFrame`, which is
-    // mirrored when the hourglass turns over, so the sand's top bulb is always the upper one.
+    // Construye arena, flujo y luces en sandFrame, que se invierte al girar el reloj.
     buildSand(glass, start, color) {
       this.sandFrame = new THREE.Group();
       this.spin.add(this.sandFrame);
       this.sand = { glass, start };
-      // It shines with its own deeper gold, so the daylight never washes it out to white.
+      // El dorado propio evita que la luz ambiental blanquee la arena.
       const glow = this.settings.glow, gold = new THREE.Color(color);
       this.sandMaterial = new THREE.MeshStandardMaterial({
         color: gold.clone().multiplyScalar(.22), emissive: gold.clone().lerp(new THREE.Color(0xff9d1c), .62),
@@ -460,7 +432,7 @@
       });
       this.topSand = this.mesh(new THREE.BufferGeometry(), this.sandMaterial, this.sandFrame);
       this.bottomSand = this.mesh(new THREE.BufferGeometry(), this.sandMaterial, this.sandFrame);
-      // Thin falling stream plus a few grains that run down it.
+      // Hilo de arena con granos que descienden.
       this.stream = this.mesh(new THREE.CylinderGeometry(SAND.stream, SAND.stream, 1, 10, 1, true), this.sandMaterial, this.sandFrame);
       const grainGeometry = new THREE.SphereGeometry(SAND.grain, 8, 6);
       this.grains = Array.from({ length: 9 }, (_, i) => {
@@ -472,8 +444,7 @@
       this.resetSand();
     }
 
-    // The sand's light: a soft halo over each pile and the stream, and a warm point light in each
-    // bulb that lights the frame, the vine and the flowers from inside.
+    // Los halos y las luces de las ampollas iluminan el reloj desde dentro.
     buildGlow(glass) {
       const texture = haloTexture(), width = Math.max(glass.radius(glass.top * .6), glass.radius(glass.bottom * .6));
       const halo = (opacity, size) => {
@@ -498,7 +469,7 @@
       };
     }
 
-    // Sand back to its starting amounts, with the hourglass upright.
+    // Restaura la arena inicial y endereza el reloj.
     resetSand() {
       const sand = this.sand, { start } = sand;
       this.flip = null;
@@ -516,8 +487,7 @@
       this.updateSand(0);
     }
 
-    // The glass as the sand sees it (in sandFrame): `sign` 1 upright, -1 turned over (the frame is
-    // mirrored, so its top bulb is the one that is up).
+    // sign identifica el reloj derecho o invertido dentro de sandFrame.
     orient(sign) {
       const sand = this.sand, { glass } = sand;
       const radius = y => Math.max(.02, glass.radius(y * sign) - SAND.wall);
@@ -527,8 +497,7 @@
       Object.assign(sand, { sign, radius, bottom, top, tables: { top: bulbVolume(radius, 0, top), bottom: bulbVolume(radius, bottom, 0) } });
     }
 
-    // A pile of sand as a lathe: up the glass wall from `low` to `high`, then a mound (`bump` > 0)
-    // or a crater (`bump` < 0) in the middle of its surface. Rebuilt only when it changes.
+    // Genera el montón o cráter según bump y reconstruye solo cuando cambia.
     shapeSand(mesh, low, high, bump) {
       mesh.visible = high - low + Math.max(0, bump) > .02;
       const key = [low, high, bump].map(value => Math.round(value * 300)).join();
@@ -542,8 +511,7 @@
       mesh.geometry = new THREE.LatheGeometry(points, 44);
     }
 
-    // Levels for `progress` (0–1 of the drain): what leaves the top bulb fills the bottom one. The
-    // falling sand opens a crater on top and, after turning over, builds up its mound below.
+    // Transfiere el volumen superior al inferior según progress.
     updateSand(progress) {
       const sand = this.sand, { tables, volume } = sand;
       const left = volume.top * (1 - progress), pile = volume.bottom + volume.top * progress;
@@ -553,7 +521,7 @@
       const crater = Math.min(Math.max(0, top - .04), SAND.crater * sand.radius(top) * Math.min(1, progress * 8));
       this.shapeSand(this.topSand, .03, top, -crater);
       this.shapeSand(this.bottomSand, sand.bottom + .02, bottom, mound);
-      // The stream runs from the neck to the top of the mound while there is sand above.
+      // El flujo llega hasta el montón mientras queda arena arriba.
       const flowing = progress < 1 && this.topSand.visible;
       const peak = bottom + mound, length = Math.max(0, -peak);
       this.stream.visible = flowing;
@@ -567,9 +535,7 @@
       this.placeGlow([.03, top, left], [sand.bottom + .02, bottom, pile], flowing ? peak : null);
     }
 
-    // While it turns over, the sand of each bulb slides to the other end of it (`slide` 0 → 1),
-    // keeping its amount: the pile goes to the neck (it will be the sand on top) and what was left
-    // on top goes to the far cap (it will be the pile). Its mound and crater flatten out.
+    // Desplaza la arena al girar y conserva el volumen de cada ampolla.
     updateSlide(slide) {
       const sand = this.sand, { tables, volume } = sand, progress = this.drain;
       const left = volume.top * (1 - progress), pile = volume.bottom + volume.top * progress;
@@ -588,8 +554,7 @@
       this.placeGlow([topLow, topHigh, left], [pileLow, pileHigh, pile], null);
     }
 
-    // Light follows the sand: each halo and lamp sits on its pile ([low, high, amount]) and glows
-    // with its amount; the stream's halo runs from the neck down to `peak` while it flows.
+    // Halos y luces siguen la posición y cantidad de arena.
     placeGlow(top, bottom, peak) {
       const { halos, lamps, level, width } = this.glow, glow = this.settings.glow * level, total = this.sand.total;
       const weight = amount => Math.min(1, Math.sqrt(Math.max(0, amount) / (.1 * total)));
@@ -608,9 +573,7 @@
       this.sandMaterial.emissiveIntensity = WARM.sandGlow * glow;
     }
 
-    // ---------- Turning over ----------
-    // Around the neck (FLIP): it shrinks and rises a little, as if lifted by hand, while the sand
-    // slides inside; the light reflections fade out meanwhile.
+    // Gira sobre el cuello, eleva y reduce el reloj mientras desliza la arena.
     updateFlip(dt) {
       const flip = this.flip;
       flip.t = Math.min(1, flip.t + dt / FLIP.duration);
@@ -623,8 +586,7 @@
       if (flip.t >= 1) this.finishFlip();
     }
 
-    // End of the turn: the sand's frame is mirrored so its top bulb is the upper one again; the
-    // pile becomes the sand on top and starts falling again.
+    // Tras el giro, invierte sandFrame y reinicia la caída.
     finishFlip() {
       const sand = this.sand, progress = this.drain;
       const left = sand.volume.top * (1 - progress), pile = sand.volume.bottom + sand.volume.top * progress;
@@ -639,8 +601,7 @@
       this.updateSand(0);
     }
 
-    // Model extent over the whole sway, used to frame the camera: only the hourglass's meshes, not
-    // the halos of its sand.
+    // Encuadra todas las posiciones del balanceo sin incluir los halos.
     measure() {
       const box = new THREE.Box3(), part = new THREE.Box3();
       for (const yaw of [-SWAY.yaw, 0, SWAY.yaw]) {
@@ -657,7 +618,7 @@
       };
     }
 
-    // Framed for the container; with `overflow` the canvas only adds room on both sides.
+    // overflow añade espacio lateral sin cambiar el encuadre del contenedor.
     resize() {
       const width = this.container.clientWidth, height = this.container.clientHeight;
       if (!width || !height) return;
@@ -675,8 +636,7 @@
       this.render();
     }
 
-    // Centre and size, on the container, of the warm light the sand casts on the page (styles.css,
-    // .hourglass-stage::before): over the neck, a little wider than the glass is tall.
+    // Sitúa y dimensiona la luz de la arena sobre la página.
     placeCoverLight(width, height, offset) {
       this.root.updateMatrixWorld(true);
       const glass = this.sand.glass;
@@ -688,8 +648,7 @@
       style.setProperty('--sand-size', `${Math.abs(high.y - low.y) / 2 * height * 2.1}px`);
     }
 
-    // The cover fades out with «Iniciar» (GSAP autoAlpha) and the whole section is hidden
-    // inside the scenes: rendering pauses until it is shown again.
+    // Pausa el render mientras la portada está oculta.
     isShown() {
       return !document.hidden && this.container.clientWidth > 0 && this.container.clientHeight > 0
         && (!this.cover || getComputedStyle(this.cover).visibility !== 'hidden');
@@ -700,7 +659,7 @@
       const dt = THREE.MathUtils.clamp((now - this.last) / 1000, 0, .1);
       this.last = now;
       if (!this.built || !this.isShown()) { this.hidden = true; return; }
-      // Each time it comes back (e.g. «Repetir experiencia») the sand starts again, upright.
+      // Al reaparecer, endereza el reloj y reinicia la arena.
       if (this.hidden) { this.hidden = false; this.time = 0; this.resetSand(); this.resize(); }
       this.time += dt;
       const pointer = this.pointer, follow = 1 - Math.exp(-dt * 3);
@@ -711,9 +670,9 @@
       this.root.rotation.y = motion * pointer.x * POINTER_TILT.y;
       this.root.rotation.x = motion * pointer.y * POINTER_TILT.x;
       this.root.position.y = motion * .05 * Math.sin(this.time * .9);
-      // The light breathes slowly, with a faint shimmer, like a warm flame.
+      // La luz pulsa lentamente con un leve centelleo.
       this.glow.level = 1 + motion * (.07 * Math.sin(this.time * 1.3) + .025 * Math.sin(this.time * 4.1));
-      // Once, `flipAfter` seconds after it appears, it turns over (at once with reduced motion).
+      // Gira una vez tras flipAfter; sin demora si se reduce el movimiento.
       if (this.flipAfter !== null && !this.flipped && this.time >= this.flipAfter) {
         this.flipped = true;
         if (this.reduced) { this.turn.rotation.z -= Math.PI; this.finishFlip(); }

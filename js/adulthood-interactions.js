@@ -1,22 +1,11 @@
 (() => {
   'use strict';
   const app = window.TimeExperience;
-  // Hover feedback per prop: a small scale-up (the sheet and the calendar barely move).
-  // The monitor is special: only its screen zooms in (see setHover).
+  // Amplía los objetos al señalar; en el monitor solo amplía la pantalla.
   const HOVER_SCALE = { checklistPaper: 1.03, wallCalendar: 1.04, monitorPower: 1.3, default: 1.06 };
   const CLICK_TOLERANCE = 6;
 
-  /**
-   * Pointer logic of the adulthood scene. It works with prop identifiers
-   * ('checklistPaper', 'pen', 'monitor', 'monitorPower', 'wallCalendar', 'coffeeThermos', 'clockDigital')
-   * and their { root, visual } groups, so replacing the meshes inside `visual` does not
-   * affect this module.
-   *
-   * Desk mode: hover feedback, clicks on props and camera drag on the rest.
-   * Reading mode (sheet lifted, see SheetFocus): a click on the pen takes it, the pen then
-   * follows the pointer and a click on a checkbox marks it. A click outside the sheet,
-   * the right button or Esc puts the pen back beside the sheet.
-   */
+  /* Gestiona los clics y el lapicero mediante identificadores y grupos root/visual. */
   class AdulthoodInteractions {
     constructor(world) {
       this.world = world;
@@ -24,7 +13,7 @@
       this.sheet = world.sheet;
       this.canvas = world.renderer.domElement;
       this.raycaster = new THREE.Raycaster();
-      // The sheet and the pen live on their own render layer (sharp over the blur).
+      // La hoja y el lapicero usan una capa nítida sobre el fondo borroso.
       this.raycaster.layers.enableAll();
       this.pointer = new THREE.Vector2();
       this.hovered = null;
@@ -55,10 +44,9 @@
       this.raycaster.setFromCamera(this.pointer, this.world.cameraRig.camera);
     }
 
-    // Returns the interactive identifier under the pointer, or null. While the sheet is
-    // lifted only the pen can be picked (the desk behind is out of focus).
+    // Devuelve el objeto señalado; con la hoja levantada solo permite tomar el lapicero.
     pick(names = null) {
-      // Once the list is complete the sheet and the pen stay on the desk without feedback.
+      // La lista completa deja la hoja y el lapicero sin respuesta al puntero.
       const finished = this.world.checklist.complete ? ['checklistPaper', 'pen'] : [];
       const entries = Object.entries(this.props.interactive).filter(([name]) => (!names || names.includes(name)) && !finished.includes(name));
       const hit = this.raycaster.intersectObjects(entries.map(([, item]) => item.root), true)[0];
@@ -81,7 +69,7 @@
           onComplete: () => this.hoverTweens.delete(key)
         }));
       });
-      // Monitor: a subtle zoom of the screen only; the monitor and the desk stay still.
+      // Amplía únicamente la pantalla del monitor.
       gsap.to(this.screenZoom, {
         t: name === 'monitor' ? 1 : 0, duration: .35, ease: 'power2.out', overwrite: true,
         onUpdate: () => { this.props.monitorScreen.setZoom(this.screenZoom.t); this.world.invalidate(); }
@@ -108,7 +96,7 @@
       this.world.cameraRig.startDrag(event.clientX, event.clientY);
     }
 
-    // A click while the sheet is lifted: take the pen, mark a checkbox or drop the pen.
+    // Con la hoja levantada permite tomar el lapicero, marcar o soltarlo.
     readingClick(event) {
       const sheet = this.sheet;
       this.world.interact();

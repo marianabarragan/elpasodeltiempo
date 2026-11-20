@@ -1,0 +1,20 @@
+<!-- Pregunta de la portada con su jerarquía original. Medidas en centímetros. -->
+<style>
+  @font-face { font-family: "Barlow"; src: url("../fuentes/Barlow-Bold.ttf"); font-weight: 700; }
+  @font-face { font-family: "Barlow"; src: url("../fuentes/Barlow-Light.ttf"); font-weight: 300; }
+  .panel { width: 62; height: 33; flex-direction: column; align-items: flex-start; justify-content: center; padding-left: 5; padding-right: 4; border-radius: 3; background-color: #d3e59d; overflow: hidden; }
+  .hojas { position-type: absolute; position-top: 0; position-left: 0; width: 62; height: 33; }
+  .linea { font-family: "Barlow"; font-weight: 700; font-size: 3.4; line-height: 1.2; color: #6b440b; }
+  .resalte { font-family: "Barlow"; font-weight: 700; font-size: 4.1; line-height: 1.1; color: #663616; }
+  .boton { margin-top: 3.2; margin-left: 10; padding-top: 0.85; padding-bottom: 0.85; padding-left: 0.85; padding-right: 0.85; border-radius: 99; background-color: #fff7e8; cursor: pointer; }
+  .centro { padding-top: 1.3; padding-bottom: 1.1; padding-left: 4.6; padding-right: 4.6; border-radius: 99; border-width: 0.12; border-color: #7a5e40; background-color: #d5bc93; }
+  .centro:hover { background-color: #c9ad80; }
+  .etiqueta { font-family: "Barlow"; font-weight: 700; font-size: 3.4; color: #fff7e8; }
+</style>
+<div class="panel">
+  <img id="hojas" class="hojas" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" />
+  <span id="linea-1" class="linea">¿Te has detenido a pensar</span>
+  <span id="linea-2" class="linea">cómo cambia la vida</span>
+  <span id="linea-3" class="resalte">con el paso del tiempo?</span>
+  <button id="inicia" class="boton"><div class="centro"><span class="etiqueta">INICIA</span></div></button>
+</div>

@@ -2,12 +2,9 @@
   'use strict';
   const app = window.TimeExperience = window.TimeExperience || {};
 
-  // ► CARGA DE MODELOS .glb (juguetes del escenario 1, mesa del escenario 3).
-  //   Con servidor (`npm start`) o en GitHub Pages se lee el .glb. Si la página se abre
-  //   directamente desde el disco (file://), el navegador no deja leerlo y se usa su copia en
-  //   script `<archivo>.glb.js`. Tras exportar un modelo, `npm run models` actualiza esas copias.
+  // Carga GLB mediante servidor o sus copias .glb.js desde disco; npm run models las actualiza.
 
-  // The .glb itself (local server, GitHub Pages)…
+  // Lee el GLB desde el servidor.
   function fetchModel(source) {
     return fetch(source).then(response => {
       if (!response.ok) throw new Error(`${source}: ${response.status}`);
@@ -15,7 +12,7 @@
     });
   }
 
-  // …or its script copy (scripts/embed-models.cjs), registered under the same path.
+  // Carga la copia en script registrada con la misma ruta.
   function embeddedModel(source) {
     return new Promise((resolve, reject) => {
       const script = document.createElement('script');
@@ -34,15 +31,14 @@
     });
   }
 
-  // Resolves with the parsed glTF ({ scene, … }) using the classic-script GLTFLoader
-  // (js/vendor/three-examples.js).
+  // Analiza el glTF con el GLTFLoader de js/vendor/three-examples.js.
   function load(source) {
     if (!app.ThreeExamples) return Promise.reject(new Error('js/vendor/three-examples.js no cargó'));
     const data = location.protocol === 'file:' ? embeddedModel(source) : fetchModel(source).catch(() => embeddedModel(source));
     return data.then(buffer => new app.ThreeExamples.GLTFLoader().parseAsync(buffer, ''));
   }
 
-  // ---------- Helpers shared by the scene modules ----------
+  // Utilidades compartidas por las escenas.
   function shade(root) {
     root.traverse(object => {
       if (!object.isMesh) return;
@@ -51,7 +47,7 @@
     return root;
   }
 
-  // Reverses the triangles of a mirrored geometry (negative scale), so its faces still face out.
+  // Invierte los triángulos de geometrías reflejadas para conservar sus caras exteriores.
   function flipWinding(geometry) {
     if (!geometry.index) geometry.setIndex([...Array(geometry.attributes.position.count).keys()]);
     const index = geometry.index.array;
@@ -59,9 +55,7 @@
     geometry.index.needsUpdate = true;
   }
 
-  // Applies every node transform to its mesh: a flat group of meshes in the file's coordinates,
-  // each with an identity transform. Glow outlines, hover scaling and pivots then work in scene
-  // units, whatever scale or rotation the object had in Blender.
+  // Aplica las transformaciones a la geometría para trabajar en unidades de escena.
   function bake(objects) {
     const group = new THREE.Group();
     objects.forEach(root => {

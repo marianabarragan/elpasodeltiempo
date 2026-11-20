@@ -7,10 +7,7 @@
     lime: '#AFDF36', orange: '#F67500', brown: '#BF5527'
   });
 
-  // The floor is procedural. The rings, the xylophone and the crayon come from the Blender
-  // models (js/childhood-models.js) and fall back to the provisional geometry below while those
-  // are not available. All share a Y-up ground convention; the crayon lies along +X with its
-  // tip at (1.5, 0, 0).
+  // Genera el piso y usa juguetes de Blender o sustitutos, con la crayola orientada en +X.
   const MODEL_SLOTS = Object.freeze({
     floor: 'assets/models/childhood/foam-floor.glb',
     rings: 'assets/models/childhood/toys.glb',
@@ -33,8 +30,7 @@
       return randomSeed / 4294967296;
     };
 
-    // Gentle painted washes and fine foam grain, deliberately low contrast.
-    // The neutral map preserves the specified palette on the material colors.
+    // La textura neutra conserva la paleta y añade grano suave.
     function paintedTexture(repeat) {
       const canvas = document.createElement('canvas');
       canvas.width = canvas.height = 128;
@@ -111,8 +107,7 @@
       return geometry;
     }
 
-    // Place each fully assembled and oriented model on the actual foam top.
-    // This also keeps replacement models from inheriting guessed pivot heights.
+    // Apoya los modelos según sus límites reales sobre la espuma.
     function ground(model, clearance = 0.002) {
       group.updateMatrixWorld(true);
       const bounds = new THREE.Box3().setFromObject(model);
@@ -120,9 +115,7 @@
       model.updateMatrixWorld(true);
     }
 
-    // Replaces a provisional toy with its Blender model, uniformly scaled so its largest measure
-    // equals the provisional toy's (the proportions stay as modelled). Returns null, keeping the
-    // provisional toy, while the models are not available.
+    // Sustituye el juguete provisional por su modelo con escala uniforme.
     const toyBounds = new THREE.Box3(), partBounds = new THREE.Box3(), toToy = new THREE.Matrix4(), partToToy = new THREE.Matrix4();
     function useModel(toy, name) {
       const model = app.ChildhoodModels?.create(name);
@@ -147,7 +140,7 @@
       return model;
     }
 
-    // Place, turn and uniform size of each toy (Config.childhood.toys); grounded afterwards.
+    // Aplica posición, giro y escala antes de apoyar cada juguete.
     const toys = app.Config.childhood.toys;
     function place(toy, layout, scale = 1) {
       toy.position.set(layout.x, 0, layout.z);
@@ -162,8 +155,7 @@
     const floorUnderlay = mesh(new THREE.BoxGeometry(1, 0.10, 1), material('#a46b40'), floor);
     floorUnderlay.position.y = 0.005;
 
-    // Opposite edges share the same curve, reversed, with complementary signs.
-    // A small uniform inset and bevel create seams without intersecting tiles.
+    // Los bordes opuestos encajan; el margen y el bisel evitan cruces.
     const tileWidth = 3, tileDepth = 3.2;
     const modulo = (value, period) => ((value % period) + period) % period;
     const verticalJoin = (column, row) => (column + row) % 2 === 0 ? 1 : -1;
@@ -184,8 +176,7 @@
         shape.bezierCurveTo(...point(0.57, 0.10), ...point(0.55, 0), ...point(0.60, 0));
         shape.lineTo(bx, by);
       }
-      // Every edge continues into its neighbour, including beyond the original
-      // six-by-four layout. There are only two alternating piece geometries.
+      // Extiende el piso con dos geometrías alternadas que encajan entre sí.
       edge(-x, -y, x, -y, -horizontalJoin(column, row - 1));
       edge(x, -y, x, y, verticalJoin(column, row));
       edge(x, y, -x, y, horizontalJoin(column, row));
@@ -194,8 +185,7 @@
       return shape;
     }
 
-    // Soft pastel tones only (Config.childhood.floor), so the floor never competes with the
-    // drawing or the toys. Neighbouring pieces never share a colour.
+    // Usa tonos pastel y evita colores iguales en piezas vecinas.
     const floorConfig = app.Config.childhood.floor;
     const hsl = {};
     const foamMaterials = floorConfig.colors.map(color => {
@@ -203,11 +193,10 @@
       tone.getHSL(hsl, THREE.SRGBColorSpace);
       const lightness = hsl.l + (1 - hsl.l) * (floorConfig.lighten || 0);
       tone.setHSL(hsl.h, hsl.s * (1 - floorConfig.desaturate), lightness, THREE.SRGBColorSpace);
-      // A little of its own colour as emission keeps each pastel close to its swatch under
-      // the warm golden-hour light (otherwise the blue turns greyish).
+      // La emisión conserva los tonos pastel bajo la luz cálida.
       return material(tone, { map: floorTexture, emissive: tone, emissiveIntensity: .32 });
     });
-    // With three tones, column + 2·row keeps both horizontal and vertical neighbours different.
+    // La fórmula columna + 2·fila diferencia los vecinos con tres colores.
     const tileColor = (column, row) => modulo(column + (foamMaterials.length % 2 ? 2 : 1) * row, foamMaterials.length);
     const tileGeometries = [0, 1].map(parity => {
       const geometry = new THREE.ExtrudeGeometry(tileShape(parity, 0), {
@@ -226,8 +215,7 @@
     function extendFloor(range) {
       tileInstances.forEach(instance => { floor.remove(instance); instance.dispose(); });
       tileInstances = [];
-      // Instancing preserves each piece's size, UVs, seams and bevels while the
-      // continued floor needs only a few draw calls, not one per new tile.
+      // Las instancias amplían el piso con pocas llamadas de dibujo.
       const tones = foamMaterials.length;
       const batches = Array.from({ length: 2 * tones }, () => []);
       for (let row = range.minRow; row <= range.maxRow; row++) {
@@ -265,9 +253,7 @@
     const coveragePoint = new THREE.Vector3();
     const viewportCorners = [[-1, -1], [-1, 1], [1, -1], [1, 1]].map(([x, y]) => new THREE.Vector2(x, y));
     function ensureFloorCoverage(camera) {
-      // Intersect the *actual* orthographic viewport with the floor before each
-      // render. This covers resize and every damped rotation without changing
-      // the camera or magnifying any prop. One whole spare tile hides the edge.
+      // Cubre la vista real del piso antes de cada render, con una pieza adicional de margen.
       let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
       for (const corner of viewportCorners) {
         coverageRay.setFromCamera(corner, camera);
@@ -372,7 +358,7 @@
     cylinderAlongX(0.207, 1.50, -0.29, paperWrapper);
     cylinderAlongX(0.210, 0.70, -0.29, colorBand);
     [-0.96, 0.38].forEach(x => cylinderAlongX(0.211, 0.035, x, wrapperLine));
-    // With the Blender crayon the chosen colour tints the whole crayon (all its materials).
+    // El color elegido tiñe todos los materiales de la crayola de Blender.
     const crayonModel = useModel(crayon, 'crayon');
     const crayonColorMaterials = [];
     if (crayonModel) crayonModel.traverse(object => { if (object.isMesh && !crayonColorMaterials.includes(object.material)) crayonColorMaterials.push(object.material); });
@@ -383,8 +369,7 @@
 
     const crayonTip = new THREE.Vector3(1.50, 0, 0);
     const crayonRest = { position: crayon.position.clone(), quaternion: crayon.quaternion.clone() };
-    // Resting pose of the rings and the xylophone: their hover state (js/object-interactions.js)
-    // always comes back to it.
+    // Guarda la pose de reposo para restaurarla tras señalar los juguetes.
     [rings, xylophone].forEach(toy => {
       toy.userData.rest = { position: toy.position.clone(), quaternion: toy.quaternion.clone(), scale: toy.scale.clone() };
     });

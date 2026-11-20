@@ -2,12 +2,7 @@
   'use strict';
   const app = window.TimeExperience;
 
-  /**
-   * Scenario 2 (youth / young adulthood): a desk at night lit by the monitor.
-   * Visual props come from AdulthoodProps.build() (or Config.adulthood.propsFactory),
-   * the checklist logic from ChecklistSystem, the lifted reading mode (with background
-   * blur) from SheetFocus and pointer logic from AdulthoodInteractions.
-   */
+  /* Coordina los objetos, la lista, la lectura y las interacciones de la adultez. */
   class AdulthoodScene {
     constructor(container, { audio, progressBar, onComplete } = {}) {
       this.container = container;
@@ -38,7 +33,7 @@
       this.scene.add(this.props.group);
       this.scene.updateMatrixWorld(true);
 
-      // Progress bar: each checked box and each secondary prop (see Config.adulthood.progress).
+      // El progreso suma casillas y objetos secundarios según la configuración.
       this.progress = new app.AdulthoodProgress({
         element: progressBar, tasks: config.checklist.tasks.length, onComplete: () => this.finish()
       });
@@ -48,14 +43,14 @@
         aspect: paper.height / paper.width,
         sheet: paper.sheet,
         onChange: () => this.invalidate(),
-        onCheck: index => { this.interact(); this.progress.mark(`task${index}`); },
-        // The fourth check stays in view for a moment, then sheet and pen go back to the desk.
+        onCheck: index => { this.audio.playEffect('list', index + 1); this.interact(); this.progress.mark(`task${index}`); },
+        // Tras la última marca, deja una pausa y devuelve hoja y lapicero.
         onComplete: () => {
           this.completeCall = gsap.delayedCall(.7, () => this.sheet.lowerSheet(() => this.finish()));
         }
       });
       paper.material.map = this.checklist.texture;
-      // Same texture as emission (off on the desk): the lifted sheet brightens, the ink stays dark.
+      // La emisión aclara la hoja levantada sin aclarar la tinta.
       paper.material.emissiveMap = this.checklist.texture;
       paper.material.needsUpdate = true;
 
@@ -70,9 +65,9 @@
       this.monitorLight.apply(this.props.group);
 
       const desk = this.props.deskTopY;
-      // Orthographic picada centred on the desk top and the props standing on it.
+      // Cámara ortográfica en picada centrada en el escritorio.
       this.cameraRig = new app.AdulthoodCamera(new THREE.Vector3(.1, desk + 1.75, 0));
-      // The plant stands at the far left end of the desk: the view is always wide enough for it.
+      // Amplía el encuadre para incluir la planta de la izquierda.
       const plant = new THREE.Box3().setFromObject(this.props.models.plant.root);
       this.cameraRig.viewWidth = Math.max(this.cameraRig.viewWidth, 2 * (this.cameraRig.target.x - plant.min.x) + .5);
       this.sheet = new app.SheetFocus(this);
@@ -85,8 +80,7 @@
       this.tick = 0;
     }
 
-    // Soft, legible night ambience. The monitor beam (MonitorLight) is the dominant light;
-    // these fills only keep the room readable and shadows gentle.
+    // La luz del monitor domina; las luces auxiliares suavizan las sombras.
     addLights() {
       const palette = app.AdulthoodProps.PALETTE;
       const hemisphere = new THREE.HemisphereLight(palette.sand, palette.walnut, 2.1);
@@ -109,8 +103,7 @@
       this.lights = { hemisphere, screenKey, warm, glow };
     }
 
-    // Screen light level (0 = off, 1 = on). With the screen off its beam, haze and glow fade
-    // out while the warm room fills rise a little, so the desk stays clearly visible.
+    // Al apagar la pantalla, desvanece su haz y refuerza la luz ambiental.
     applyScreenLevel() {
       const level = this.screenLevel.value, dark = 1 - level;
       const { hemisphere, screenKey, warm, glow } = this.lights;
@@ -123,6 +116,7 @@
     }
 
     toggleScreen() {
+      this.audio.playEffect('screen');
       this.screenOn = !this.screenOn;
       this.props.monitorScreen.setPower(this.screenOn);
       gsap.to(this.screenLevel, {
@@ -131,17 +125,14 @@
       });
     }
 
-    // The scene is complete when the bar reaches 100 % and the sheet is back on the desk.
+    // Completa la escena con el progreso al 100 % y la hoja sobre el escritorio.
     finish() {
       if (this.finished || !this.progress.complete || this.sheet.state !== 'desk') return;
       this.finished = true;
       this.onComplete?.();
     }
 
-    // The Blender desk and wall (props.deskFit / wallFit) are scaled uniformly, never stretched,
-    // just enough to cover everything the camera can show on this screen shape at any permitted
-    // angle: the desk from the wall forward (never smaller than modelled), the wall only when a
-    // very wide or tall screen sees past its edges.
+    // Escala escritorio y pared uniformemente para cubrir todos los ángulos permitidos.
     fitBackdrop() {
       const desk = this.props.deskFit, wall = this.props.wallFit;
       if (!desk && !wall) return;
@@ -156,7 +147,7 @@
         rig.apply();
         for (let i = 0; i <= 16; i++) for (let j = 0; j <= 16; j++) {
           ray.setFromCamera(screen.set(i / 8 - 1, j / 8 - 1), rig.camera);
-          // Margins of a few percent cover the camera's small slide while it turns.
+          // El margen cubre el desplazamiento de la cámara durante el giro.
           if (ray.ray.intersectPlane(top, point) && point.z >= back) {
             if (desk) deskScale = Math.max(deskScale, 2 * Math.abs(point.x - desk.object.position.x) / desk.width * 1.06, (point.z - back) / desk.depth * 1.06);
           } else if (wall && ray.ray.intersectPlane(wallPlane, point)) {
@@ -200,7 +191,7 @@
       this.tick = requestAnimationFrame(this.frame);
     }
 
-    // Called once the entry transition has finished: the sheet's glow starts after its delay.
+    // Activa el brillo de la hoja tras la entrada y la espera configurada.
     ready() { this.audio.enter(); this.interact(); this.sheet.scheduleGlow(); }
 
     frame(now) {
@@ -211,21 +202,20 @@
       this.tick = requestAnimationFrame(this.frame);
     }
 
-    // Click on a desk prop. The sheet (or the pen lying next to it) opens the reading mode;
-    // the calendar turns a month and the screen (or the monitor's button) switches the screen.
-    // The thermos, the clock and the calendar also add their share to the progress bar (once each).
+    // Procesa las interacciones del escritorio y registra los hitos secundarios una sola vez.
     activateProp(name) {
       const item = this.props.interactive[name];
       if (!item) return;
       this.interact();
       if (name === 'checklistPaper' || name === 'pen') {
-        if (this.sheet.liftSheet()) this.interact();
+        if (this.sheet.liftSheet()) { this.audio.playEffect('list', 0); this.interact(); }
       } else if (name === 'monitor') {
         this.toggleScreen();
       } else if (name === 'monitorPower') {
         this.toggleScreen();
         gsap.fromTo(item.visual.position, { z: -.03 }, { z: 0, duration: .25, ease: 'power2.out', onUpdate: () => this.invalidate() });
       } else if (name === 'wallCalendar') {
+        this.audio.playEffect('calendar', this.calendarMonth);
         this.flipCalendar();
       } else if (name === 'coffeeThermos') {
         this.audio.playEffect('thermos');
@@ -245,9 +235,7 @@
       this.invalidate();
     }
 
-    // Wall calendar: the current sheet lifts off the pad and falls away, showing the next
-    // month (October → November → December → January …). A click during the animation
-    // finishes it at once and turns the following sheet.
+    // Pasa al siguiente mes; otro clic termina el giro actual y continúa.
     flipCalendar() {
       this.calendarFlip?.progress(1);
       const { pages, setMonth } = this.props.calendar;
@@ -276,7 +264,7 @@
       this.invalidate();
     }
 
-    // Immediate pulse of the pen beside the lifted sheet (a click on the sheet without it).
+    // Resalta el lapicero al pulsar la hoja sin tenerlo.
     hintPen() {
       clearTimeout(this.hintTimer);
       this.pulsePen(1);
@@ -291,7 +279,7 @@
       } });
     }
 
-    // With the sheet lifted and the pen still beside it, the pen glows faintly after a pause.
+    // Tras una pausa, ilumina el lapicero junto a la hoja levantada.
     interact() {
       this.hint?.kill();
       clearTimeout(this.hintTimer);

@@ -6,7 +6,7 @@
     varying vec2 vUv;
     void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }
   `;
-  // Horizontal pass: blur plus a slow, wavy distortion (deteriorated sight).
+  // Pasada horizontal de desenfoque y distorsión ondulada.
   const BLUR_H = `
     uniform sampler2D tInput;
     uniform vec2 uTexel;
@@ -26,8 +26,7 @@
       gl_FragColor = sum / total;
     }
   `;
-  // Vertical pass to the screen: mixes in the sharp image where the focus mask is set,
-  // adds a soft warm haze to the blurred areas and applies tone mapping / sRGB output.
+  // La pasada vertical combina máscara nítida, neblina cálida y salida sRGB.
   const BLUR_V = `
     uniform sampler2D tInput;
     uniform sampler2D tSharp;
@@ -54,11 +53,7 @@
     }
   `;
 
-  /**
-   * Post-processing of the old-age scene: blur/distortion (amount 0–1) and an optional
-   * sharp "focus" mask for the objects on `maskLayer` (the glasses on hover).
-   * With amount 0 the scene is rendered directly, identical to a normal render.
-   */
+  /* Aplica visión borrosa con máscara de enfoque; con intensidad cero dibuja directamente. */
   class OldAgeVision {
     constructor(renderer, { maxBlurPx = 22, maskLayer = 1 } = {}) {
       this.renderer = renderer;
@@ -130,7 +125,7 @@
       renderer.render(this.quadScene, this.quadCamera);
     }
 
-    // White silhouette of the objects on the mask layer over black.
+    // Dibuja las siluetas de la máscara en blanco sobre negro.
     renderMask(scene, camera) {
       const renderer = this.renderer;
       const background = scene.background, override = scene.overrideMaterial, layers = camera.layers.mask;
@@ -156,13 +151,7 @@
     }
   }
 
-  /**
-   * First-person "putting on the glasses": a copy of the glasses model rendered with its own
-   * perspective camera over the scene. It rises from the table into view, opens its temples,
-   * turns to face the viewer and comes up to the eyes until the frame leaves the screen.
-   * It works with any model placed in the glasses' `visual` (lenses facing +Z); temples are
-   * animated only when the model provides `glasses-temple-left/right`.
-   */
+  /* Anima las gafas en primera persona con cámara propia y pivotes de varillas opcionales. */
   class FirstPersonGlasses {
     constructor(source) {
       this.scene = new THREE.Scene();
@@ -179,7 +168,7 @@
         if (object.isMesh) { object.castShadow = object.receiveShadow = false; }
       });
       remove.forEach(object => object.parent.remove(object));
-      // Seen from the wearer: lenses face away (+Z turned to -Z), temples come toward the eyes.
+      // Orienta las lentes hacia fuera y las varillas hacia los ojos.
       this.model.rotation.set(0, Math.PI, 0);
       this.model.position.set(0, 0, 0);
       this.model.scale.setScalar(1);
@@ -200,7 +189,7 @@
       this.camera.updateProjectionMatrix();
     }
 
-    // Returns the GSAP timeline; `onUnblur(progress)` receives 0→1 while the view sharpens.
+    // Devuelve la animación y comunica la nitidez de 0 a 1 mediante onUnblur.
     play({ reduced = false, onUnblur, onComplete } = {}) {
       this.timeline?.kill();
       const holder = this.holder, unfold = { t: 0 }, sharpen = { t: 0 };
@@ -216,12 +205,12 @@
         onComplete: () => { holder.visible = false; this.timeline = null; onComplete?.(); }
       });
       this.timeline
-        // Picked up from the table: rises into view, still lying down.
+        // Eleva las gafas desde la mesa manteniéndolas acostadas.
         .to(holder.position, { x: 0, y: -.42, z: -1.75, duration: .95 * k, ease: 'power2.out' }, 0)
         .to(holder.rotation, { x: -.12, y: 0, z: -.03, duration: 1.0 * k, ease: 'power2.inOut' }, 0)
-        // Both hands open the temples while turning it toward the face.
+        // Abre las varillas mientras gira la montura hacia el rostro.
         .to(unfold, { t: 1, duration: .75 * k, ease: 'power1.inOut', onUpdate: unfoldTemples }, .3 * k)
-        // A small hesitation, then up to the eyes: the frame leaves the field of view.
+        // Tras una pausa breve, acerca las gafas hasta sacarlas del encuadre.
         .to(holder.position, { y: -.06, z: -1.05, duration: .5 * k, ease: 'sine.inOut' }, 1.0 * k)
         .to(holder.rotation, { x: .04, z: .015, duration: .5 * k, ease: 'sine.inOut' }, 1.0 * k)
         .to(holder.position, { y: .03, z: -.02, duration: .85 * k, ease: 'power2.in' }, 1.5 * k)

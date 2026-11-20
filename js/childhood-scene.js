@@ -1,13 +1,9 @@
 (() => {
   'use strict';
   const app = window.TimeExperience;
-  // ► BRILLO DE LOS JUGUETES DE BLENDER: intensidad de los reflejos, color del estudio que se
-  //   refleja (más oscuro = reflejos más contrastados y colores más vivos) y rugosidad máxima
-  //   (0 = espejo, 1 = mate). Solo afecta a los modelos; el piso, la hoja y las luces de la
-  //   escena no cambian.
+  // Controla reflejos y rugosidad únicamente en los juguetes de Blender.
   const TOY_GLOSS = { reflection: .9, studio: '#2b2420', roughness: .3 };
-  // ► BRILLO DE LA CRAYOLA EN REPOSO (indica que es interactiva): color, margen alrededor de
-  //   la crayola (unidades del mundo) y opacidad mínima y máxima de su pulso lento.
+  // Configura el color, margen y pulso del brillo de la crayola en reposo.
   const CRAYON_GLOW = { color: '#fff3c4', margin: .09, min: .22, max: .55 };
   const GLOW_VERTEX = `
     varying vec3 vNormal;
@@ -51,7 +47,7 @@
       this.scene.add(this.props.group);
       this.addToyReflections();
       this.crayonGlow = this.buildCrayonGlow();
-      // Five 20 % milestones (crayon click, colour, sun, house, tree); see childhood-progress.js.
+      // Cinco hitos: tomar crayola, elegir color y pintar sol, casa y árbol.
       this.progress = new app.ChildhoodProgress({ element: progressBar, onComplete });
       this.painting = new app.PaintingSystem({ onProgress: progress => { this.checkFigures(progress); this.invalidate(); } });
       this.tone = new app.PaletteTone({ src: config.audio.paletteHoverSrc, isEnabled: () => this.audio.enabled && this.active });
@@ -84,16 +80,13 @@
       this.frame = this.frame.bind(this);
       this.tick = 0;
     }
-    // The Blender toys keep the glossy look of their material preview: a soft studio
-    // environment reflected only on them, with a cap on their roughness (TOY_GLOSS).
+    // El entorno de estudio conserva el brillo de los juguetes según TOY_GLOSS.
     addToyReflections() {
       const models = this.props.metadata?.models;
       if (!models) return;
       const toys = [models.rings, models.xylophone, models.crayon].filter(toy => toy?.userData.blenderModel);
       if (!toys.length) return;
-      // A dark, warm studio with three small, very bright softboxes (upper left like the key
-      // light, right and a strip above): crisp highlights on the plastic, but little extra
-      // diffuse light, so the colours keep their strength.
+      // Las luces pequeñas crean reflejos intensos sin deslavar los colores.
       const studio = new THREE.Scene();
       studio.background = new THREE.Color(TOY_GLOSS.studio);
       const panel = new THREE.PlaneGeometry(1, 1);
@@ -118,9 +111,7 @@
         material.needsUpdate = true;
       }));
     }
-    // A soft halo around the crayon while it rests (CRAYON_GLOW): a slightly larger copy of
-    // it, drawn from behind and brighter at the silhouette, with the same margin all round
-    // whatever the crayon's proportions. It never catches the pointer.
+    // Un halo alrededor de la crayola indica interacción sin interceptar el puntero.
     buildCrayonGlow() {
       const crayon = this.props.crayon;
       crayon.updateMatrixWorld(true);
@@ -148,14 +139,13 @@
       const size = bounds.getSize(new THREE.Vector3()), center = bounds.getCenter(new THREE.Vector3());
       const margin = CRAYON_GLOW.margin / crayon.scale.x;
       halo.scale.set(1 + 2 * margin / size.x, 1 + 2 * margin / size.y, 1 + 2 * margin / size.z);
-      // Scaled about the crayon's centre: p' = centre + scale · (p − centre).
+      // Escala respecto al centro: p' = centro + escala · (p − centro).
       halo.position.copy(center).sub(center.clone().multiply(halo.scale));
       halo.visible = false;
       crayon.add(halo);
       return { halo, material, value: 0 };
     }
-    // Visible while the crayon rests and can be picked up; it fades out when it becomes the
-    // tool or the palette is open. Returns true while it needs new frames.
+    // El halo aparece en reposo y se oculta al abrir la paleta o tomar la crayola.
     updateCrayonGlow(time, dt) {
       const glow = this.crayonGlow;
       const on = this.interactions.mode === 'rest' && !this.palette.open && !app.runtime.transitioning;
@@ -165,7 +155,7 @@
       glow.halo.visible = glow.value > .005;
       return glow.halo.visible;
     }
-    // World width the camera keeps in view: every toy at both ends of the permitted yaw.
+    // Ancho necesario para ver todos los juguetes durante el giro permitido.
     toysWidth() {
       const maxYaw = app.Config.camera.maxYaw, models = this.props.metadata?.models || {};
       const box = new THREE.Box3();
@@ -180,8 +170,7 @@
       return Math.max(21.5, 2 * half + 1);
     }
     addLights() {
-      // World-space afternoon light: diagonal from the upper left, warm (amber sun, peach sky
-      // and bounce) while the light on the paper stays paler, so the drawing reads untinted.
+      // Luz cálida desde arriba a la izquierda, con iluminación más neutra sobre el papel.
       this.scene.add(new THREE.HemisphereLight(0xffd7a4, 0xa8683a, 1.55));
       const key = new THREE.DirectionalLight(0xffb470, 1.85);
       key.position.set(-12, 10, -9);
@@ -189,44 +178,39 @@
       key.castShadow = true;
       key.shadow.mapSize.set(1024, 1024);
       Object.assign(key.shadow.camera, { left: -15, right: 15, top: 15, bottom: -15, near: .5, far: 55 });
-      // The paper sits only .001 above its body; a small depth bias avoids VSM
-      // self-shadow speckles on that nearly coplanar pair.
+      // Un pequeño sesgo de profundidad evita sombras sobre superficies casi coplanares.
       key.shadow.bias = -.0006; key.shadow.normalBias = .018;
       key.shadow.radius = 4;
       key.shadow.blurSamples = 8;
       this.scene.add(key, key.target);
       const fill = new THREE.DirectionalLight(0xffcf9c, .55);
       fill.position.set(8, 9, 5); this.scene.add(fill);
-      // A broad, feathered patch favours the drawing without clipping the white
-      // paper or projecting a competing pattern over the crayon outlines.
+      // La luz suave destaca el dibujo sin quemar el papel.
       const paperLight = new THREE.SpotLight(0xffe4bd, 80, 0, .62, 1, 2);
       paperLight.position.set(-3, 10, -2);
       paperLight.target.position.copy(this.paper.position);
       this.scene.add(paperLight, paperLight.target);
       this.keyLight = key;
     }
-    // Warm patches of sunlight on the floor, as if the golden-hour sun came through a window
-    // out of view (upper left, like the key light). One window of four panes; it lies
-    // just above the foam, below the sheet and the toys, and only brighten what is under them.
+    // Proyecta una ventana cálida sobre el piso, debajo de la hoja y los juguetes.
     addWindowLight() {
       const canvas = document.createElement('canvas');
       canvas.width = 256; canvas.height = 160;
       const ctx = canvas.getContext('2d');
       const panes = [[18, 14, 104, 58], [134, 14, 104, 58], [18, 88, 104, 58], [134, 88, 104, 58]];
-      // Light map: white panes on black, with soft edges (stacked, slightly larger rectangles).
+      // Rectángulos superpuestos suavizan los bordes del patrón de ventana.
       ctx.fillStyle = '#000'; ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = 'rgba(255,255,255,.13)';
       for (let k = 6; k >= 0; k--) panes.forEach(([x, y, w, h]) => ctx.fillRect(x - k, y - k, w + k * 2, h + k * 2));
       const texture = new THREE.CanvasTexture(canvas);
       texture.colorSpace = THREE.SRGBColorSpace;
-      // "Screen" blending: the floor under the light gets brighter and warmer without the
-      // yellow light turning the blue pieces cyan (as plain additive light would).
+      // La mezcla screen aclara el piso sin alterar sus tonos azules.
       const material = new THREE.MeshBasicMaterial({
         map: texture, color: '#f4c486', transparent: true, depthWrite: false, toneMapped: false,
         blending: THREE.CustomBlending, blendEquation: THREE.AddEquation,
         blendSrc: THREE.OneMinusDstColorFactor, blendDst: THREE.OneFactor
       });
-      // Long side along the light's direction across the floor (from the upper left).
+      // Orienta el lado largo según la dirección de la luz.
       const angle = Math.atan2(9, 12);
       const geometry = new THREE.PlaneGeometry(1, 1);
       geometry.rotateX(-Math.PI / 2);
@@ -253,14 +237,14 @@
       this.invalidate();
       if (this.active) this.render();
     }
-    // Only the 16 palette colours are accepted (plus the crayon's initial colour).
+    // Acepta los colores de la paleta y el color inicial de la crayola.
     setColor(color, initial = false) {
       if (!initial && !this.palette.includes(color)) return;
       this.color = color;
       this.props.crayonColorMaterials.forEach(material => material.color.set(color));
       this.invalidate();
     }
-    // First click on the crayon (milestone 1): the 4 × 4 palette opens beside it.
+    // El primer clic abre la paleta y registra el primer hito.
     openPalette() {
       if (!this.active || app.runtime.transitioning) return;
       this.tone.unlock();
@@ -272,7 +256,7 @@
       this.palette.show({ x: (point.x * .5 + .5) * width, y: (.5 - point.y * .5) * height }, { width, height });
       this.interact();
     }
-    // Choosing a colour (milestone 2): the crayon takes it and becomes the active tool.
+    // Elegir color activa la crayola y registra el segundo hito.
     chooseColor(color, event) {
       this.setColor(color);
       this.progress.mark('color');
@@ -281,7 +265,7 @@
       this.interactions.setTool(pointer || this.interactions.lastPointer);
       this.interact();
     }
-    // Milestones 3–5: each whole figure (sun, house, tree) painted at least 25 %.
+    // Cada figura alcanza su hito al cubrir el porcentaje mínimo.
     checkFigures(progress) {
       const threshold = app.Config.childhood.figureThreshold;
       ['sun', 'house', 'tree'].forEach(figure => { if (progress[figure] >= threshold) this.progress.mark(figure); });
@@ -315,7 +299,7 @@
       this.props.crayonColorMaterials.forEach(material => { material.emissive?.setHex(0); });
       this.invalidate();
       this.hintTimer = setTimeout(() => {
-        // The glow only invites to pick up the crayon; it stays off once it is the active tool.
+        // El brillo permanece apagado mientras la crayola está activa.
         if (!this.active || app.runtime.transitioning || this.interactions.toolActive || this.palette.open) return;
         const pulse = { t: 0 };
         this.hint = gsap.to(pulse, { t: 1, yoyo: true, repeat: 3, duration: .65, onUpdate: () => {

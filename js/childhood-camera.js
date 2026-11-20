@@ -2,14 +2,12 @@
   'use strict';
   const app = window.TimeExperience;
   class ChildhoodCamera {
-    // minWidth: world width always kept in view (wide enough for the toys at either side).
+    // minWidth mantiene ambos extremos de los juguetes dentro de la vista.
     constructor(targetY, { minWidth = 21.5 } = {}) {
       this.minWidth = minWidth;
       this.camera = new THREE.OrthographicCamera(-11, 11, 7.3, -7.3, .1, 70);
       this.target = new THREE.Vector3(0, targetY, 0);
-      // Rotation values are offsets from the initial oblique pose. Keeping the
-      // base inclination separate makes reset() return to the intended view and
-      // prevents the vertical range from ever reaching an overhead shot.
+      // Los giros son relativos a la pose inicial para reiniciar bien y evitar una vista cenital.
       this.initialTilt = app.Config.camera.initialTilt;
       this.current = { yaw: 0, tilt: 0 };
       this.desired = { yaw: 0, tilt: 0 };
@@ -27,8 +25,7 @@
     }
     dragTo(x, y) {
       if (!this.drag || this.frozen) return;
-      // Deliberate drag sensitivity; damping preserves the small glide after
-      // release while all motion remains inside the relative angle limits.
+      // Amortigua el arrastre y mantiene el movimiento dentro de los límites.
       this.desired.yaw = THREE.MathUtils.clamp(this.drag.yaw - (x - this.drag.x) * .0011, -app.Config.camera.maxYaw, app.Config.camera.maxYaw);
       this.desired.tilt = THREE.MathUtils.clamp(this.drag.tilt + (y - this.drag.y) * .00175, -app.Config.camera.maxTilt, app.Config.camera.maxTilt);
     }
@@ -55,13 +52,10 @@
       const inclination = this.initialTilt + tilt;
       const s = Math.sin(inclination), c = Math.cos(inclination), sy = Math.sin(yaw), cy = Math.cos(yaw);
       this.camera.position.set(22 * s * sy, this.target.y + 22 * c, 22 * s * cy);
-      // Stable roll-free up vector for an orbiting orthographic camera.
+      // Conserva el eje vertical estable durante la órbita.
       this.camera.up.set(-c * sy, s, -c * cy);
       this.camera.lookAt(this.target);
-      // The oblique view shortens the paper on screen, so use a closer base
-      // framing while reserving extra height as yaw mixes the room's width into
-      // the vertical axis. This keeps both side toys and the foreground crayon
-      // visible throughout the permitted orbit.
+      // Ajusta el encuadre oblicuo para mantener visibles juguetes y crayola.
       const rotatedHeight = 13.2 * Math.cos(Math.abs(yaw)) + 8.6 * Math.sin(Math.abs(yaw));
       const height = Math.max(13.2, this.minWidth / this.aspect, rotatedHeight);
       this.camera.left = -height * this.aspect / 2;

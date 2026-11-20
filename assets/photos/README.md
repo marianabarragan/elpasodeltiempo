@@ -1,27 +1,19 @@
 # Fotografías del tablero inicial
 
-El inicio presenta tres retratos procedurales provisionales, en orden de izquierda a derecha: niñez, adultez joven y vejez. Se generan en `js/intro-textures.js`; no son fotografías definitivas aportadas al proyecto.
-
-Coloca tus imágenes, por ejemplo:
+El tablero muestra una fotografía por escenario, en orden de izquierda a derecha: niñez, adultez joven y vejez. Las rutas están en `Config.assets.photos` (`js/project-config.js`):
 
 ```text
-assets/photos/childhood.jpg
-assets/photos/adulthood.jpg
-assets/photos/oldage.jpg
+assets/photos/childhood.webp
+assets/photos/adulthood.webp
+assets/photos/oldage.webp
 ```
 
-Configura las rutas en `js/project-config.js`:
+Son imágenes livianas (1200 × 1440 px, WebP). Cada una tiene además una copia `.webp.js`, que se usa al abrir la página sin servidor.
 
-```javascript
-photos: {
-  childhood: 'assets/photos/childhood.jpg',
-  adulthood: 'assets/photos/adulthood.jpg',
-  oldage: 'assets/photos/oldage.jpg'
-}
-```
+Para cambiar una foto:
 
-Las claves conservan el orden del tablero. Puedes sustituir una sola imagen: los valores que permanezcan en `null` siguen usando el retrato procedural de esa etapa. Usa rutas relativas a `index.html` y recarga la página desde `npm start` después de cambiarlas.
+1. Prepara una imagen vertical con proporción `0.83:1`, por ejemplo `1200 × 1440 px`, en WebP o JPG. Las superficies miden `3.32 × 4.0` unidades y el borde de papel ya se genera en 3D, así que no hace falta incluirlo.
+2. Guárdala en esta carpeta y, si cambia el nombre, actualiza su ruta en `Config.assets.photos`.
+3. Ejecuta `npm run models`: actualiza las copias `.webp.js`.
 
-Las superficies de imagen miden `3.32 × 4.0` unidades. Para evitar deformación, prepara archivos verticales con proporción aproximada `0.83:1`, por ejemplo `830 × 1000 px`, con el encuadre resuelto dentro del propio archivo. El borde de papel ya se genera en 3D; no hace falta incluirlo en la imagen. No añadas rótulos de las etapas sobre las fotografías.
-
-`IntroScene.loadPhoto()` usa `THREE.TextureLoader` y vuelve a renderizar al terminar la carga. Cuando configuras una ruta, debe existir y ser accesible: el reemplazo configurado no tiene recuperación automática al retrato procedural si el archivo falta.
+Con `null`, o si el archivo no carga, esa etapa usa su retrato provisional de `js/intro-textures.js`.

@@ -2,17 +2,13 @@
   'use strict';
   const app = window.TimeExperience = window.TimeExperience || {};
 
-  // ► MODELOS DE BLENDER DEL ESCENARIO 1 (juego de aros, xilófono y crayón), exportados juntos
-  //   en un solo .glb. Cada objeto pertenece a un juguete según su nombre en Blender:
-  //   «crayola…» → crayón, «Aro…» / «Aros…» → juego de aros, todo lo demás → xilófono.
-  //   Tras exportar desde Blender, `npm run models` actualiza también la copia toys.glb.js
-  //   (ver js/model-loader.js).
+  // Clasifica los juguetes por nombre en toys.glb; npm run models actualiza su copia.
   const SOURCE = 'assets/models/childhood/toys.glb';
   const toyOf = name => /^crayo/i.test(name) ? 'crayon' : /^aro/i.test(name) ? 'rings' : 'xylophone';
-  // Meshes exported with flat shading get smooth normals up to this angle; sharper edges stay.
+  // Suaviza las normales hasta este ángulo y conserva las aristas más marcadas.
   const CREASE_ANGLE = 40 * Math.PI / 180;
 
-  // Exported with flat shading: almost every corner is duplicated with its own normal.
+  // Detecta el sombreado plano por las esquinas duplicadas con normales propias.
   function isFaceted(geometry) {
     const position = geometry.attributes.position;
     const corners = new Set();
@@ -22,8 +18,7 @@
     return corners.size / position.count < .6;
   }
 
-  // Glass-like transmission needs an extra render of the whole scene every frame; a plain
-  // translucent material keeps the look (light, clear ring) at the cost of a normal one.
+  // Usa transparencia sencilla para evitar un render adicional por fotograma.
   function simplify(material) {
     if (!material.transmission) return material;
     const light = new THREE.MeshStandardMaterial({
@@ -34,9 +29,7 @@
     return light;
   }
 
-  // Splits the scene into the three toys. Each template is normalised so that its largest
-  // measure is 1, centred on the floor (rings, xylophone) or on its axis (crayon, lying along
-  // +X with the tip at +X, as the painting controller expects).
+  // Separa y normaliza los juguetes; la crayola queda alineada con +X.
   function prepare(gltf, toCreasedNormals) {
     const parts = { rings: new THREE.Group(), xylophone: new THREE.Group(), crayon: new THREE.Group() };
     [...gltf.scene.children].forEach(node => parts[toyOf(node.name)].add(node));
@@ -54,7 +47,7 @@
         object.castShadow = !object.material.transparent;
         object.receiveShadow = true;
       });
-      // In Blender the crayon stands with its tip up (+Y once exported).
+      // La crayola exportada tiene la punta hacia +Y.
       if (toy === 'crayon') part.rotation.z = -Math.PI / 2;
       part.updateMatrixWorld(true);
       const box = new THREE.Box3().setFromObject(part, true);
@@ -69,21 +62,17 @@
     return templates;
   }
 
-  /**
-   * Loads the Blender toys while the start cover is on screen. `ChildhoodProps.build()` uses
-   * them when they are ready; otherwise it keeps the provisional toys (js/model-loader.js).
-   */
+  /* Carga los juguetes durante la portada y usa sustitutos si no están disponibles. */
   const models = {
     status: 'loading',
     templates: null,
     ready: false,
-    // Calls back once loading has finished, successfully or not (at once if it already has).
+    // Avisa al terminar la carga, incluso si falla.
     whenSettled(callback) {
       if (this.status !== 'loading') callback();
       else this.settled.then(() => callback());
     },
-    // A fresh copy of one toy (largest measure 1). The crayon gets its own materials so the
-    // chosen colour never leaks into the template.
+    // Clona el juguete; la crayola usa materiales propios para cambiar de color.
     create(toy) {
       const template = this.templates?.[toy];
       if (!template) return null;
@@ -92,7 +81,7 @@
       return copy;
     }
   };
-  // Loads after the start cover's hourglass (js/intro-models.js), the first thing on screen.
+  // Carga los juguetes después del reloj de la portada.
   models.settled = (app.IntroModels?.settled || Promise.resolve())
     .then(() => app.ModelLoader.load(SOURCE))
     .then(gltf => prepare(gltf, app.ThreeExamples.toCreasedNormals))

@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Capa_1" data-name="Capa 1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1920 1080">
+  <defs>
+    <style>
+      .cls-1 {
+        letter-spacing: .02em;
+      }
+
+      .cls-2 {
+        letter-spacing: 0em;
+      }
+
+      .cls-3 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-4 {
+        letter-spacing: -.04em;
+      }
+
+      .cls-5 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-6 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-7 {
+        letter-spacing: -.04em;
+      }
+
+      .cls-8 {
+        letter-spacing: 0em;
+      }
+
+      .cls-9 {
+        fill: none;
+      }
+
+      .cls-10 {
+        opacity: .47;
+      }
+
+      .cls-11 {
+        letter-spacing: .02em;
+      }
+
+      .cls-12 {
+        letter-spacing: -.04em;
+      }
+
+      .cls-13 {
+        letter-spacing: .01em;
+      }
+
+      .cls-14 {
+        fill: #fffdf0;
+      }
+
+      .cls-14, .cls-15, .cls-16 {
+        font-family: Bahnschrift-Light, Bahnschrift;
+        font-variation-settings: 'wght' 300, 'wdth' 100;
+        font-weight: 300;
+      }
+
+      .cls-14, .cls-16 {
+        font-size: 30px;
+      }
+
+      .cls-15 {
+        font-size: 83px;
+      }
+
+      .cls-15, .cls-17, .cls-16, .cls-18 {
+        fill: #6b440b;
+      }
+
+      .cls-19 {
+        filter: url(#drop-shadow-8);
+      }
+
+      .cls-19, .cls-20, .cls-21 {
+        fill: #fff7e8;
+      }
+
+      .cls-19, .cls-22, .cls-21 {
+        stroke: #6b440b;
+        stroke-miterlimit: 10;
+      }
+
+      .cls-23 {
+        fill: #7c652a;
+      }
+
+      .cls-24 {
+        letter-spacing: -.04em;
+      }
+
+      .cls-25 {
+        fill: url(#Motivo_nuevo);
+        opacity: .22;
+      }
+
+      .cls-26 {
+        letter-spacing: .02em;
+      }
+
+      .cls-27 {
+        fill: #f4e995;
+      }
+
+      .cls-17 {
+        font-size: 73px;
+      }
+
+      .cls-17, .cls-28, .cls-18 {
+        font-family: Bahnschrift-Bold, Bahnschrift;
+        font-variation-settings: 'wght' 700, 'wdth' 100;
+        font-weight: 700;
+      }
+
+      .cls-28 {
+        fill: #3d2404;
+        font-size: 25.82px;
+      }
+
+      .cls-20 {
+        opacity: .69;
+      }
+
+      .cls-22 {
+        fill: #111;
+        opacity: .35;
+      }
+
+      .cls-29 {
+        letter-spacing: 0em;
+      }
+
+      .cls-30 {
+        letter-spacing: 0em;
+      }
+
+      .cls-31 {
+        letter-spacing: -.01em;
+      }
+
+      .cls-32 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-18 {
+        font-size: 38.92px;
+      }
+
+      .cls-33 {
+        letter-spacing: -.01em;
+      }
+
+      .cls-21 {
+        filter: url(#drop-shadow-9);
+      }
+
+      .cls-34 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-35 {
+        letter-spacing: 0em;
+      }
+
+      .cls-36 {
+        clip-path: url(#clippath);
+      }
+    </style>
+    <pattern id="Motivo_nuevo" data-name="Motivo nuevo" x="0" y="0" width="65.58" height="103.44" patternTransform="translate(10177.33 11784.69) scale(2.42 2.7)" patternUnits="userSpaceOnUse" viewBox="0 0 65.58 103.44">
+      <g>
+        <rect class="cls-9" width="65.58" height="103.44"/>
+        <g>
+          <path class="cls-23" d="M27.42,49.05c-5.91-2.9-8.97-9.41-11.6-15.45,2.96,2.62,7.05,3.43,10.9,4.34s7.93,2.17,10.34,5.3c.85,1.11,1.45,2.4,2.24,3.55,1.8,2.62,4.86,4.99,7.78,6.19-2.26-1.86-6.99-1.61-9.82-1.84-3.35-.28-6.77-.58-9.84-2.08Z"/>
+          <path class="cls-23" d="M18.52,86.96c-1.67-1.91-3.55-3.65-5.14-5.63-5.25-6.53-7.06-15.67-4.7-23.71.58-.13,1.11.3,1.55.69,2.38,2.14,4.77,4.28,7.15,6.41,2.29,2.05,4.63,4.18,5.93,6.96,1.73,3.71,1.31,7.89.91,11.84-.28,2.79.38,7.64-1,9.99-1.63-2.11-2.91-4.51-4.7-6.55Z"/>
+          <path class="cls-23" d="M58.23,15.27c-2.37.39-4.7,1.02-7.08,1.31-7.86.95-16.09-2.16-21.36-8.07.19-.52.79-.75,1.33-.9,2.9-.84,5.81-1.69,8.71-2.53,2.79-.81,5.67-1.63,8.55-1.28,3.84.46,6.98,2.89,9.95,5.18,2.09,1.62,6.31,3.51,7.51,5.79-2.5.26-5.07.09-7.6.5Z"/>
+        </g>
+        <path class="cls-23" d="M-7.35,15.27c-2.37.39-4.7,1.02-7.08,1.31-7.86.95-16.09-2.16-21.36-8.07.19-.52.79-.75,1.33-.9,2.9-.84,5.81-1.69,8.71-2.53,2.79-.81,5.67-1.63,8.55-1.28,3.84.46,6.98,2.89,9.95,5.18,2.09,1.62,6.31,3.51,7.51,5.79-2.5.26-5.07.09-7.6.5Z"/>
+      </g>
+    </pattern>
+    <filter id="drop-shadow-8" x="152.38" y="362.09" width="521" height="468" filterUnits="userSpaceOnUse">
+      <feOffset dx="7" dy="7"/>
+      <feGaussianBlur result="blur" stdDeviation="5"/>
+      <feFlood flood-color="#000" flood-opacity=".31"/>
+      <feComposite in2="blur" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="drop-shadow-9" x="1261.38" y="362.09" width="520" height="468" filterUnits="userSpaceOnUse">
+      <feOffset dx="7" dy="7"/>
+      <feGaussianBlur result="blur-2" stdDeviation="5"/>
+      <feFlood flood-color="#000" flood-opacity=".31"/>
+      <feComposite in2="blur-2" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <clipPath id="clippath">
+      <rect class="cls-9" x="727.97" y="358.13" width="488.17" height="548.5" rx="98.04" ry="98.04"/>
+    </clipPath>
+  </defs>
+  <rect class="cls-27" x="2.36" y="2.45" width="1916.9" height="1076.94"/>
+  <polygon class="cls-25" points="1.28 552.77 1919.23 581.36 1919.13 998.19 1.17 998.19 1.28 552.77"/>
+  <text/>
+  <text class="cls-17" transform="translate(660.33 189.59)"><tspan class="cls-12" x="0" y="0">P</tspan><tspan x="42.24" y="0">equeños gestos</tspan></text>
+  <text class="cls-15" transform="translate(587.38 287.12)"><tspan x="0" y="0">Grandes momentos</tspan></text>
+  <rect class="cls-20" x="1.17" y="998.19" width="1917.96" height="82.72"/>
+  <g>
+    <g class="cls-10">
+      <text class="cls-28" transform="translate(114.7 1052.05)"><tspan x="0" y="0">EL </tspan><tspan class="cls-4" x="37.17" y="0">P</tspan><tspan class="cls-24" x="52.11" y="0">A</tspan><tspan class="cls-32" x="67.82" y="0">S</tspan><tspan x="83.21" y="0">O </tspan><tspan class="cls-2" x="106.82" y="0">D</tspan><tspan x="123.51" y="0">EL </tspan><tspan class="cls-26" x="160.68" y="0">T</tspan><tspan x="173.62" y="0">IEM</tspan><tspan class="cls-2" x="216.28" y="0">P</tspan><tspan x="232.11" y="0">O</tspan></text>
+    </g>
+    <path class="cls-27" d="M89.2,1056.23h-.35c-1.84.03-3.63-.74-4.67-2.16l-9.09-12.47c-1.58-2.18-.79-5.1,1.78-6.48.84-.46,1.78-.7,2.7-.73,1.9-.07,3.78.71,4.85,2.17l4.18,5.74,3.76-6.03c1.43-2.29,4.77-3.19,7.44-1.99,2.65,1.19,3.66,4.05,2.24,6.33l-8.16,13.09c-.93,1.49-2.66,2.38-4.5,2.49-.06.01-.12.01-.18.02Z"/>
+  </g>
+  <rect class="cls-19" x="161.82" y="371.56" width="488.17" height="435.74" rx="98.04" ry="98.04"/>
+  <rect class="cls-21" x="1270.42" y="371.56" width="488.17" height="435.74" rx="98.04" ry="98.04"/>
+  <text class="cls-18" transform="translate(201.66 463.95)"><tspan class="cls-5" x="0" y="0">C</tspan><tspan class="cls-35" x="23.32" y="0">O</tspan><tspan x="48.06" y="0">M</tspan><tspan class="cls-7" x="78.39" y="0">P</tspan><tspan x="100.91" y="0">AR</tspan><tspan class="cls-11" x="151.48" y="0">T</tspan><tspan x="170.98" y="0">E TU </tspan><tspan class="cls-1" x="259.38" y="0">T</tspan><tspan x="278.88" y="0">IEM</tspan><tspan class="cls-35" x="343.19" y="0">P</tspan><tspan x="367.04" y="0">O</tspan></text>
+  <text class="cls-18" transform="translate(1455.54 463.95)"><tspan class="cls-6" x="0" y="0">D</tspan><tspan class="cls-30" x="24.78" y="0">ON</tspan><tspan x="76.4" y="0">A</tspan></text>
+  <text class="cls-16" transform="translate(220.59 573.39)"><tspan x="0" y="0">Súmate como </tspan><tspan class="cls-8" x="192.13" y="0">v</tspan><tspan x="206.84" y="0">o</tspan><tspan class="cls-29" x="223.18" y="0">l</tspan><tspan x="231.72" y="0">untario </tspan><tspan x="0" y="36">a una causa y constr</tspan><tspan class="cls-31" x="277.4" y="36">u</tspan><tspan class="cls-8" x="293.64" y="36">y</tspan><tspan x="307.84" y="36">e </tspan><tspan x="0" y="72">un vín</tspan><tspan class="cls-33" x="80.79" y="72">c</tspan><tspan x="95.36" y="72">ulo que c</tspan><tspan class="cls-8" x="217.08" y="72">r</tspan><tspan x="229.58" y="72">ece con </tspan><tspan x="0" y="108">cada en</tspan><tspan class="cls-33" x="103.95" y="108">c</tspan><tspan x="118.52" y="108">uent</tspan><tspan class="cls-8" x="177.83" y="108">r</tspan><tspan class="cls-34" x="190.34" y="108">o</tspan><tspan x="206.1" y="108" xml:space="preserve">.   </tspan></text>
+  <text class="cls-16" transform="translate(1333.78 555)"><tspan x="0" y="0">Dona materiales para </tspan><tspan x="0" y="36">actividades, alimentos o </tspan><tspan x="0" y="72">un aporte económico a </tspan><tspan x="0" y="108">una o</tspan><tspan class="cls-8" x="73.81" y="108">r</tspan><tspan x="86.32" y="108">ganización </tspan><tspan x="0" y="144">ce</tspan><tspan class="cls-8" x="31.03" y="144">r</tspan><tspan x="43.54" y="144">cana</tspan></text>
+  <g class="cls-36">
+    <image width="4160" height="6240" transform="translate(711.57 211.15) scale(.15)" xlink:href="../../Downloads/pexels-cottonbro-5493781.jpg"/>
+  </g>
+  <rect class="cls-22" x="726.64" y="355.88" width="490.21" height="548.5" rx="98.04" ry="98.04"/>
+  <text class="cls-14" transform="translate(770.16 689.52)"><tspan x="0" y="0">El acompañamiento </tspan><tspan class="cls-34" x="272.89" y="0">f</tspan><tspan class="cls-8" x="281.81" y="0">r</tspan><tspan x="294.32" y="0">e</tspan><tspan class="cls-33" x="310.4" y="0">c</tspan><tspan x="324.98" y="0">uente </tspan><tspan x="0" y="36">permite que </tspan><tspan class="cls-29" x="169.35" y="36">l</tspan><tspan x="177.89" y="36">a con</tspan><tspan class="cls-13" x="249.96" y="36">f</tspan><tspan x="259.91" y="36">ianza </tspan><tspan x="0" y="72">apa</tspan><tspan class="cls-8" x="48.25" y="72">r</tspan><tspan x="60.76" y="72">ezca poco a poc</tspan><tspan class="cls-34" x="274.29" y="72">o</tspan><tspan x="290.05" y="72">. </tspan><tspan class="cls-3" x="304.91" y="72">P</tspan><tspan x="322.85" y="72">uedes </tspan><tspan x="0" y="108">vin</tspan><tspan class="cls-33" x="39.29" y="108">c</tspan><tspan x="53.86" y="108">u</tspan><tspan class="cls-29" x="70.55" y="108">l</tspan><tspan x="79.09" y="108">arte a un p</tspan><tspan class="cls-8" x="223.62" y="108">r</tspan><tspan x="236.13" y="108">ograma de </tspan><tspan class="cls-8" x="0" y="144">v</tspan><tspan x="14.71" y="144">o</tspan><tspan class="cls-29" x="31.05" y="144">l</tspan><tspan x="39.59" y="144">untariado local y elegir una </tspan><tspan class="cls-34" x="0" y="180">f</tspan><tspan class="cls-8" x="8.92" y="180">r</tspan><tspan x="21.43" y="180">e</tspan><tspan class="cls-33" x="37.51" y="180">c</tspan><tspan x="52.09" y="180">uencia posible para ti.</tspan></text>
+</svg>

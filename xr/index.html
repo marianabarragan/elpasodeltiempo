@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="theme-color" content="#d3e59d">
+  <link rel="icon" href="data:,">
+  <title>El paso del tiempo · Realidad mixta</title>
+  <!-- Como en la web: letra manuscrita de la hoja de pendientes (Caveat) y meses del calendario (DM Sans). -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- Sin bloquear la carga: sin internet se usan letras del sistema. -->
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=DM+Sans:wght@600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <style>
+    @font-face { font-family: "Barlow"; src: url("./fuentes/Barlow-Bold.ttf") format("truetype"); font-weight: 700; }
+    @font-face { font-family: "Barlow"; src: url("./fuentes/Barlow-Light.ttf") format("truetype"); font-weight: 300; }
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #d3e59d; }
+    #scene-container { position: fixed; inset: 0; }
+    /* Página de entrada con los colores y el botón de la portada original. */
+    .entrada { position: fixed; inset: 0; z-index: 2; display: grid; place-content: center; gap: 28px; padding: 24px; background: #d3e59d; color: #6b440b; font-family: Bahnschrift, "Barlow", sans-serif; text-align: center; }
+    .entrada[hidden] { display: none; }
+    .entrada h1 { margin: 0; font-weight: 700; font-size: clamp(30px, 5vw, 56px); line-height: 1.1; }
+    .entrada p { margin: 0 auto; max-width: 30em; font-weight: 300; font-size: clamp(17px, 2vw, 22px); line-height: 1.35; }
+    .boton { justify-self: center; padding: 10px; border: 0; border-radius: 999px; background: #fff7e8; font: inherit; cursor: pointer; filter: drop-shadow(6px 6px 5px rgba(0, 0, 0, .31)); transition: scale .2s; }
+    .boton span { display: block; padding: 16px 34px; border: 1px solid #7a5e40; border-radius: 999px; background: #d5bc93; color: #fff7e8; font-weight: 700; font-size: clamp(18px, 2.2vw, 26px); letter-spacing: .02em; text-transform: uppercase; }
+    .boton:hover:not(:disabled) { scale: 1.04; }
+    .boton:disabled { opacity: .6; cursor: default; }
+    .boton:focus-visible { outline: 3px solid #00b2da; outline-offset: 5px; }
+  </style>
+</head>
+<body>
+  <div id="scene-container"></div>
+  <main class="entrada" id="entrada">
+    <h1>El paso del tiempo</h1>
+    <p id="entrada-texto">Ponte las Meta Quest 3 y entra a la experiencia frente a una mesa o un escritorio.</p>
+    <button class="boton" id="entrar" type="button" disabled><span>Entrar en realidad mixta</span></button>
+  </main>
+  <script type="module" src="/src/index.js"></script>
+</body>
+</html>

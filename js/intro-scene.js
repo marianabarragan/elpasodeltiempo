@@ -2,15 +2,38 @@
   'use strict';
   const app = window.TimeExperience = window.TimeExperience || {};
   const PHOTO_STAGES = ['childhood', 'adulthood', 'oldage'];
-  // Hand-hung composition: each photograph has its own point on the rope (`at`), how far
-  // it hangs below it (`drop`), its tilt (`tilt`, radians) and a slight turn/lean in depth.
-  // Only these hanging transforms change; hover, locks, raycasts and camera targets keep
-  // using the same meshes. Tilts stay small so the camera's cover zoom still fills the frame.
+  // Configura cómo cuelga cada foto sin alterar sus interacciones.
   const PHOTO_LAYOUT = Object.freeze({
-    childhood: { at: .19, drop: .02, tilt: -.085, turn: .05, lean: .03 },
-    adulthood: { at: .503, drop: -.12, tilt: .03, turn: -.035, lean: -.015 },
-    oldage: { at: .81, drop: .2, tilt: -.058, turn: .035, lean: .025 }
+    childhood: { at: .19, tilt: -.085, turn: .05, lean: .03 },
+    adulthood: { at: .503, tilt: .03, turn: -.035, lean: -.015 },
+    oldage: { at: .81, tilt: -.058, turn: .035, lean: .025 }
   });
+  // Mide los bordes del papel desde el centro del agujero.
+  const CARD = { width: 3.8, top: .16, bottom: 4.67, thickness: .085, hole: .1 };
+  // La imagen comienza a topGap del agujero.
+  const PHOTO = { width: 3.32, height: 4, topGap: .16 };
+  // La cuerda alterna delante y detrás del papel al atravesar el agujero.
+  const THREAD = { depth: .15, through: .14, release: [1.95, 2.6] };
+  // Ancho del candado en las fotografías bloqueadas.
+  const LOCK_SIZE = 1.5;
+  // Usa la copia de la imagen en script al abrir desde disco.
+  function photoAddress(source) {
+    return location.protocol === 'file:' ? scriptCopy(source) : Promise.resolve(source);
+  }
+  // Obtiene la imagen como URL de datos desde su copia en script.
+  function scriptCopy(source) {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = `${source}.js`;
+      script.onload = () => {
+        script.remove();
+        const address = app.embeddedPhotos?.[source];
+        if (address) resolve(address); else reject(new Error(`${source}.js vacío`));
+      };
+      script.onerror = () => { script.remove(); reject(new Error(`${source}.js no disponible`)); };
+      document.head.appendChild(script);
+    });
+  }
   const material = (color, options = {}) => new THREE.MeshStandardMaterial({
     color, roughness: 1, metalness: 0, flatShading: true, ...options
   });
@@ -32,7 +55,7 @@
       this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
       this.renderer.toneMappingExposure = 1.12;
       this.renderer.shadowMap.enabled = true;
-      // Variance shadow maps give the low sun wide, smooth penumbras with low contrast.
+      // Las sombras de varianza suavizan la luz del sol bajo.
       this.renderer.shadowMap.type = THREE.VSMShadowMap;
       this.renderer.domElement.setAttribute('aria-hidden', 'true');
       container.appendChild(this.renderer.domElement);
@@ -50,7 +73,7 @@
       this.resizeObserver = new ResizeObserver(() => this.resize());
       this.resizeObserver.observe(container);
       this.resize();
-      // The initial scene is static: render on resize/update, not in an idle loop.
+      // El tablero estático solo se dibuja al actualizar o redimensionar.
     }
 
     mesh(geometry, surface, parent = this.board) {
@@ -60,9 +83,7 @@
       return mesh;
     }
 
-    // Late golden hour (about 5 PM): low, raking amber sunlight that enters from a window
-    // outside the frame, on the left. Its cookie (projectWindowLight) adds the diffuse shadow
-    // of the window bars and of a plant's leaves. A warm sky fill keeps shadows light.
+    // Luz cálida lateral con sombras suaves de ventana y hojas.
     buildLights() {
       const ambient = new THREE.HemisphereLight(0xffe0bd, 0x93613f, 2.25);
       const sun = new THREE.SpotLight(0xffc387, 5.2, 0, .3, .45, 0);
@@ -84,8 +105,7 @@
       };
     }
 
-    // Maps the window/leaf pattern onto the board: the board corners are projected into the
-    // sunlight's view so the cookie is authored in board units, whatever the light position.
+    // Proyecta el patrón de ventana usando las esquinas del tablero vistas desde la luz.
     projectWindowLight() {
       const { sun } = this.lighting;
       this.scene.updateMatrixWorld(true);
@@ -101,7 +121,7 @@
       });
     }
 
-    // Transition helper: 0 = resting golden hour, 1 = the light swells into the memory.
+    // Intensidad de la transición: 0 en reposo, 1 al entrar en el recuerdo.
     setMemoryGlow(amount) {
       const { ambient, sun, base } = this.lighting;
       this.renderer.toneMappingExposure = base.exposure * (1 + .42 * amount);
@@ -128,14 +148,12 @@
         depth: .54, bevelEnabled: true, bevelSize: .065, bevelThickness: .065, bevelSegments: 1, steps: 1
       }), frameMaterial);
       frame.position.z = -.18; frame.name = 'warm-frame';
-      // The wall the board hangs on, in the former background tone: it catches the window
-      // light and the board's soft shadow, so the sunlight reads as part of the room.
+      // La pared recibe la luz de ventana y la sombra del tablero.
       const wall = this.mesh(new THREE.PlaneGeometry(150, 110), material(0xf3e6d3, { flatShading: false }));
       wall.position.z = -.3; wall.castShadow = false; wall.name = 'wall';
     }
 
-    // Cabuya: three twisted strands of natural fibre around a darker core, plus a few loose
-    // hairs. Flat-shaded and simplified to stay in the project's hand-painted low-poly style.
+    // Forma la cabuya con tres hebras, un núcleo oscuro y fibras sueltas.
     buildRope() {
       const curve = this.ropeCurve;
       const length = curve.getLength();
@@ -175,33 +193,61 @@
       rope.add(fuzz);
     }
 
+    // Curva la cuerda alrededor de los agujeros de las fotografías.
+    threadRope(line) {
+      const smooth = THREE.MathUtils.smoothstep;
+      const holes = PHOTO_STAGES.map(stage => ({ x: line.getPoint(PHOTO_LAYOUT[stage].at).x, side: Math.sign(PHOTO_LAYOUT[stage].turn) }));
+      const points = line.getSpacedPoints(320);
+      points.forEach(point => holes.forEach(({ x, side }) => {
+        const distance = point.x - x;
+        const across = 2 * smooth(distance, -THREAD.through, THREAD.through) - 1;
+        point.z += side * THREAD.depth * across * (1 - smooth(Math.abs(distance), ...THREAD.release));
+      }));
+      return new THREE.CatmullRomCurve3(points);
+    }
+
+    cardGeometry() {
+      if (this.card) return this.card;
+      const half = CARD.width / 2;
+      const shape = new THREE.Shape();
+      shape.moveTo(-half, -CARD.bottom);
+      shape.lineTo(half, -CARD.bottom);
+      shape.lineTo(half, CARD.top);
+      shape.lineTo(-half, CARD.top);
+      shape.closePath();
+      const hole = new THREE.Path();
+      hole.absarc(0, 0, CARD.hole, 0, Math.PI * 2, true);
+      shape.holes.push(hole);
+      this.card = new THREE.ExtrudeGeometry(shape, { depth: CARD.thickness, bevelEnabled: false, curveSegments: 24 });
+      this.card.translate(0, 0, -CARD.thickness / 2);
+      return this.card;
+    }
+
     buildRopeAndPhotos() {
-      this.ropeCurve = new THREE.CatmullRomCurve3([
+      const line = new THREE.CatmullRomCurve3([
         new THREE.Vector3(-9.45, 3.75, .475), new THREE.Vector3(-6, 3.02, .78),
         new THREE.Vector3(0, 2.46, .89), new THREE.Vector3(6, 3.0, .78),
         new THREE.Vector3(9.45, 3.73, .475)
       ]);
+      this.ropeCurve = this.threadRope(line);
       this.buildRope();
 
       PHOTO_STAGES.forEach(stage => {
         const layout = PHOTO_LAYOUT[stage];
-        const attachment = this.ropeCurve.getPoint(layout.at);
+        const attachment = line.getPoint(layout.at);
         const hanging = new THREE.Group();
         hanging.position.copy(attachment);
         hanging.rotation.set(layout.lean, layout.turn, layout.tilt);
         this.board.add(hanging);
-        const width = 3.8, height = 4.75, thickness = .085;
-        // Keep the rope anchor fixed, while scaling the card and its overlay about its center.
-        // The card sits just behind the thicker twisted rope instead of crossing it.
+        // Escala cada foto y su cubierta desde el agujero para mantenerla colgada.
         const visual = new THREE.Group();
-        visual.position.set(0, -height / 2 - layout.drop, -.125);
         hanging.add(visual);
-        const paper = this.mesh(new THREE.BoxGeometry(width, height, thickness), material(0xfff7e6), visual);
+        const paper = this.mesh(this.cardGeometry(), material(0xfff7e6), visual);
         paper.name = `photo-card-${stage}`;
         paper.userData.stage = stage;
         const texture = this.loadPhoto(stage);
-        const image = this.mesh(new THREE.PlaneGeometry(3.32, 4.0), material(0xffffff, { map: texture }), visual);
-        image.position.set(0, height / 2 - 2.24, .09 - .044);
+        const image = this.mesh(new THREE.PlaneGeometry(PHOTO.width, PHOTO.height), material(0xffffff, { map: texture }), visual);
+        image.position.set(0, -PHOTO.topGap - PHOTO.height / 2, CARD.thickness / 2 + .004);
         image.name = `photo-${stage}`;
         image.userData.stage = stage;
         const unlocked = stage === 'childhood';
@@ -210,64 +256,48 @@
       });
     }
 
+    // Muestra el candado configurado cuando termina de cargar.
     buildPhotoLock(parent, imagePosition, stage) {
       const lock = new THREE.Group();
       lock.name = `photo-lock-${stage}`;
       lock.position.copy(imagePosition);
       lock.position.z += .025;
       parent.add(lock);
-      const ink = new THREE.MeshBasicMaterial({ color: 0x161616, transparent: true, depthWrite: false });
-      const white = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, depthWrite: false });
-      lock.userData.materials = [ink, white];
-      const add = (geometry, surface, z, y = 0) => {
-        const part = new THREE.Mesh(geometry, surface);
-        part.position.set(0, y, z);
-        lock.add(part);
-      };
-      const shackle = (outer, inner) => {
-        const shape = new THREE.Shape();
-        shape.moveTo(-outer, 0);
-        shape.lineTo(-outer, .28);
-        shape.absarc(0, .28, outer, Math.PI, 0, true);
-        shape.lineTo(outer, 0);
-        shape.lineTo(inner, 0);
-        shape.lineTo(inner, .28);
-        shape.absarc(0, .28, inner, 0, Math.PI, false);
-        shape.lineTo(-inner, 0);
-        shape.closePath();
-        return new THREE.ShapeGeometry(shape);
-      };
-      const body = (width, height, radius) => {
-        const x = -width / 2, y = -height / 2;
-        const shape = new THREE.Shape();
-        shape.moveTo(x + radius, y);
-        shape.lineTo(x + width - radius, y);
-        shape.quadraticCurveTo(x + width, y, x + width, y + radius);
-        shape.lineTo(x + width, y + height - radius);
-        shape.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-        shape.lineTo(x + radius, y + height);
-        shape.quadraticCurveTo(x, y + height, x, y + height - radius);
-        shape.lineTo(x, y + radius);
-        shape.quadraticCurveTo(x, y, x + radius, y);
-        return new THREE.ShapeGeometry(shape);
-      };
-      add(shackle(.29, .17), ink, 0);
-      add(shackle(.26, .20), white, .002);
-      add(body(.78, .60, .065), ink, .004, -.15);
-      add(body(.71, .53, .04), white, .006, -.15);
-      add(new THREE.CircleGeometry(.058, 20), ink, .008, -.11);
-      add(new THREE.PlaneGeometry(.055, .11), ink, .008, -.18);
+      const surface = new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, toneMapped: false });
+      lock.userData.materials = [surface];
+      const icon = new THREE.Mesh(new THREE.PlaneGeometry(LOCK_SIZE, LOCK_SIZE), surface);
+      icon.visible = false;
+      lock.add(icon);
+      scriptCopy(this.options.lockIcon).then(address => new THREE.ImageLoader().load(address, image => {
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = 512;
+        canvas.getContext('2d').drawImage(image, 0, 0, 512, 512);
+        surface.map = new THREE.CanvasTexture(canvas);
+        surface.map.colorSpace = THREE.SRGBColorSpace;
+        surface.needsUpdate = true;
+        icon.visible = true;
+        this.render();
+      })).catch(error => console.warn('Tablero: el candado no cargó.', error));
       return lock;
     }
 
     loadPhoto(stage) {
       const source = this.options.photoSources[stage];
-      if (source) {
-        const texture = new THREE.TextureLoader().load(source, () => this.render());
-        texture.colorSpace = THREE.SRGBColorSpace;
-        return texture;
-      }
-      return app.IntroTextures.photo(stage);
+      if (!source) return app.IntroTextures.photo(stage);
+      const texture = new THREE.Texture();
+      texture.colorSpace = THREE.SRGBColorSpace;
+      // Si falla la foto, conserva el retrato provisional.
+      const fallback = error => {
+        console.warn(`Tablero: ${source} no cargó; se usa el retrato provisional.`, error);
+        this.photos.find(item => item.stage === stage).image.material.map = app.IntroTextures.photo(stage);
+        this.render();
+      };
+      photoAddress(source).then(address => new THREE.ImageLoader().load(address, image => {
+        texture.image = image;
+        texture.needsUpdate = true;
+        this.render();
+      }, undefined, fallback)).catch(fallback);
+      return texture;
     }
 
     getPhotoTarget(stage) {
@@ -281,7 +311,7 @@
       return this.getPhotoTarget('childhood');
     }
 
-    // On-screen tilt of a photograph (radians), so the camera can straighten onto it.
+    // Obtiene la inclinación de la foto para enderezar la cámara.
     getPhotoRoll(stage) {
       const photo = this.photos.find(item => item.stage === stage);
       if (!photo) return 0;

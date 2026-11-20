@@ -23,32 +23,36 @@
 
   app.audio = new app.AudioSystem({
     ...app.Config.assets.audio,
-    // Clicks on the toys (Config.childhood.audio); null paths stay silent.
-    effects: {
-      rings: app.Config.childhood.audio.ringsSrc,
-      xylophone: app.Config.childhood.audio.xylophoneSrc,
-      crayon: app.Config.childhood.audio.crayonSrc
-    },
+    // Sonidos de los juguetes; las rutas nulas permanecen en silencio.
+    effects: { rings: app.Config.childhood.audio.ringsSrc, xylophone: app.Config.childhood.audio.xylophoneSrc },
     onStateChange(state) {
       const enabled = state.enabled && !state.blocked;
       sound.setAttribute('aria-pressed', String(enabled));
       sound.setAttribute('aria-label', enabled ? 'Silenciar sonido' : 'Activar sonido');
     }
   });
-  // Scenario 2 keeps the same audio system: looping music plus one-shot prop effects.
+  // La adultez combina música en bucle y sonidos de los objetos.
   app.adulthoodAudio = new app.AudioSystem({
     musicSrc: adultConfig.audio.musicSrc,
-    effects: { thermos: adultConfig.audio.thermosSrc, clock: adultConfig.audio.clockSrc },
+    effects: {
+      thermos: adultConfig.audio.thermosSrc,
+      screen: adultConfig.audio.screenSrc,
+      clock: adultConfig.audio.clockSrc,
+      calendar: adultConfig.audio.calendarSrc,
+      list: adultConfig.audio.listSrc
+    },
     onStateChange(state) {
       const enabled = state.enabled && !state.blocked;
       adultSound.setAttribute('aria-pressed', String(enabled));
       adultSound.setAttribute('aria-label', enabled ? 'Silenciar sonido' : 'Activar sonido');
     }
   });
-  // Scenario 3: looping ambient music (Config.oldage.audio.musicSrc) and an optional water effect.
+  // La vejez combina riego en bucle y sonidos puntuales.
   app.oldageAudio = new app.AudioSystem({
     musicSrc: oldConfig.audio.musicSrc,
-    effects: { water: oldConfig.audio.waterSrc },
+    frictionSrc: oldConfig.audio.waterSrc,
+    frictionVolume: 1,
+    effects: { pot: oldConfig.audio.potSrc, cup: oldConfig.audio.cupSrc, radio: oldConfig.audio.radioSrc, window: oldConfig.audio.windowSrc },
     onStateChange(state) {
       const enabled = state.enabled && !state.blocked;
       oldSound.setAttribute('aria-pressed', String(enabled));
@@ -58,15 +62,13 @@
   adultMessage.querySelector('p').textContent = adultConfig.message;
   oldMessage.querySelector('p').textContent = oldConfig.message;
   app.scenes = new Map();
-  const intro = new app.IntroScene(document.getElementById('intro3d'), { photoSources: app.Config.assets.photos });
+  const intro = new app.IntroScene(document.getElementById('intro3d'), { photoSources: app.Config.assets.photos, lockIcon: app.Config.assets.photoLock });
   app.scenes.set('intro', intro);
-  // Portada: reloj de arena 3D junto a la pregunta. Si el navegador no puede crear este segundo
-  // contexto WebGL, la portada y el resto de la experiencia siguen funcionando sin él.
+  // La portada funciona aunque el reloj no pueda crear otro contexto WebGL.
   try { app.introHourglass = new app.IntroHourglass(document.getElementById('introHourglass')); }
   catch (error) { console.warn('No fue posible crear el reloj de arena 3D', error); }
 
-  // Scenario 1 completes when its progress bar reaches 100 % (five milestones): the phrase
-  // appears below the bar, then the arrow; after a few seconds the phrase fades away.
+  // Al completar la niñez aparecen la frase y la flecha; después se desvanece la frase.
   function completeChildhood() {
     if (arrowShown) return;
     messageShown = true;
@@ -104,9 +106,7 @@
     introSection.hidden = false;
     document.body.classList.add('intro-active');
   }
-  // Scenario 2 completes when its progress bar reaches 100 % (checklist + secondary props) and
-  // the sheet is back on the desk: the phrase appears, then the arrow, and as in scenario 1
-  // the phrase fades out slowly a few seconds later.
+  // La adultez termina al completar el progreso y devolver la hoja al escritorio.
   function completeAdulthood() {
     if (adultMessageShown) return;
     adultMessageShown = true;
@@ -133,8 +133,7 @@
     document.body.classList.remove('intro-active');
     prepareAdulthood().enter();
   }
-  // Scenario 3 completes when its bar reaches 100 % (glasses, chosen pot, full watering and the
-  // cup or the radio) and the can is back in place: phrase first, then the arrow.
+  // La vejez termina al completar el progreso y devolver la regadera.
   function completeOldAge() {
     if (oldMessageShown) return;
     oldMessageShown = true;
@@ -162,13 +161,12 @@
     prepareOldAge().enter();
   }
   function requestScene(stage) {
-    // Future scene entry (vejez): called only after the unlocked photograph fills the frame.
+    // Entra en la vejez cuando su fotografía ocupa toda la vista.
     window.dispatchEvent(new CustomEvent('experience:request-scene', {
       detail: { from: 'intro', to: stage, memory: app.memory, adulthood: app.adulthoodMemory }
     }));
   }
-  // The board pre-builds the childhood room once the Blender toys have loaded (or failed, in
-  // which case the provisional toys are used); entering it never waits for them.
+  // Prepara la niñez tras cargar los juguetes para evitar esperas al entrar.
   app.introTransition = new app.SceneTransition({
     intro, prepareChildhood: () => app.ChildhoodModels.whenSettled(prepareChildhood), enterChildhood, enterAdulthood, enterOldAge, requestScene, showBoard,
     beforeStart: () => app.audio.unlock(),
@@ -203,7 +201,7 @@
       const memory = adulthood.getMemory();
       if (!memory.complete) return false;
       app.adulthoodMemory = memory;
-      // Unlocks the third photograph (vejez) once; later returns do not repeat it.
+      // Desbloquea la fotografía de la vejez una sola vez.
       return app.introTransition.returnToBoard({ unlock: 'oldage' });
     },
     toOldAge() {
@@ -216,16 +214,14 @@
       if (!memory.complete) return false;
       app.oldageMemory = memory;
       window.dispatchEvent(new CustomEvent('experience:scene-complete', { detail: { from: 'oldage', memory } }));
-      // SALIDA DEL ESCENARIO 3 → reflexión final (no vuelve al tablero). La escena se
-      // desvanece y, al ocultarse, detiene su render y su música.
+      // Al salir de la vejez, detiene la escena y la música antes de mostrar la reflexión.
       return app.closing.enter(oldSection, () => oldage.exit());
     }
   };
 
-  // Cierre: reflexión → formas de aportar → agradecimiento (js/closing-screens.js).
+  // Cierre: reflexión, formas de aportar y agradecimiento.
   const veil = document.getElementById('transitionVeil');
-  // «Repetir experiencia»: reinicia internamente todo el recorrido (escenas, progreso, candados)
-  // y muestra la pantalla introductoria original, sin recargar la página.
+  // Reinicia el recorrido y muestra la portada sin recargar la página.
   function restartExperience() {
     if (app.runtime.transitioning) return;
     app.Interface.setLocked(true);
@@ -238,8 +234,7 @@
       })
       .to(veil, { opacity: 0, duration: reduced ? .12 : .8, ease: 'power2.inOut', onComplete: () => app.Interface.setLocked(false) });
   }
-  // «Salir de la experiencia»: usa el destino configurado en Config.closing (onExit o exitUrl).
-  // Sin destino, vuelve con seguridad a la pantalla inicial sin iniciar ninguna escena.
+  // Salir usa el destino configurado o vuelve a la portada.
   function exitExperience() {
     const { exitUrl, onExit } = app.Config.closing;
     if (typeof onExit === 'function') { onExit(); return; }
@@ -272,7 +267,7 @@
     gsap.fromTo(oldArrow, { scale: .91 }, { scale: 1, duration: .3, ease: 'power2.out', overwrite: true });
   });
 
-  // Reset is a technical API, not an extra button in this phase's interface.
+  // El reinicio se ofrece mediante la API, sin botón adicional.
   app.reset = () => {
     app.closing.reset();
     app.scenes.get('oldage')?.exit();
@@ -307,7 +302,7 @@
     if (event.persisted && app.scenes.get('adulthood')?.active && !app.runtime.transitioning) app.adulthoodAudio.enter();
   });
 
-  // Local inspection shortcut; the normal experience always begins at the board.
+  // Atajo de inspección local; el recorrido normal empieza en el tablero.
   const inspect = new URLSearchParams(location.search).get('scene');
   if (inspect === 'childhood') {
     app.ChildhoodModels.whenSettled(() => {

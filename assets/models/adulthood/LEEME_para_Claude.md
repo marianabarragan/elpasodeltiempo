@@ -19,7 +19,6 @@ junto a cada OBJ. Sirven para reemplazar los objetos equivalentes de un proyecto
 | `termo/termo.obj` | Vaso/termo con tapa |
 | `lapicero/lapicero.obj` | Lapicero (cuerpo + clip) |
 | `papel/hoja_pendientes.obj` | Hoja "Pendientes": papel, título, 4 textos y 4 casillas (los textos ya son malla) |
-| `escena_completa/escena_completa.obj` | Todo lo anterior junto, ya colocado |
 | `manifiesto.json` | Por archivo: objetos de Blender que contiene, caja envolvente, tamaño y centro de la base |
 
 Cada carpeta es autónoma: el `.obj`, su `.mtl` y las imágenes que el `.mtl` usa están juntos

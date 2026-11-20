@@ -2,19 +2,15 @@
   'use strict';
   const app = window.TimeExperience = window.TimeExperience || {};
 
-  // ► RELOJ DE ARENA DE LA PORTADA, de Blender (el OBJ completo convertido a .glb con
-  //   `npm run obj`). Se carga antes que los demás modelos porque es lo primero que se ve.
-  //   La web dibuja y anima su arena (js/intro-hourglass.js): del modelo toma la forma del
-  //   cristal, el color de la arena y cuánta hay arriba y abajo.
+  // Carga primero el reloj de Blender; la web calcula y anima su arena.
   const SOURCE = 'assets/models/Inicio/reloj de arena/reloj_de_arena_completo/reloj_de_arena_completo.glb';
-  // Height of each bulb of the glass in the template, the same as the provisional hourglass of
-  // js/intro-hourglass.js, so both share their camera, lights and sand measures.
+  // La altura de las ampollas coincide con la del reloj provisional.
   const BULB_HEIGHT = 2.3;
 
   const { bake } = app.ModelLoader;
   const radial = (position, i) => Math.hypot(position.getX(i), position.getZ(i));
 
-  // Glass outline as rings (height, radius), from the bottom up: the widest radius at each height.
+  // Obtiene el perfil del cristal por altura y radio máximo.
   function rings(mesh) {
     const position = mesh.geometry.attributes.position, byHeight = new Map();
     for (let i = 0; i < position.count; i++) {
@@ -24,7 +20,7 @@
     return [...byHeight].sort((a, b) => a[0] - b[0]);
   }
 
-  // Radius of the outline at any height (linear between rings, clamped at the ends).
+  // Interpola el radio entre anillos y limita los extremos.
   function outline(points) {
     return y => {
       if (y <= points[0][0]) return points[0][1];
@@ -39,23 +35,17 @@
     };
   }
 
-  /**
-   * Template in the hourglass's own units: the neck of the glass at the origin, its axis along Y,
-   * each bulb BULB_HEIGHT tall and the front (Blender's -X side, with the flowers, as the
-   * background of the export shows) facing +Z. The sand mesh is left out; the hourglass draws
-   * its own from `sand` (colour, starting levels and mound) inside `glass` (its mesh name, its
-   * radius at each height and its ends).
-   */
+  /* Centra el cuello, orienta el frente hacia +Z y separa la arena del modelo. */
   function prepare(scene) {
     const group = bake([scene]);
     const meshes = group.children.filter(child => child.isMesh);
     const glass = meshes.find(mesh => mesh.material.transparent);
     if (!glass) throw new Error('el modelo no tiene un cristal transparente');
-    // The sand is the piece that lies inside the glass.
+    // Identifica la arena como la pieza interior del cristal.
     const glassBox = new THREE.Box3().setFromObject(glass);
     const sand = meshes.find(mesh => mesh !== glass && glassBox.containsBox(new THREE.Box3().setFromObject(mesh)));
 
-    // Neck: the narrowest ring in the middle half of the glass.
+    // El cuello es el anillo más estrecho de la mitad central.
     const axis = glassBox.getCenter(new THREE.Vector3());
     glass.geometry.translate(-axis.x, 0, -axis.z);
     const raw = rings(glass);
@@ -77,8 +67,7 @@
     let color = new THREE.Color('#ffd08a');
     if (sand) {
       color = sand.material.color.clone();
-      // Top: the highest grain above the neck. Bottom: where the pile still touches the wall, and
-      // its mound up to the highest point that is clearly pile (not the thin falling stream).
+      // Mide la arena superior y el montón inferior sin incluir el flujo fino.
       const position = sand.geometry.attributes.position, wide = .25 * Math.max(...points.map(([, r]) => r));
       let peak = -Infinity;
       for (let i = 0; i < position.count; i++) {

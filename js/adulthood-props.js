@@ -2,15 +2,13 @@
   'use strict';
   const app = window.TimeExperience = window.TimeExperience || {};
 
-  // Mandatory palette of scenario 2. Every prop color is this set or a tone of it.
+  // Todos los objetos usan la paleta de la adultez o sus variantes.
   const PALETTE = Object.freeze({
     olive: '#837858', steel: '#91959c', lime: '#c7cf96',
     walnut: '#604427', mint: '#c0dea4', sand: '#e2c99e'
   });
 
-  // Blender models (js/adulthood-models.js), with a provisional prop for any that does not load.
-  // Every prop is { root, visual }: interaction code only touches root (placement)
-  // and visual (hover scale / small animations), never the meshes inside visual.
+  // Usa modelos de Blender o sustitutos; las interacciones solo modifican root y visual.
   const MODEL_SLOTS = app.AdulthoodModels?.SOURCES || Object.freeze({});
 
   const DESK_TOP = 7.4;
@@ -64,7 +62,7 @@
       shape.quadraticCurveTo(x, y, x + radius, y);
       return shape;
     }
-    // Box rounded in the top view (XZ), height along +Y, centred on its origin.
+    // Caja redondeada en XZ, centrada y con altura en +Y.
     function softBox(width, height, depth, radius = .06) {
       const bevel = Math.min(.025, height * .2);
       const geometry = new THREE.ExtrudeGeometry(roundedRectangle(width - bevel * 2, depth - bevel * 2, radius), {
@@ -74,7 +72,7 @@
       geometry.translate(0, -height / 2 + bevel, 0);
       return geometry;
     }
-    // Box rounded in the front view (XY), depth along Z, centred on its origin.
+    // Caja redondeada en XY, centrada y con profundidad en Z.
     function frontBox(width, height, depth, radius = .1) {
       const bevel = Math.min(.03, depth * .2);
       const geometry = new THREE.ExtrudeGeometry(roundedRectangle(width - bevel * 2, height - bevel * 2, radius), {
@@ -87,8 +85,7 @@
       return new THREE.LatheGeometry(profile.map(([r, y]) => new THREE.Vector2(r, y)), segments);
     }
 
-    // A named root (placement, pivot at the base centre) and a visual child (hover/animation).
-    // To use a .glb: clear `visual` and add the loaded scene to it, then call settle().
+    // Separa posición y animación en root/visual; tras sustituir la malla, ejecuta settle().
     const models = {};
     function prop(name) {
       const root = new THREE.Group();
@@ -101,7 +98,7 @@
       models[name] = { root, visual };
       return models[name];
     }
-    // Rest any assembled model on the desk using its real bounds, never guessed pivots.
+    // Apoya el modelo según sus límites reales.
     function settle(root, x, z, rotationY = 0, surfaceY = DESK_TOP, clearance = .002) {
       root.position.set(x, 0, z);
       root.rotation.y = rotationY;
@@ -111,15 +108,11 @@
       root.updateMatrixWorld(true);
     }
 
-    // ---------- Blender models (js/adulthood-models.js) ----------
-    // Each one keeps its shape and proportions: it is scaled uniformly so its largest measure
-    // is `size` (that of the provisional prop it replaces) and goes in the prop's place.
+    // Escala los modelos de Blender uniformemente al tamaño del objeto sustituido.
     const blender = app.AdulthoodModels?.status === 'ready' ? app.AdulthoodModels.create() : {};
     const WALL_FRONT = -3.9;
     const baseOf = box => new THREE.Vector3((box.min.x + box.max.x) / 2, box.min.y, (box.min.z + box.max.z) / 2);
-    // Puts `object` (in the exported scene's coordinates) in `parent`, scaled, with the point
-    // `pivotOf(box)` at the parent's origin. Returns the scale and a converter from the
-    // object's coordinates to the parent's.
+    // Sitúa y escala object en parent con pivotOf(box) como origen.
     function useModel(parent, object, size, pivotOf = baseOf) {
       object.updateMatrixWorld(true);
       const box = new THREE.Box3().setFromObject(object, true), measure = box.getSize(new THREE.Vector3());
@@ -132,7 +125,7 @@
       return { holder, box, scale, local: point => new THREE.Vector3(point.x, point.y, point.z).sub(pivot).multiplyScalar(scale) };
     }
 
-    // ---------- Textures ----------
+    // Texturas.
     const wallTexture = canvasTexture(256, 256, (ctx, w, h) => {
       ctx.fillStyle = PALETTE.olive; ctx.fillRect(0, 0, w, h);
       ctx.lineWidth = 1.4;
@@ -167,15 +160,14 @@
       }
     }, [6, 6]);
 
-    // ---------- Room ----------
+    // Habitación.
     const room = prop('room');
     const wallMaterial = material('#ffffff', { map: wallTexture, flatShading: false, roughness: 1 });
     const sideWallMaterial = material(tone('#ffffff', .1), { map: wallTexture, flatShading: false, roughness: 1 });
     const floorMaterial = material(tone(PALETTE.walnut, .05, '#ffffff'), { map: floorTexture, flatShading: false, roughness: .95 });
     const floor = mesh(new THREE.PlaneGeometry(34, 34), floorMaterial, room.visual);
     floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, 13); floor.name = 'floor';
-    // Back wall: from Blender, its bottom on the desk's back edge (AdulthoodScene.fitBackdrop()
-    // enlarges it uniformly only if a very wide or tall screen sees past it), or provisional.
+    // Apoya la pared en el borde trasero y amplíala solo para cubrir la vista.
     let wallFit = null;
     if (blender.wall) {
       const { holder, box } = useModel(room.visual, blender.wall, 0, box => new THREE.Vector3((box.min.x + box.max.x) / 2, box.min.y, box.max.z));
@@ -187,7 +179,7 @@
       const backWall = mesh(new THREE.PlaneGeometry(34, 24), wallMaterial, room.visual);
       backWall.position.set(0, 12, WALL_FRONT); backWall.name = 'back-wall';
     }
-    // Side walls only frame the provisional room: the Blender desk and wall cover the view alone.
+    // Las paredes laterales se usan en la habitación provisional.
     if (!blender.wall) [-1, 1].forEach(side => {
       const wall = mesh(new THREE.PlaneGeometry(34, 24), sideWallMaterial, room.visual);
       wall.rotation.y = -side * Math.PI / 2;
@@ -197,11 +189,10 @@
     const trim = material(tone(PALETTE.sand, .25));
     const baseboard = mesh(new THREE.BoxGeometry(31, .55, .12), trim, room.visual);
     baseboard.position.set(0, .275, -3.84);
-    // Wall shelf with notebooks and a wall calendar of crossed-out days: routine, deadlines.
-    // Both hang low enough to stay inside the view at every camera angle.
+    // Mantiene repisa y calendario visibles durante el giro.
     const SHELF_X = -4.9, SHELF_Y = 9.6;
     if (blender.shelf) {
-      // Shelf and books from Blender, on the wall where the provisional shelf was.
+      // Coloca la repisa de Blender en la posición de la provisional.
       const { holder } = useModel(room.visual, blender.shelf, 4.4, box => new THREE.Vector3((box.min.x + box.max.x) / 2, box.min.y, box.min.z));
       holder.position.set(SHELF_X, SHELF_Y - .08, WALL_FRONT + .005);
       holder.name = 'wall-shelf';
@@ -219,14 +210,11 @@
       const boxOnShelf = mesh(softBox(1.1, .55, .7), material(PALETTE.sand), room.visual);
       boxOnShelf.position.set(SHELF_X + 1.3, SHELF_Y + .08 + .275, -3.45);
     }
-    // ---------- Wall calendar (interactive: one sheet per month) ----------
-    // A backing board with binding rings and a pad of month sheets. Each sheet hangs from
-    // a pivot on its top edge; `calendar.pages.front` is the visible month and `under` the next.
+    // Las hojas del calendario cuelgan del borde superior; front es el mes actual y under el siguiente.
     const MONTHS = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
     const calendarStart = app.Config.adulthood.calendar;
     const monthTextures = new Map();
-    // `index` counts months from the configured start (0 = start month). The layout was drawn
-    // for a 320 × 380 page; vertical measures follow the real page's proportions (`k`).
+    // index cuenta meses desde el inicio; k ajusta las medidas verticales.
     function monthTexture(index) {
       if (monthTextures.has(index)) return monthTextures.get(index);
       const absolute = calendarStart.startYear * 12 + calendarStart.startMonth + index;
@@ -248,7 +236,7 @@
           ctx.strokeStyle = 'rgba(96,68,39,.3)'; ctx.lineWidth = 1.2; ctx.strokeRect(x, y, 38, 41 * k);
           if (day < 1 || day > days) continue;
           ctx.fillStyle = 'rgba(96,68,39,.75)'; ctx.fillText(String(day), x + 4, y + 15 * k);
-          // The starting month keeps its crossed-out days: routine and deadlines.
+          // Conserva los días tachados del mes inicial.
           if (index === 0 && day <= 23) {
             ctx.strokeStyle = 'rgba(70,64,92,.75)'; ctx.lineWidth = 2.6;
             ctx.beginPath(); ctx.moveTo(x + 9, y + 9 * k); ctx.lineTo(x + 31, y + 36 * k); ctx.moveTo(x + 31, y + 9 * k); ctx.lineTo(x + 9, y + 35 * k); ctx.stroke();
@@ -260,8 +248,7 @@
       return texture;
     }
     const wallCalendar = prop('wallCalendar');
-    // Month pages hang from the top edge of the pad: over the blank sheet of the Blender cork
-    // board, or over the provisional board.
+    // Cuelga los meses sobre la hoja del corcho.
     let pageWidth = 2.14, pageHeight = 2.62, pageGap = [.024, .032];
     const pageTop = new THREE.Vector3(0, 1.3, 0);
     if (blender.wallCalendar) {
@@ -287,7 +274,7 @@
     const pageGeometry = new THREE.PlaneGeometry(pageWidth, pageHeight);
     pageGeometry.translate(0, -pageHeight / 2, 0);
     geometries.add(pageGeometry);
-    // `rest` is where the page hangs; AdulthoodScene brings a turned page back there.
+    // rest guarda la posición de reposo de la hoja del calendario.
     function page(name, z) {
       const pivot = new THREE.Group();
       pivot.name = name;
@@ -299,12 +286,12 @@
       return { pivot, sheet, material: surface, rest: pivot.position.clone() };
     }
     const calendarPages = { under: page('calendar-page-under', pageGap[0]), front: page('calendar-page-front', pageGap[1]) };
-    // Shows month `index` on the front sheet and the following month underneath.
+    // Muestra el mes index delante y el siguiente debajo.
     function setCalendarMonth(index) {
       calendarPages.front.material.map = monthTexture(index);
       calendarPages.under.material.map = monthTexture(index + 1);
       [calendarPages.front, calendarPages.under].forEach(item => { item.material.needsUpdate = true; });
-      // Keep only the textures that can still be shown.
+      // Conserva solo las texturas que aún pueden mostrarse.
       monthTextures.forEach((texture, key) => {
         if (key < index || key > index + 1) { texture.dispose(); textures.delete(texture); monthTextures.delete(key); }
       });
@@ -313,10 +300,9 @@
     wallCalendar.root.position.set(5.75, 9.5, blender.wallCalendar ? WALL_FRONT + .005 : -3.84);
     wallCalendar.root.rotation.z = .02;
 
-    // ---------- Desk ----------
+    // Escritorio.
     const desk = prop('desk');
-    // The Blender desk top runs from the wall forward, its top at DESK_TOP; AdulthoodScene.
-    // fitBackdrop() scales it uniformly so it covers everything the camera can see.
+    // Escala el escritorio uniformemente desde la pared para cubrir la vista.
     let deskFit = null;
     if (blender.desk) {
       const { holder, box } = useModel(desk.visual, blender.desk, 0, box => new THREE.Vector3((box.min.x + box.max.x) / 2, box.max.y, box.min.z));
@@ -327,8 +313,7 @@
     } else {
       const deskWood = material(tone(PALETTE.walnut, .34, '#ffffff'), { map: deskTexture, flatShading: false, roughness: .85 });
       const deskDark = material(tone(PALETTE.walnut, .15));
-      // A long, deep top: from the back wall (z = -3.6) well past the bottom of the view and
-      // wider than it on both sides, so the camera only ever sees the desk, never the floor.
+      // Extiende el escritorio más allá del encuadre para ocultar el piso.
       const DESK_WIDTH = 26, DESK_BACK = -3.6, DESK_FRONT = 12;
       const top = mesh(softBox(DESK_WIDTH, .36, DESK_FRONT - DESK_BACK, .1), deskWood, desk.visual);
       top.position.set(0, DESK_TOP - .18, (DESK_FRONT + DESK_BACK) / 2); top.name = 'desk-top';
@@ -348,24 +333,23 @@
       });
     }
 
-    // ---------- Monitor (main light source) ----------
+    // Monitor como fuente principal de luz.
     const monitor = prop('monitor');
     const plastic = material(tone(PALETTE.steel, .62));
     const plasticLight = material(tone(PALETTE.steel, .35));
-    // Switched-off panel: dark glass with a faint reflection.
+    // Pantalla apagada: vidrio oscuro con reflejo tenue.
     const screenOffTexture = canvasTexture(512, 280, (ctx, w, h) => {
       ctx.fillStyle = '#15191e'; ctx.fillRect(0, 0, w, h);
       const glare = ctx.createLinearGradient(0, 0, w * .8, h);
       glare.addColorStop(0, 'rgba(255,255,255,.08)'); glare.addColorStop(.45, 'rgba(255,255,255,.015)'); glare.addColorStop(1, 'rgba(255,255,255,0)');
       ctx.fillStyle = glare; ctx.fillRect(0, 0, w, h);
     });
-    // The screen light starts just in front of the screen's centre.
+    // La luz nace delante del centro de la pantalla.
     const screenAnchor = new THREE.Object3D();
     screenAnchor.name = 'monitor-screen-light-anchor';
     let screen, screenMaterial, screenTexture, screenOnColor, screenWidth, screenHeight, powerButton, setLed;
     if (blender.monitor && blender.screen) {
-      // Blender monitor with its screen picture; the little button under the screen (and the
-      // screen itself, see AdulthoodScene) switches it, and its ring is the status light.
+      // La pantalla y el botón controlan el encendido; el anillo indica su estado.
       const both = new THREE.Group();
       both.add(blender.monitor, blender.screen);
       const { local, scale } = useModel(monitor.visual, both, 6.4);
@@ -434,7 +418,7 @@
       screen = mesh(new THREE.PlaneGeometry(screenWidth, screenHeight), screenMaterial, head);
       screen.position.z = .113; screen.name = 'monitor-screen';
       screen.castShadow = false; screen.userData.ignoreScreenLight = true;
-      // Power button on the bottom edge of the bezel, with a small status light beside it.
+      // Botón de encendido e indicador junto al borde inferior.
       powerButton = { root: new THREE.Group(), visual: new THREE.Group() };
       powerButton.root.name = 'monitorPower';
       powerButton.root.add(powerButton.visual);
@@ -460,14 +444,13 @@
       setLed = on => ledMaterial.color.set(on ? PALETTE.mint : tone(PALETTE.steel, .6));
       screenAnchor.position.z = .12;
       head.add(screenAnchor);
-      // Sticky notes on the bezel: accumulating to-dos.
+      // Notas adhesivas con pendientes acumulados.
       [[2.55, -1.32, .14, PALETTE.lime], [2.95, -1.05, -.1, PALETTE.sand], [-2.85, 1.3, .08, PALETTE.mint]].forEach(([x, y, angle, color]) => {
         const note = mesh(new THREE.PlaneGeometry(.55, .55), material(color, { side: THREE.DoubleSide }), head);
         note.position.set(x, y, .125); note.rotation.z = angle; note.castShadow = false;
       });
     }
-    // Hover emphasis on the screen only (0 = rest, 1 = hover): the panel grows slightly
-    // inside its bezel and its content zooms in a little.
+    // Amplía ligeramente la pantalla y su contenido al señalarla.
     function setScreenZoom(amount) {
       screen.scale.set(1 + .035 * amount, 1 + .035 * amount, 1);
       const repeat = 1 / (1 + .07 * amount);
@@ -483,7 +466,7 @@
       setLed(on);
     }
 
-    // ---------- Keyboard ----------
+    // Teclado.
     const keyboard = prop('keyboard');
     let keys = null;
     if (blender.keyboard) useModel(keyboard.visual, blender.keyboard, 4.7);
@@ -508,7 +491,7 @@
       spacebar.position.set(.1, .195, .56);
     }
 
-    // ---------- Digital clock (secondary interaction) ----------
+    // Reloj digital con interacción secundaria.
     const clockDigital = prop('clockDigital');
     const SEGMENTS = { 0: 'abcdef', 1: 'bc', 2: 'abged', 3: 'abgcd', 4: 'fgbc', 5: 'afgcd', 6: 'afgedc', 7: 'abc', 8: 'abcdefg', 9: 'abcdfg' };
     function drawDigit(ctx, x, y, w, h, segments, color) {
@@ -532,8 +515,7 @@
       [...segments].forEach(key => bar(...map[key]));
       ctx.restore();
     }
-    // Config.adulthood.clockTime in slanted 7-segment digits, with the unlit segments faintly
-    // behind them, laid out on 512 × 256 and centred on the canvas (`fill` < 1 leaves a margin).
+    // Dibuja clockTime con dígitos inclinados de siete segmentos y margen fill.
     function drawClockTime(ctx, w, h, fill = 1) {
       const scale = fill * Math.min(w / 512, h / 256);
       ctx.save();
@@ -554,8 +536,7 @@
     }
     let setClockPower;
     if (blender.clockDigital) {
-      // Blender clock: switching it off darkens its backlight and hides its digits, which are
-      // drawn here (drawClockTime) over its backlight instead of the ones in its texture.
+      // Al apagar el reloj, oscurece el fondo y oculta los dígitos dibujados.
       const model = blender.clockDigital;
       useModel(clockDigital.visual, model, 1.55);
       const backlight = model.getObjectByName('clock-backlight'), digits = model.getObjectByName('clock-digits');
@@ -615,7 +596,7 @@
     }
     setClockPower(true);
 
-    // ---------- Coffee thermos (secondary interaction) ----------
+    // Termo con interacción secundaria.
     const coffeeThermos = prop('coffeeThermos');
     if (blender.coffeeThermos) useModel(coffeeThermos.visual, blender.coffeeThermos, 1.75);
     else {
@@ -635,7 +616,7 @@
       sip.position.set(0, 1.74, .3);
     }
 
-    // ---------- Plant (dry leaves: time passing) ----------
+    // Planta con hojas secas que sugieren el paso del tiempo.
     const plant = prop('plant');
     if (blender.plant) useModel(plant.visual, blender.plant, 3.27);
     else {
@@ -666,13 +647,11 @@
       }
     }
 
-    // ---------- Checklist paper (main interaction surface) ----------
-    // The ChecklistSystem owns the texture; this module only owns the shape.
+    // La hoja define la forma; ChecklistSystem controla su textura.
     const checklistPaper = prop('checklistPaper');
     let paperWidth = 2.9, paperHeight = 3.7, paperTop = 0, paperMesh, paperMaterial, paperSheet = null;
     if (blender.checklistPaper?.userData.boxes?.length >= app.Config.adulthood.checklist.tasks.length) {
-      // Blender sheet: its paper, title, tasks and boxes are its own; the checks are drawn on its
-      // paper picture, at its boxes (`paperSheet`, see ChecklistSystem).
+      // Dibuja las marcas sobre las casillas de la hoja de Blender.
       const model = blender.checklistPaper, { scale, local } = useModel(checklistPaper.visual, model, 3.7);
       paperMesh = model.getObjectByName('paper-sheet');
       paperMaterial = paperMesh.material;
@@ -685,7 +664,7 @@
     } else {
       const paperGeometry = new THREE.PlaneGeometry(paperWidth, paperHeight, 30, 38);
       paperGeometry.rotateX(-Math.PI / 2);
-      // Light crumpling: a few crossing creases plus slightly lifted edges. Always above the desk.
+      // Añade pliegues y bordes elevados sobre el escritorio.
       const creases = Array.from({ length: 6 }, () => {
         const angle = random() * Math.PI;
         return { x: Math.cos(angle), z: Math.sin(angle), offset: (random() - .5) * 2.4, amount: .006 + random() * .01 };
@@ -707,9 +686,7 @@
       paperMesh.name = 'checklist-paper-sheet';
       paperMesh.castShadow = false;
     }
-    // Call-to-action glow: soft light around the sheet's edges only (transparent inside,
-    // so it never covers the writing), a thin cream halo like the glow of the props in the
-    // other scenes. Its opacity is animated by the scene.
+    // El halo ilumina los bordes de la hoja sin cubrir el texto.
     const glowMargin = .2;
     const glowTexture = canvasTexture(256, 320, (ctx, w, h) => {
       const image = ctx.createImageData(w, h);
@@ -741,14 +718,13 @@
     paperGlow.raycast = () => {};
     paperGlow.userData.ignoreScreenLight = true;
 
-    // ---------- Pen (main interaction tool) ----------
-    // Authored along +X, tip at +X. The tip is derived from the bounds below.
+    // Lapicero orientado en +X, con punta calculada desde sus límites.
     const pen = prop('pen');
     const tipMarker = new THREE.Object3D();
     tipMarker.name = 'pen-tip';
     let penMaterials;
     if (blender.pen) {
-      // Blender pen, along +X with its tip at +X and the clip on top (js/adulthood-models.js).
+      // El lapicero de Blender conserva la punta en +X y el clip en +Y.
       const model = blender.pen, { local } = useModel(pen.visual, model, 1.71);
       tipMarker.position.copy(local(model.userData.tip));
       penMaterials = [];
@@ -779,11 +755,11 @@
     }
     pen.root.add(tipMarker);
 
-    // ---------- Placement on the desk ----------
+    // Colocación sobre el escritorio.
     settle(monitor.root, .5, -2.35);
     settle(keyboard.root, .55, -.15);
     settle(clockDigital.root, -4.5, -2.45, .32);
-    // At the far left end of the desk, forward, clear of the wall shelf.
+    // Ubica la matera adelante a la izquierda, separada de la repisa.
     settle(plant.root, -8.25, -.8);
     settle(coffeeThermos.root, 5.0, -1.0, -.4);
     settle(checklistPaper.root, -4.0, 1.3, .22, DESK_TOP, .004);
@@ -792,7 +768,7 @@
 
     const interactive = ['checklistPaper', 'pen', 'monitor', 'wallCalendar', 'coffeeThermos', 'clockDigital'];
     interactive.forEach(name => { models[name].root.userData.interactive = name; });
-    // Nested inside the monitor: the raycast finds the button before the monitor itself.
+    // Anida el botón en el monitor para detectarlo primero.
     powerButton.root.userData.interactive = 'monitorPower';
     const penRest = { position: pen.root.position.clone(), quaternion: pen.root.quaternion.clone() };
     const paperRest = { position: checklistPaper.root.position.clone(), quaternion: checklistPaper.root.quaternion.clone() };
@@ -810,7 +786,7 @@
       clock: { setPower: setClockPower },
       metadata: { palette: PALETTE, modelSlots: MODEL_SLOTS, axis: 'Y-up', penTipAxis: '+X' },
       dispose() {
-        // Blender models bring their own geometries, materials and textures.
+        // Los modelos de Blender incluyen geometrías, materiales y texturas.
         group.traverse(object => {
           if (object.geometry) geometries.add(object.geometry);
           [].concat(object.material || []).forEach(surface => {

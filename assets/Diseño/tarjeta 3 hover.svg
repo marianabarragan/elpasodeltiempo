@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Capa_1" data-name="Capa 1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1920 1080">
+  <defs>
+    <style>
+      .cls-1 {
+        letter-spacing: .02em;
+      }
+
+      .cls-2 {
+        letter-spacing: 0em;
+      }
+
+      .cls-3 {
+        letter-spacing: -.04em;
+      }
+
+      .cls-4 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-5 {
+        letter-spacing: -.04em;
+      }
+
+      .cls-6 {
+        letter-spacing: 0em;
+      }
+
+      .cls-7 {
+        fill: none;
+      }
+
+      .cls-8 {
+        opacity: .47;
+      }
+
+      .cls-9 {
+        letter-spacing: .02em;
+      }
+
+      .cls-10 {
+        letter-spacing: -.04em;
+      }
+
+      .cls-11 {
+        fill: #fffdf0;
+      }
+
+      .cls-11, .cls-12, .cls-13 {
+        font-family: Bahnschrift-Light, Bahnschrift;
+        font-variation-settings: 'wght' 300, 'wdth' 100;
+        font-weight: 300;
+      }
+
+      .cls-11, .cls-13 {
+        font-size: 30px;
+      }
+
+      .cls-12 {
+        font-size: 83px;
+      }
+
+      .cls-12, .cls-14, .cls-13, .cls-15 {
+        fill: #6b440b;
+      }
+
+      .cls-16 {
+        fill: #7c652a;
+      }
+
+      .cls-17 {
+        letter-spacing: -.04em;
+      }
+
+      .cls-18 {
+        fill: url(#Motivo_nuevo);
+        opacity: .22;
+      }
+
+      .cls-19 {
+        letter-spacing: .02em;
+      }
+
+      .cls-20 {
+        fill: #f4e995;
+      }
+
+      .cls-14 {
+        font-size: 73px;
+      }
+
+      .cls-14, .cls-21, .cls-15 {
+        font-family: Bahnschrift-Bold, Bahnschrift;
+        font-variation-settings: 'wght' 700, 'wdth' 100;
+        font-weight: 700;
+      }
+
+      .cls-21 {
+        fill: #3d2404;
+        font-size: 25.82px;
+      }
+
+      .cls-22 {
+        opacity: .69;
+      }
+
+      .cls-22, .cls-23, .cls-24 {
+        fill: #fff7e8;
+      }
+
+      .cls-23 {
+        filter: url(#drop-shadow-10);
+      }
+
+      .cls-23, .cls-24, .cls-25 {
+        stroke: #6b440b;
+        stroke-miterlimit: 10;
+      }
+
+      .cls-24 {
+        filter: url(#drop-shadow-11);
+      }
+
+      .cls-26 {
+        letter-spacing: 0em;
+      }
+
+      .cls-27 {
+        letter-spacing: -.06em;
+      }
+
+      .cls-28 {
+        letter-spacing: -.01em;
+      }
+
+      .cls-29 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-15 {
+        font-size: 38.92px;
+      }
+
+      .cls-30 {
+        letter-spacing: -.01em;
+      }
+
+      .cls-31 {
+        letter-spacing: -.04em;
+      }
+
+      .cls-32 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-33 {
+        letter-spacing: 0em;
+      }
+
+      .cls-25 {
+        fill: #111;
+        opacity: .48;
+      }
+
+      .cls-34 {
+        clip-path: url(#clippath);
+      }
+    </style>
+    <pattern id="Motivo_nuevo" data-name="Motivo nuevo" x="0" y="0" width="65.58" height="103.44" patternTransform="translate(-26481.04 9668.24) rotate(-180) scale(2.42 -2.42)" patternUnits="userSpaceOnUse" viewBox="0 0 65.58 103.44">
+      <g>
+        <rect class="cls-7" width="65.58" height="103.44"/>
+        <g>
+          <path class="cls-16" d="M27.42,49.05c-5.91-2.9-8.97-9.41-11.6-15.45,2.96,2.62,7.05,3.43,10.9,4.34s7.93,2.17,10.34,5.3c.85,1.11,1.45,2.4,2.24,3.55,1.8,2.62,4.86,4.99,7.78,6.19-2.26-1.86-6.99-1.61-9.82-1.84-3.35-.28-6.77-.58-9.84-2.08Z"/>
+          <path class="cls-16" d="M18.52,86.96c-1.67-1.91-3.55-3.65-5.14-5.63-5.25-6.53-7.06-15.67-4.7-23.71.58-.13,1.11.3,1.55.69,2.38,2.14,4.77,4.28,7.15,6.41,2.29,2.05,4.63,4.18,5.93,6.96,1.73,3.71,1.31,7.89.91,11.84-.28,2.79.38,7.64-1,9.99-1.63-2.11-2.91-4.51-4.7-6.55Z"/>
+          <path class="cls-16" d="M58.23,15.27c-2.37.39-4.7,1.02-7.08,1.31-7.86.95-16.09-2.16-21.36-8.07.19-.52.79-.75,1.33-.9,2.9-.84,5.81-1.69,8.71-2.53,2.79-.81,5.67-1.63,8.55-1.28,3.84.46,6.98,2.89,9.95,5.18,2.09,1.62,6.31,3.51,7.51,5.79-2.5.26-5.07.09-7.6.5Z"/>
+        </g>
+        <path class="cls-16" d="M-7.35,15.27c-2.37.39-4.7,1.02-7.08,1.31-7.86.95-16.09-2.16-21.36-8.07.19-.52.79-.75,1.33-.9,2.9-.84,5.81-1.69,8.71-2.53,2.79-.81,5.67-1.63,8.55-1.28,3.84.46,6.98,2.89,9.95,5.18,2.09,1.62,6.31,3.51,7.51,5.79-2.5.26-5.07.09-7.6.5Z"/>
+      </g>
+    </pattern>
+    <filter id="drop-shadow-10" x="156.38" y="369.09" width="520" height="467" filterUnits="userSpaceOnUse">
+      <feOffset dx="7" dy="7"/>
+      <feGaussianBlur result="blur" stdDeviation="5"/>
+      <feFlood flood-color="#000" flood-opacity=".31"/>
+      <feComposite in2="blur" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="drop-shadow-11" x="712.38" y="372.09" width="520" height="468" filterUnits="userSpaceOnUse">
+      <feOffset dx="7" dy="7"/>
+      <feGaussianBlur result="blur-2" stdDeviation="5"/>
+      <feFlood flood-color="#000" flood-opacity=".31"/>
+      <feComposite in2="blur-2" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <clipPath id="clippath">
+      <rect class="cls-7" x="1255.7" y="384.07" width="488.17" height="548.5" rx="98.04" ry="98.04"/>
+    </clipPath>
+  </defs>
+  <rect class="cls-20" x="2.04" y="-.26" width="1920.58" height="1085.81"/>
+  <polygon class="cls-18" points="1919.24 110.04 669.19 1004.68 1921.53 1001.62 1919.24 110.04"/>
+  <text/>
+  <text/>
+  <text class="cls-14" transform="translate(663.69 195.76)"><tspan class="cls-10" x="0" y="0">P</tspan><tspan x="42.24" y="0">equeños gestos</tspan></text>
+  <text class="cls-12" transform="translate(590.74 293.29)"><tspan x="0" y="0">Grandes momentos</tspan></text>
+  <rect class="cls-22" x="4.53" y="1004.36" width="1917.96" height="82.72"/>
+  <g>
+    <g class="cls-8">
+      <text class="cls-21" transform="translate(118.06 1058.22)"><tspan x="0" y="0">EL </tspan><tspan class="cls-3" x="37.17" y="0">P</tspan><tspan class="cls-17" x="52.11" y="0">A</tspan><tspan class="cls-29" x="67.82" y="0">S</tspan><tspan x="83.21" y="0">O </tspan><tspan class="cls-2" x="106.82" y="0">D</tspan><tspan x="123.51" y="0">EL </tspan><tspan class="cls-19" x="160.68" y="0">T</tspan><tspan x="173.62" y="0">IEM</tspan><tspan class="cls-2" x="216.28" y="0">P</tspan><tspan x="232.11" y="0">O</tspan></text>
+    </g>
+    <path class="cls-20" d="M92.56,1062.4h-.35c-1.84.03-3.63-.74-4.67-2.16l-9.09-12.47c-1.58-2.18-.79-5.1,1.78-6.48.84-.46,1.78-.7,2.7-.73,1.9-.07,3.78.71,4.85,2.17l4.18,5.74,3.76-6.03c1.43-2.29,4.77-3.19,7.44-1.99,2.65,1.19,3.66,4.05,2.24,6.33l-8.16,13.09c-.93,1.49-2.66,2.38-4.5,2.49-.06.01-.12.01-.18.02Z"/>
+  </g>
+  <rect class="cls-23" x="165.19" y="377.73" width="488.17" height="435.74" rx="98.04" ry="98.04"/>
+  <text class="cls-15" transform="translate(205.02 470.12)"><tspan class="cls-4" x="0" y="0">C</tspan><tspan class="cls-33" x="23.32" y="0">O</tspan><tspan x="48.06" y="0">M</tspan><tspan class="cls-5" x="78.39" y="0">P</tspan><tspan x="100.91" y="0">AR</tspan><tspan class="cls-9" x="151.48" y="0">T</tspan><tspan x="170.98" y="0">E TU </tspan><tspan class="cls-1" x="259.38" y="0">T</tspan><tspan x="278.88" y="0">IEM</tspan><tspan class="cls-33" x="343.19" y="0">P</tspan><tspan x="367.04" y="0">O</tspan></text>
+  <text class="cls-13" transform="translate(223.95 579.56)"><tspan x="0" y="0">Súmate como </tspan><tspan class="cls-6" x="192.13" y="0">v</tspan><tspan x="206.84" y="0">o</tspan><tspan class="cls-26" x="223.18" y="0">l</tspan><tspan x="231.72" y="0">untario </tspan><tspan x="0" y="36">a una causa y constr</tspan><tspan class="cls-28" x="277.4" y="36">u</tspan><tspan class="cls-6" x="293.64" y="36">y</tspan><tspan x="307.84" y="36">e </tspan><tspan x="0" y="72">un vín</tspan><tspan class="cls-30" x="80.79" y="72">c</tspan><tspan x="95.36" y="72">ulo que c</tspan><tspan class="cls-6" x="217.08" y="72">r</tspan><tspan x="229.58" y="72">ece con </tspan><tspan x="0" y="108">cada en</tspan><tspan class="cls-30" x="103.95" y="108">c</tspan><tspan x="118.52" y="108">uent</tspan><tspan class="cls-6" x="177.83" y="108">r</tspan><tspan class="cls-32" x="190.34" y="108">o</tspan><tspan x="206.1" y="108" xml:space="preserve">.   </tspan></text>
+  <rect class="cls-24" x="721.53" y="380.85" width="488.17" height="435.74" rx="98.04" ry="98.04"/>
+  <text class="cls-15" transform="translate(856.52 474.74)"><tspan class="cls-31" x="0" y="0">A</tspan><tspan class="cls-4" x="23.68" y="0">C</tspan><tspan class="cls-33" x="47" y="0">O</tspan><tspan x="71.74" y="0">M</tspan><tspan class="cls-5" x="102.07" y="0">P</tspan><tspan x="124.59" y="0">A</tspan><tspan class="cls-33" x="149.79" y="0">Ñ</tspan><tspan x="176.66" y="0">A</tspan></text>
+  <text class="cls-13" transform="translate(795.36 582.68)"><tspan x="0" y="0">Súmate como </tspan><tspan class="cls-6" x="192.13" y="0">v</tspan><tspan x="206.84" y="0">o</tspan><tspan class="cls-26" x="223.18" y="0">l</tspan><tspan x="231.72" y="0">untario </tspan><tspan x="0" y="36">a una causa y constr</tspan><tspan class="cls-28" x="277.4" y="36">u</tspan><tspan class="cls-6" x="293.64" y="36">y</tspan><tspan x="307.84" y="36">e </tspan><tspan x="0" y="72">un vín</tspan><tspan class="cls-30" x="80.79" y="72">c</tspan><tspan x="95.36" y="72">ulo que c</tspan><tspan class="cls-6" x="217.08" y="72">r</tspan><tspan x="229.58" y="72">ece con </tspan><tspan x="0" y="108">cada en</tspan><tspan class="cls-30" x="103.95" y="108">c</tspan><tspan x="118.52" y="108">uent</tspan><tspan class="cls-6" x="177.83" y="108">r</tspan><tspan class="cls-32" x="190.34" y="108">o</tspan><tspan x="206.1" y="108" xml:space="preserve">.   </tspan></text>
+  <g class="cls-34">
+    <image width="3863" height="5794" transform="translate(1138.7 193.27) scale(.2)" xlink:href="../../Downloads/pexels-shkrabaanthony-7345441.jpg"/>
+  </g>
+  <rect class="cls-25" x="1255.15" y="385.71" width="490.21" height="548.5" rx="98.04" ry="98.04"/>
+  <text class="cls-11" transform="translate(1299.95 708.16)"><tspan x="0" y="0">Un aporte material o </tspan><tspan x="0" y="36">económico </tspan><tspan class="cls-28" x="153.05" y="36">a</tspan><tspan x="168.57" y="36">yuda a sostener </tspan><tspan x="0" y="72">actividades y espacios de </tspan><tspan x="0" y="108">en</tspan><tspan class="cls-30" x="32.84" y="108">c</tspan><tspan x="47.42" y="108">uent</tspan><tspan class="cls-6" x="106.73" y="108">r</tspan><tspan class="cls-32" x="119.24" y="108">o</tspan><tspan x="135" y="108">. Antes de dona</tspan><tspan class="cls-27" x="341.07" y="108">r</tspan><tspan x="351.97" y="108">, </tspan><tspan x="0" y="144">p</tspan><tspan class="cls-6" x="16.32" y="144">r</tspan><tspan x="28.83" y="144">egunta a </tspan><tspan class="cls-26" x="152.36" y="144">l</tspan><tspan x="160.9" y="144">a o</tspan><tspan class="cls-6" x="201.27" y="144">r</tspan><tspan x="213.78" y="144">ganización qué </tspan><tspan x="0" y="180">necesita </tspan><tspan class="cls-6" x="120.76" y="180">r</tspan><tspan x="133.27" y="180">ea</tspan><tspan class="cls-26" x="165.32" y="180">l</tspan><tspan x="173.86" y="180">ment</tspan><tspan class="cls-32" x="242.18" y="180">e</tspan><tspan x="257.68" y="180">.</tspan></text>
+</svg>

@@ -1,10 +1,11 @@
-# Despliegue de «El paso del tiempo» en GitHub Pages.
-# Publica la misma página que sirve `npm start` en local: index.html, styles.css, script.js,
-# js/, assets/ y las dos librerías que index.html carga desde node_modules (Three.js y GSAP),
-# conservando sus rutas relativas.
+# Este archivo inicia la página ("npm run dev") en github actions para tenerla para el publico
 #
-# Requisito único en GitHub: Settings → Pages → Build and deployment → Source: «GitHub Actions».
+# Publica dos versiones en el mismo sitio:
+# - la de computador en la raíz (index.html, styles.css, script.js, js/, assets/ y Three.js y GSAP), igual que antes;
+# - la de realidad mixta para Meta Quest 3 (carpeta xr/, Vite + IWSDK) en la subcarpeta /xr/:
+#   https://marianabarragan.github.io/elpasodeltiempo/xr/
 
+# Requisito único en GitHub: Settings → Pages → Build and deployment → Source: «GitHub Actions».
 name: Desplegar en GitHub Pages
 
 on:
@@ -34,12 +35,24 @@ jobs:
         with:
           node-version: 24
           cache: npm
+          # Dos proyectos con su propio package-lock.json: la página de computador y la app de realidad mixta.
+          cache-dependency-path: |
+            package-lock.json
+            xr/package-lock.json
 
       - name: Instalar dependencias (versiones fijadas en package-lock.json)
         run: npm ci
 
       - name: Comprobar la sintaxis de los módulos
         run: npm run check
+
+      - name: Instalar dependencias de la versión de realidad mixta (xr/package-lock.json)
+        working-directory: xr
+        run: npm ci
+
+      - name: Compilar la versión de realidad mixta
+        working-directory: xr
+        run: npm run build
 
       - name: Reunir los archivos del sitio
         run: |
@@ -49,12 +62,22 @@ jobs:
           # Mismas rutas que usa index.html: node_modules/three/build/three.min.js y node_modules/gsap/dist/gsap.min.js
           cp node_modules/three/build/three.min.js _site/node_modules/three/build/
           cp node_modules/gsap/dist/gsap.min.js _site/node_modules/gsap/dist/
-          # Sin procesamiento Jekyll: los archivos se sirven tal cual.
+          # Versión de realidad mixta, compilada en xr/dist, en la subcarpeta /xr/ (rutas relativas: base './').
+          cp -r xr/dist _site/xr
+          # Sin procesamiento Jekyll: los archivos se sirven tal cual (incluidos los de xr/ que empiezan con «_»).
           touch _site/.nojekyll
-          # Verifica que existe cada script y hoja de estilos local que pide index.html.
+          # Verifica que existe cada script, hoja de estilos e ícono local que pide cada index.html.
+          # Se lee una ruta por línea: algunos nombres tienen espacios («boton volumen.svg»).
           missing=0
-          for ref in $(grep -oE '(src|href)="[^"#:]+"' index.html | sed -E 's/^(src|href)="//; s/"$//'); do
+          while IFS= read -r ref; do
             if [ ! -f "_site/$ref" ]; then echo "Falta en el sitio: $ref"; missing=1; fi
+          done < <(grep -oE '(src|href)="[^"#:]+"' index.html | sed -E 's/^(src|href)="//; s/"$//')
+          while IFS= read -r ref; do
+            if [ ! -f "_site/xr/$ref" ]; then echo "Falta en la versión de realidad mixta: $ref"; missing=1; fi
+          done < <(grep -oE '(src|href)="[^"#:]+"' _site/xr/index.html | sed -E 's/^(src|href)="//; s/"$//')
+          # La app de realidad mixta carga estos recursos originales (lista en xr/src/recursos.js).
+          for ref in models/adulthood/mesa/mesa.glb models/childhood/toys.glb models/oldage/radio/radio.glb audio/ambiental.mp3; do
+            if [ ! -f "_site/xr/assets/$ref" ]; then echo "Falta en la versión de realidad mixta: assets/$ref"; missing=1; fi
           done
           exit $missing
 

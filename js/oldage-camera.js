@@ -2,10 +2,7 @@
   'use strict';
   const app = window.TimeExperience;
 
-  // Orthographic, slightly elevated view looking down at the table (picada, never overhead).
-  // Like the adulthood camera, it orbits a fixed focus within the configured limits
-  // (±maxYaw horizontally, ±maxTilt vertically), with damping and a small slide
-  // opposite to the motion that settles back when the pointer is released.
+  // Cámara ortográfica con giro limitado, amortiguación y desplazamiento opuesto al movimiento.
   class OldAgeCamera {
     constructor(target) {
       const limits = app.Config.oldage.camera;
@@ -17,11 +14,10 @@
       this.damping = limits.damping;
       this.distance = 30;
       this.aspect = 16 / 9;
-      // Visible area: close, first-person framing of the objects on the table and the lower
-      // part of the window; the table extends beyond every edge, so the floor never shows.
+      // Encuadra los objetos y la ventana en primera persona, ocultando el piso.
       this.viewWidth = 17.5;
       this.viewHeight = 10.4;
-      // Extra zoom used by the first-person glasses animation (1 = rest).
+      // Acercamiento adicional de las gafas; 1 indica reposo.
       this.zoom = 1;
       this.current = { yaw: 0, tilt: 0 };
       this.desired = { yaw: 0, tilt: 0 };
@@ -46,7 +42,7 @@
 
     dragTo(x, y) {
       if (!this.drag || this.frozen) return;
-      // Low sensitivity keeps the rotation slow and controlled.
+      // La sensibilidad baja permite girar con suavidad.
       this.desired.yaw = THREE.MathUtils.clamp(this.drag.yaw - (x - this.drag.x) * .0012, -this.maxYaw, this.maxYaw);
       this.desired.tilt = THREE.MathUtils.clamp(this.drag.tilt + (y - this.drag.y) * .0012, -this.maxTilt, this.maxTilt);
     }
@@ -69,7 +65,7 @@
       const tiltStep = (this.desired.tilt - this.current.tilt) * alpha;
       this.current.yaw += yawStep;
       this.current.tilt += tiltStep;
-      // Angular speed pushes the view slightly the other way; a spring brings it back.
+      // Compensa la velocidad angular y recupera el reposo con un resorte.
       this.slideTarget.set(-yawStep / dt * .5, -tiltStep / dt * .4);
       this.slideTarget.clampLength(0, .32);
       this.slide.lerp(this.slideTarget, 1 - Math.exp(-6 * dt));
@@ -95,7 +91,7 @@
       this.offset.setFromMatrixColumn(this.camera.matrixWorld, 0).multiplyScalar(this.slide.x);
       this.offset.addScaledVector(this.axis.setFromMatrixColumn(this.camera.matrixWorld, 1), this.slide.y);
       this.camera.position.add(this.offset);
-      // Fill the screen: keep the objects' width on narrow screens and the framing height on wide ones.
+      // Conserva el ancho en pantallas estrechas y la altura en las anchas.
       const height = Math.max(this.viewHeight, this.viewWidth / this.aspect);
       this.camera.left = -height * this.aspect / 2;
       this.camera.right = height * this.aspect / 2;

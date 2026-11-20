@@ -2,13 +2,7 @@
   'use strict';
   const app = window.TimeExperience = window.TimeExperience || {};
 
-  // ► OBJETOS DEL ESCENARIO 3 (Blender). Cada archivo trae su objeto ya ubicado en la
-  //   composición de la escena (exportada sobre la referencia de Blender). La web los usa tal
-  //   cual: mismo tamaño, forma, texturas y lugar; solo los apoya sobre la mesa y ajusta la
-  //   escala de la mesa (y de la pared, si hace falta) para cubrir la vista.
-  //   Tras exportar de nuevo un archivo con el mismo nombre, `npm run models` actualiza su copia .glb.js.
-  //   `matera1-web.glb` y `taza-web.glb` son copias corregidas de tus exportaciones (la matera 1
-  //   con su maceta, que faltaba en matera1.glb; la taza con texturas de 1024 px en vez de 4096).
+  // Carga los GLB de la vejez en su composición original y actualiza copias con npm run models.
   const SOURCES = Object.freeze({
     table: 'assets/models/oldage/mesa/mesa.glb',
     wall: 'assets/models/oldage/pared/pared.glb',
@@ -23,18 +17,16 @@
     cup: 'assets/models/oldage/taza/taza-web.glb',
     saucer: 'assets/models/oldage/taza/platotaza.glb'
   });
-  // Sharper painted wood at the grazing view angle (capped by the graphics card's maximum).
+  // Ajusta la anisotropía al límite de la tarjeta para conservar el detalle de la madera.
   const ANISOTROPY = 8;
-  // Leaves of a pot's plant: objects whose name starts with «hoja».
+  // Identifica las hojas por su nombre en Blender.
   const LEAF = /^hoja/i;
 
-  // Every node transform applied to its mesh (see ModelLoader.bake).
+  // Aplica las transformaciones de los nodos a sus mallas.
   const { bake, shade } = app.ModelLoader;
   const boxOf = object => new THREE.Box3().setFromObject(object, true);
 
-  // ---------- Table ----------
-  // The painted wood loses part of its saturation (Config.oldage.table.desaturate) in the
-  // shader, so its grain stays as painted and the clay pots stand out against it.
+  // Reduce la saturación de la mesa en el sombreador para destacar las macetas.
   function desaturate(material, amount) {
     if (!amount) return;
     material.onBeforeCompile = shader => {
@@ -44,9 +36,7 @@
     material.customProgramCacheKey = () => `table-desaturate-${amount}`;
   }
 
-  // Template with its origin at the middle of the back edge of the top surface: scaling it
-  // keeps the top at the table height and the back edge in place. `x`, `back` and `top` say
-  // where that point is in the file; `top` is the height every other object is measured from.
+  // Sitúa el origen en el borde trasero superior para escalar sin desplazar el apoyo.
   function prepareTable(scene) {
     scene.traverse(object => {
       if (!object.isMesh) return;
@@ -67,8 +57,7 @@
     return { template, width: size.x, depth: size.z, outline: topOutline(template, size.y), x, back: box.min.z, top: box.max.y };
   }
 
-  // The real outline of the top surface (x, z; hand-made, so not a perfect rectangle), in the
-  // template's space, ordered around its centre. Used to check what the table really covers.
+  // Obtiene el contorno real de la mesa para calcular su cobertura.
   function topOutline(template, thickness) {
     template.updateMatrixWorld(true);
     const corners = new Map(), vertex = new THREE.Vector3();
@@ -85,21 +74,18 @@
     return points.sort((a, b) => Math.atan2(a[1] - cz, a[0] - cx) - Math.atan2(b[1] - cz, b[0] - cx));
   }
 
-  // ---------- Glasses ----------
-  // The glasses in the file are the prototype's low-poly parts (12-sided rims, boxy temples).
-  // Each part with exactly one of these sizes gets a smooth, rounded version of the same shape:
-  // same size, place and material. Glasses modelled differently are left as they are.
+  // Suaviza las gafas del prototipo conservando tamaño, posición y material.
   const capsule = (width, length, depth) => {
     const radius = Math.min(width, depth) / 2;
     return new THREE.CapsuleGeometry(radius, length - radius * 2, 8, 20).scale(width / (radius * 2), 1, depth / (radius * 2));
   };
   const GLASSES_PARTS = [
-    { size: [.97, .97, .124], make: () => new THREE.TorusGeometry(.42, .065, 20, 72) },        // rim
-    { size: [.84, .84, 0], make: () => new THREE.CircleGeometry(.42, 72) },                     // lens
-    { size: [.34, .17, .1], make: () => new THREE.TorusGeometry(.12, .05, 14, 28, Math.PI) },   // bridge
-    { size: [.14, .1, .12], make: () => new THREE.SphereGeometry(.5, 20, 14).scale(.14, .1, .12) }, // hinge
-    { size: [.065, .075, 1.5], make: () => capsule(.065, 1.5, .075).rotateX(Math.PI / 2) },    // temple arm
-    { size: [.065, .25, .07], make: () => capsule(.065, .25, .07) }                             // ear tip
+    { size: [.97, .97, .124], make: () => new THREE.TorusGeometry(.42, .065, 20, 72) },        // Aro.
+    { size: [.84, .84, 0], make: () => new THREE.CircleGeometry(.42, 72) },                     // Lente.
+    { size: [.34, .17, .1], make: () => new THREE.TorusGeometry(.12, .05, 14, 28, Math.PI) },   // Puente.
+    { size: [.14, .1, .12], make: () => new THREE.SphereGeometry(.5, 20, 14).scale(.14, .1, .12) }, // Bisagra.
+    { size: [.065, .075, 1.5], make: () => capsule(.065, 1.5, .075).rotateX(Math.PI / 2) },    // Varilla.
+    { size: [.065, .25, .07], make: () => capsule(.065, .25, .07) }                             // Extremo de la varilla.
   ];
   function smoothGlasses(scene) {
     const size = new THREE.Vector3();
@@ -114,9 +100,7 @@
     });
   }
 
-  // They lie leaning back on the table in the file. The web needs them upright (lenses facing
-  // +Z) for the first-person animation, so the lean is kept apart (`userData.lean`, applied by
-  // OldAgeProps) and each temple gets a pivot on its hinge: rotation.y = folded angle, 0 = open.
+  // Separa la inclinación de reposo y crea pivotes en las bisagras para abrir las gafas.
   function prepareGlasses(scene) {
     smoothGlasses(scene);
     scene.updateMatrixWorld(true);
@@ -132,14 +116,14 @@
     const lean = Math.atan2(normal.y, normal.z);
     const upright = new THREE.Matrix4().makeRotationX(lean);
     const temples = ['glasses-temple-left', 'glasses-temple-right'].map(name => scene.getObjectByName(name)).filter(Boolean);
-    // Frame centre (rims, lenses, bridge): the glasses' pivot, as in the provisional ones.
+    // El centro de la montura define el pivote de las gafas.
     const frame = new THREE.Box3(), part = new THREE.Box3();
     scene.traverse(object => {
       if (object.isMesh && !temples.some(temple => temple === object || temple.getObjectById(object.id))) frame.union(part.setFromObject(object, true));
     });
     const center = frame.getCenter(new THREE.Vector3());
     temples.forEach(temple => {
-      // The longest part is the arm; its outer end (farthest from the centre) is the hinge.
+      // La pieza más larga es la varilla; su extremo exterior corresponde a la bisagra.
       let arm = null, armLength = 0;
       temple.traverse(object => {
         if (!object.isMesh) return;
@@ -171,8 +155,7 @@
     return scene;
   }
 
-  // ---------- Pots ----------
-  // The pot (baked) and its plant's leaves (kept as they are, so each one can sway).
+  // Separa maceta y hojas para permitir su balanceo.
   function preparePot(scene) {
     const leaves = scene.children.filter(object => LEAF.test(object.name));
     const body = bake(scene.children.filter(object => !leaves.includes(object)));
@@ -185,9 +168,7 @@
     return template;
   }
 
-  // ---------- Watering can ----------
-  // Spout pointing to -X, as the provisional can. Its tip (`watering-can-spout`, where the
-  // drops come from) is the middle of the can's leftmost points.
+  // Orienta el pico hacia -X y coloca el origen de las gotas en su extremo.
   function prepareCan(scene) {
     const can = bake([scene]);
     const box = boxOf(can), sum = new THREE.Vector3(), point = new THREE.Vector3();
@@ -208,9 +189,7 @@
     return can;
   }
 
-  // ---------- Radio ----------
-  // The antenna (every loose piece above the body) becomes its own `radio-antenna`, turning on
-  // its base, so it still swings when the radio is clicked.
+  // Separa la antena con un pivote en la base para animarla al pulsar la radio.
   function prepareRadio(scene) {
     const radio = bake([scene]);
     const pieces = [];
@@ -239,7 +218,7 @@
       part.name = `${mesh.name}-antenna`;
       group.add(part);
     });
-    // The rest of each mesh stays in place.
+    // Conserva el resto de las mallas en su lugar.
     new Set(antenna.map(piece => piece.mesh)).forEach(mesh => {
       const kept = pieces.filter(piece => piece.mesh === mesh && !antenna.includes(piece)).flatMap(piece => piece.triangles);
       const geometry = subset(mesh.geometry, kept);
@@ -250,7 +229,7 @@
     return shade(radio);
   }
 
-  // Triangles grouped by connected piece (vertices welded by position).
+  // Agrupa triángulos conectados mediante vértices coincidentes.
   function looseParts(geometry) {
     const position = geometry.attributes.position, index = geometry.index?.array;
     const triangleCount = (index ? index.length : position.count) / 3;
@@ -276,7 +255,7 @@
     return [...parts.values()];
   }
 
-  // A new geometry with only the given triangles (and the vertices they use).
+  // Construye una geometría con los triángulos y vértices seleccionados.
   function subset(geometry, triangles) {
     const index = geometry.index?.array, remap = new Map(), order = [], faces = [];
     triangles.forEach(t => {
@@ -296,9 +275,7 @@
     return result;
   }
 
-  // ---------- Cup ----------
-  // `coffee-cup-body` turns on the cup's own axis (the centre of its largest part, the body),
-  // so it spins in place on the saucer.
+  // Centra coffee-cup-body en su eje para girar sobre el plato.
   function prepareCup(scene) {
     const cup = bake([scene]);
     let body = null;
@@ -311,8 +288,7 @@
     return cup;
   }
 
-  // ---------- Room ----------
-  // The view outside the window is a picture: unlit, as bright as painted.
+  // La vista exterior usa su imagen sin iluminación adicional.
   function prepareWindowView(scene) {
     const view = bake([scene]);
     view.traverse(mesh => {
@@ -342,20 +318,16 @@
     saucer: scene => bake([scene])
   };
 
-  /**
-   * Loads the scene 3 objects after the scene 1 and 2 models (they are first needed in scenario 3).
-   * `OldAgeProps.build()` uses every one that is ready; any missing one keeps its provisional prop.
-   */
+  /* Carga los modelos de la vejez después de los anteriores y conserva sustitutos si fallan. */
   const models = {
     status: 'loading',
     templates: {},
-    // Calls back once loading has finished, successfully or not (at once if it already has).
+    // Avisa al terminar la carga, incluso si falla.
     whenSettled(callback) {
       if (this.status !== 'loading') callback();
       else this.settled.then(() => callback());
     },
-    // Fresh copies of the loaded objects, in the file's coordinates. `fileTop` is the height of
-    // the table top in the file; `table` is { object, width, depth, outline, x, back } (or null).
+    // Clona los objetos; fileTop indica la altura de la mesa exportada.
     create() {
       const { table, ...rest } = this.templates;
       const copies = Object.fromEntries(Object.entries(rest).map(([name, template]) => [name, template.clone(true)]));

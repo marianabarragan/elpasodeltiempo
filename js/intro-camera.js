@@ -5,7 +5,7 @@
   class IntroCamera {
     constructor() {
       this.camera = new THREE.OrthographicCamera(-12, 12, 7.4, -7.4, .1, 80);
-      // roll turns the view around its axis (only used to straighten a photo while entering it).
+      // roll endereza la fotografía al entrar en ella.
       this.pose = { x: 0, y: 0, zoomProgress: 0, roll: 0 };
       this.baseHeight = 14.8;
       this.aspect = 1;
@@ -16,7 +16,7 @@
 
     resize(width, height) {
       this.aspect = width / height;
-      // Keep the whole board in view at narrower desktop aspect ratios.
+      // Mantiene todo el tablero visible en ventanas más estrechas.
       this.baseHeight = Math.max(14.8, 22 / this.aspect);
       this.camera.left = -this.baseHeight * this.aspect / 2;
       this.camera.right = this.baseHeight * this.aspect / 2;

@@ -2,13 +2,7 @@
   'use strict';
   const app = window.TimeExperience;
 
-  /**
-   * Progress of scenario 2 (young adulthood), horizontal at the top of the screen.
-   * Config.adulthood.progress: the checklist is worth `checklist` % (shared equally by its
-   * tasks, one milestone per checked box); the rest is shared by `propsNeeded` of the
-   * secondary props (thermos, clock, calendar), each counting once. At 100 % `onComplete`
-   * runs (phrase and continue arrow, in script.js). Same bar markup and look as scenario 1.
-   */
+  /* Reparte el progreso entre casillas y objetos; al llegar al 100 % ejecuta onComplete. */
   class AdulthoodProgress {
     constructor({ element, tasks, onComplete } = {}) {
       const config = app.Config.adulthood.progress;
@@ -22,14 +16,6 @@
       this.weights = new Map();
       for (let i = 0; i < tasks; i++) this.weights.set(`task${i}`, share / tasks);
       config.props.forEach(name => this.weights.set(name, (100 - share) / needed));
-      // Tick marks between the checklist milestones and at the end of the checklist share.
-      const track = element?.querySelector('.childhood-progress__track');
-      track?.querySelectorAll('i').forEach(tick => tick.remove());
-      for (let i = 1; i <= tasks && share < 100; i++) {
-        const tick = document.createElement('i');
-        tick.style.left = `${share * i / tasks}%`;
-        track?.append(tick);
-      }
       this.shown = { value: 0 };
       this.reset();
     }
@@ -42,7 +28,7 @@
     get complete() { return this.value >= 99.999; }
     has(step) { return this.done.has(step); }
 
-    // Registers a milestone; repeated actions do not add progress again.
+    // Cada hito suma progreso una sola vez.
     mark(step) {
       if (!this.weights.has(step) || this.done.has(step) || this.complete) return false;
       this.done.add(step);

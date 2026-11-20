@@ -1,0 +1,9 @@
+<!-- Frase de cierre con el estilo de la web (Nunito 700); la vejez cambia colores y ancho. Medidas en centímetros. -->
+<style>
+  @font-face { font-family: "Nunito"; src: url("../fuentes/Nunito-Bold.ttf"); font-weight: 700; }
+  .tarjeta { padding-top: 1.9; padding-bottom: 1.9; padding-left: 2.8; padding-right: 2.8; border-radius: 1.2; background-color: #ffffff; }
+  .texto { font-family: "Nunito"; font-weight: 700; font-size: 2.2; line-height: 1.35; color: #443327; text-align: center; }
+</style>
+<div id="tarjeta" class="tarjeta">
+  <span id="texto" class="texto">Cuando somos niños el tiempo parece infinito</span>
+</div>
