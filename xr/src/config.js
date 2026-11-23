@@ -190,12 +190,14 @@ export const AJUSTES = {
     // Ajuste propio de cada objeto respecto de la manos (no un mismo porcentaje para todos): factor de tamaño
     // (desde su base, sin despegarlo del escritorio) y desplazamiento en unidades para que nada se cruce.
     objetos: {
-      checklistPaper: { escala: 1.15, dx: -.4 },
-      pen: { escala: 1.2, dx: .08, dz: .3 },
+      // Hoja, lapicero y termo se apartan del teclado grande (ver keyboard).
+      checklistPaper: { escala: 1.15, dx: -1.6, dz: 1.5 },
+      pen: { escala: 1.2, dx: .08, dz: .85 },
       // El termo conserva su tamaño: a 0,07–0,085 m/u mide 8–9,8 cm de ancho, lo que una mano alcanza a envolver.
-      coffeeThermos: { escala: 1 },
+      coffeeThermos: { escala: 1, dx: 1.3 },
       clockDigital: { escala: 1.05 },
-      keyboard: { escala: 1.1 },
+      // El teclado es grande desde el inicio: sus teclas (~3 cm) se pulsan cómodamente con la yema de cada dedo.
+      keyboard: { escala: 1.6 },
       wallCalendar: { escala: 1.15 }
     },
     // Escritorio (mesa.glb con su textura de madera): cubre la mesa elegida, y como mínimo la composición con
@@ -221,6 +223,20 @@ export const AJUSTES = {
     // Botones del monitor y del reloj: cualquier punta de dedo a menos de `margen` m del botón lo pulsa;
     // se rearma cuando todas las puntas salen a más de `rearme` veces ese margen.
     boton: { margen: .016, rearme: 1.6, hundir: .03 },
+    // Computador (computador.js): correo que se escribe pulsando el teclado con el monitor encendido.
+    computador: {
+      // Pulsaciones válidas para terminar el correo y cuántas forman el primer renglón (el resto, el segundo).
+      pulsaciones: 15, primerRenglon: 6,
+      // Largo final de cada renglón, como fracción del ancho del cuerpo del correo (el primero, más corto).
+      renglones: [.3, .8],
+      // Teclas: la yema pulsa al llegar a `contacto` m de la cara de una tecla y se rearma al subir más de `rearme` m;
+      // `margen` (m) alrededor de cada tecla, `hundir` (m) que baja la tecla y `pausa` (s) mínima entre pulsaciones.
+      // Una yema que aparece más de `profundo` m dentro del teclado no pulsa (llegó desde dentro, no desde arriba).
+      tecla: { contacto: .003, rearme: .012, margen: .002, hundir: .003, pausa: .09, profundo: .02 },
+      // Correo: segundos que crece un renglón, pausa tras la última pulsación, desvanecer los renglones y mostrar el
+      // mensaje final, y el mensaje.
+      correo: { crecer: .18, pausa: .35, ocultar: .35, mostrar: .5, texto: 'Correo recibido. Muchas gracias.' }
+    },
     termo: {
       // Agarre envolvente: la palma a menos de `palma` m del eje del termo (además de su radio) y al menos
       // `dedos` puntas de dedo a menos de `puntas` m de su superficie, durante `confirmar` s. Se suelta si

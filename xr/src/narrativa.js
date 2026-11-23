@@ -391,7 +391,7 @@ export async function iniciarExperiencia(world) {
       crearFinal(world, espacio, { alContinuar: salirDeAdultez, texto: ADULTHOOD_FINAL_PHRASE, colorTexto: '#4a3520', tarjeta: { maxWidth: 58 } })
     ]);
     e.adultez = crearAdultez(world, espacio, base, {
-      sonido: sonido.adultez, hielo: sonido.hielo, cabeza, manos, alHito: paso => { e.progresoAdultez.marcar(paso); revisarFinAdultez(); }
+      sonido: sonido.adultez, hielo: sonido.hielo, teclado: sonido.teclado, cabeza, manos, alHito: paso => { e.progresoAdultez.marcar(paso); revisarFinAdultez(); }
     });
     e.manipAdultez = crearManipulacion({ manos, espacio, raiz: e.adultez.escena, area: e.adultez.area, superficie: e.adultez.superficie, cabeza });
     Object.entries(e.adultez.manejadores).forEach(([id, manejador]) => sistema.manejadores.set(id, {

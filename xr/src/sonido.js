@@ -2,6 +2,7 @@ import { VisibilityState } from '@iwsdk/core';
 import { AJUSTES } from './config.js';
 import { crearSonidoCrayola } from './sonido-crayola.js';
 import { crearSonidoHielo } from './sonido-hielo.js';
+import { crearSonidoTeclado } from './sonido-teclado.js';
 
 // Volumen de las notas del xilófono, relativo a Config.audio.level (los demás efectos usan 0,6).
 const NIVEL_XILOFONO = 3;
@@ -46,6 +47,8 @@ export function crearSonido(world) {
   const hielo = crearSonidoHielo({
     habilitado: () => adultez.enabled && adultez.active && !adultez.hidden && !adultez.blocked, nivel: cfg.audio.level, muestra: AJUSTES.adultez.termo.hielo.muestra
   });
+  // Teclas del computador: clic procedural (no hay grabación de teclado en assets/audio).
+  const teclado = crearSonidoTeclado({ habilitado: () => adultez.enabled && adultez.active && !adultez.hidden && !adultez.blocked, nivel: cfg.audio.level });
   const pagina = {
     get hidden() {
       const visibilidad = world.visibilityState.peek();
@@ -62,10 +65,11 @@ export function crearSonido(world) {
     escenarios.forEach(sistema => { if (sistema.blocked && sistema.active) { sistema.blocked = false; sistema.sync(); } });
     crayola.reanudar();
     hielo.reanudar();
+    teclado.reanudar();
   };
   return {
-    audio, tono, crayola, vejez, adultez, hielo,
-    desbloquear() { escenarios.forEach(sistema => sistema.unlock()); tono.unlock(); xilofono.unlock(); crayola.desbloquear(); hielo.desbloquear(); },
+    audio, tono, crayola, vejez, adultez, hielo, teclado,
+    desbloquear() { escenarios.forEach(sistema => sistema.unlock()); tono.unlock(); xilofono.unlock(); crayola.desbloquear(); hielo.desbloquear(); teclado.desbloquear(); },
     entrarAdultez: () => adultez.enter(),
     salirAdultez: () => adultez.exit(),
     entrarVejez: () => vejez.enter(),

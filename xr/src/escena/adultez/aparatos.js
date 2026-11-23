@@ -7,12 +7,16 @@ import { cajaLocal, crearBoton } from './dedos.js';
  * Monitor y reloj digital: cada uno se apaga y se enciende con su botón físico, tocándolo con la punta de
  * cualquier dedo (crearBoton). El encendido es el de la web (AdulthoodScene.toggleScreen y el reloj de
  * activateProp): pantalla e indicador del monitor (monitorScreen.setPower) y luz y dígitos del reloj
- * (clock.setPower), con sus sonidos. La primera vez que cada uno cambia de estado suma su hito.
+ * (clock.setPower), con sus sonidos. El monitor empieza apagado; encenderlo muestra el correo (computador.js,
+ * avisado con `alPantalla`) y no suma el hito por sí solo: el del computador llega al terminar el correo. El
+ * reloj suma su hito la primera vez que cambia de estado.
  */
-export function crearAparatos({ props, sonido, alHito }) {
+export function crearAparatos({ props, sonido, alHito, alPantalla }) {
   const A = AJUSTES.adultez.boton;
   const botonMonitor = props.interactive.monitorPower, reloj = props.models.clockDigital;
-  const estado = { pantalla: true, reloj: true, ultimo: { monitor: -Infinity, reloj: -Infinity } };
+  const estado = { pantalla: false, reloj: true, ultimo: { monitor: -Infinity, reloj: -Infinity } };
+  // El monitor empieza apagado (pantalla negra).
+  props.monitorScreen.setPower(false);
   // Evita que un mismo toque cuente dos veces si el dedo tiembla en el borde del botón.
   const libre = id => {
     const ahora = performance.now() / 1000;
@@ -36,7 +40,7 @@ export function crearAparatos({ props, sonido, alHito }) {
     estado.pantalla = !estado.pantalla;
     props.monitorScreen.setPower(estado.pantalla);
     gsap.fromTo(botonMonitor.visual.position, { z: -A.hundir }, { z: 0, duration: .25, ease: 'power2.out', overwrite: true });
-    alHito('monitor');
+    alPantalla?.(estado.pantalla);
   }
 
   function alternarReloj() {

@@ -5,6 +5,7 @@ import { Tocable } from '../../componentes.js';
 import { AJUSTES } from '../../config.js';
 import { cajaLocal, crearDedos } from './dedos.js';
 import { crearAparatos } from './aparatos.js';
+import { crearComputador } from './computador.js';
 import { crearHoja } from './hoja.js';
 import { crearTermo } from './termo.js';
 import { crearCalendario } from './calendario.js';
@@ -88,10 +89,10 @@ export function prepararAdultez() {
  * Escenario 2 sobre la mesa real: el escritorio de madera como base (como el piso de rompecabezas de la niñez)
  * con monitor, teclado, reloj, termo, planta, hoja con su lapicero, y la repisa y el calendario suspendidos
  * detrás. Todo cuelga de `escena`, que el usuario mueve, gira y escala con las dos manos (manipulacion.js).
- * Cinco interacciones sin orden: la lista de pendientes, el botón del monitor, el botón del reloj, beber café
- * del termo y desprender una hoja del calendario.
+ * Cinco interacciones sin orden: la lista de pendientes, escribir el correo en el computador (encenderlo con su
+ * botón y pulsar el teclado), el botón del reloj, beber café del termo y desprender una hoja del calendario.
  */
-export function crearAdultez(world, espacio, base, { sonido, hielo, cabeza, manos, alHito }) {
+export function crearAdultez(world, espacio, base, { sonido, hielo, teclado, cabeza, manos, alHito }) {
   const A = AJUSTES.adultez;
   const { props, caja: composicion, repisa, escritorio } = base;
   const { models } = props;
@@ -192,7 +193,10 @@ export function crearAdultez(world, espacio, base, { sonido, hielo, cabeza, mano
   const hechos = new Set();
   const hito = paso => { if (hechos.has(paso)) return; hechos.add(paso); alHito(paso); };
   const dedos = crearDedos(world);
-  const aparatos = crearAparatos({ props, sonido, alHito: hito });
+  // Computador: monitor apagado al empezar, correo en la pantalla y teclado que se pulsa con los dedos. Su hito
+  // ('monitor') llega al terminar el correo, no al encender el monitor.
+  const computador = crearComputador({ props, manos, dedos, teclado, alHito: hito });
+  const aparatos = crearAparatos({ props, sonido, alHito: hito, alPantalla: encendida => computador.pantalla(encendida) });
   // Metros por unidad del escritorio, incluida la escala que el usuario le dé al escenario con las manos.
   const escalaActual = () => s * escena.scale.x;
   const hoja = crearHoja({
@@ -225,7 +229,7 @@ export function crearAdultez(world, espacio, base, { sonido, hielo, cabeza, mano
   const manoDelTermo = () => (termo.estado.modo === 'envolvente' ? termo.estado.lado : termo.estado.modo ? world.getSystem(GrabSystem)?.getHolderHand(entidades.vaso) : null);
 
   return {
-    escena, props, entidades, sombras, hechos, dedos, aparatos, hoja, termo, calendario, estado, paneles, limites, area,
+    escena, props, entidades, sombras, hechos, dedos, aparatos, computador, hoja, termo, calendario, estado, paneles, limites, area,
     get escala() { return escalaActual(); },
     // Altura de la cara superior del escritorio (m, en el espacio de `escena`): el contorno del escalado va sobre ella.
     superficie: E.grosor + .001,
@@ -259,6 +263,7 @@ export function crearAdultez(world, espacio, base, { sonido, hielo, cabeza, mano
       const activo = enEscena && estado.habilitado;
       dedos.actualizar();
       aparatos.actualizar(dedos.puntas, activo);
+      computador.actualizar(dt, activo);
       const conLapicero = hoja.estado.sostenido ? hoja.agarre.estado.lado : null, conTermo = manoDelTermo();
       hoja.update(dt, activo, [conLapicero, conTermo].filter(Boolean));
       termo.update(dt, activo, [conLapicero].filter(Boolean));
@@ -271,6 +276,7 @@ export function crearAdultez(world, espacio, base, { sonido, hielo, cabeza, mano
     ocultar() {
       habilitar(false);
       hoja.detener();
+      computador.detener();
       escena.visible = false;
     }
   };
