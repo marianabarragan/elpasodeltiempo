@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { AJUSTES } from '../config.js';
-import { colocar } from '../paneles.js';
+import { colocar, colocarAlineado, escalarPanel } from '../paneles.js';
+import { crearEsquinas } from './esquinas.js';
 
 const ARRIBA = new THREE.Vector3(0, 1, 0);
 const LADOS = ['left', 'right'];
@@ -18,19 +19,22 @@ const envolver = a => Math.atan2(Math.sin(a), Math.cos(a));
  *   cambiar la altura de su superficie. Una vez empezado, sigue aunque las manos se alejen del borde.
  * Con controles: los dos botones laterales trasladan y los dos gatillos, desde el borde, escalan.
  *
- * Un contorno punteado (color del diseño) aparece sobre el borde de la superficie cuando una mano se acerca a
- * él y se apaga al alejarse; durante el escalado se queda. Es hijo del escenario: lo acompaña al moverlo,
- * girarlo y escalarlo, y conserva el grosor y el largo de sus trazos en metros.
+ * Cuatro esquinas en forma de L (blancas con borde gris, como en el diseño) aparecen junto a las esquinas de la
+ * superficie cuando una mano se acerca a su borde y se apagan al alejarse; durante el escalado se quedan. Son hijas
+ * del escenario: lo acompañan al moverlo, girarlo y escalarlo, y conservan su tamaño en metros.
  *
  * Se transforma solo la raíz del escenario (hija del espacio de la mesa anclado): todos sus objetos la
  * acompañan con sus posiciones relativas y su superficie sigue horizontal, así lo que se apoya en ella no
  * se desliza. La mesa real solo fija la posición inicial; el tablero y los demás elementos globales no se
- * mueven. Los paneles anclados (barra, frase, flecha) acompañan al escenario sin cambiar de tamaño.
+ * mueven. Los paneles anclados (barra, frase, flecha) acompañan al escenario y crecen o se reducen con él, en el
+ * mismo orden (barra arriba, frase debajo y flecha a su derecha), así nunca se superponen.
  *
  * `area`: ancho y fondo (m) de la superficie base, centrada en el origen de `raiz`; `superficie`: su altura (m).
  */
 export function crearManipulacion({ manos, espacio, raiz, area, cabeza, superficie = 0 }) {
-  const M = AJUSTES.manipulacion, B = M.contorno;
+  const M = AJUSTES.manipulacion, B = M.esquinas;
+  // Escala con que apareció el escenario: a ella los paneles anclados tienen su tamaño de diseño.
+  const escalaInicial = raiz.scale.x;
   const estado = { modo: null, espera: 0, gracia: 0, inicio: null, movimientos: 0, escalados: 0, contorno: 0 };
   const anclas = new Map();
   const izq = new THREE.Vector3(), der = new THREE.Vector3(), medio = new THREE.Vector3(), local = new THREE.Vector3();
@@ -65,45 +69,14 @@ export function crearManipulacion({ manos, espacio, raiz, area, cabeza, superfic
   };
   const separadas = (a, b) => a.distanceTo(b) >= M.separacionMin;
 
-  // ---------- Contorno punteado sobre el borde de la superficie ----------
-  const material = new THREE.MeshBasicMaterial({
-    color: new THREE.Color(B.color), transparent: true, opacity: 0, depthWrite: false, toneMapped: false, side: THREE.DoubleSide,
-    polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3
-  });
-  const contorno = new THREE.Mesh(new THREE.BufferGeometry(), material);
+  // ---------- Esquinas de escalado junto a la superficie ----------
+  // Grupo hijo del escenario, tendido sobre su superficie (el plano XY de las esquinas pasa a XZ, con «arriba» hacia
+  // el fondo); su escala compensa la del escenario para que las esquinas midan siempre lo mismo en el mundo.
+  const esquinas = crearEsquinas({ renderOrder: 5 });
+  const contorno = esquinas.grupo;
   contorno.name = 'contorno-escalado';
-  contorno.visible = false;
-  contorno.renderOrder = 5;
-  contorno.raycast = () => {};
-  contorno.pointerEvents = 'none';
-  contorno.userData.sombraContacto = true;
+  contorno.rotation.x = -Math.PI / 2;
   raiz.add(contorno);
-  let escalaContorno = 0;
-  // Trazos planos sobre la superficie, en el espacio del escenario; su largo, hueco y grosor se dan en metros
-  // y se rehacen si la escala del escenario cambia, para que en el mundo midan siempre lo mismo.
-  function armarContorno(k) {
-    escalaContorno = k;
-    const trazo = B.trazo / k, hueco = B.hueco / k, grosor = B.grosor / k, y = superficie + .0015 / k;
-    const ax = area.ancho / 2, az = area.fondo / 2, posiciones = [], indices = [];
-    // Cada lado: de una esquina a la siguiente, con trazos repartidos de modo que empiece y termine en trazo.
-    const lados = [[[-ax, -az], [ax, -az]], [[ax, -az], [ax, az]], [[ax, az], [-ax, az]], [[-ax, az], [-ax, -az]]];
-    lados.forEach(([[x0, z0], [x1, z1]]) => {
-      const largo = Math.hypot(x1 - x0, z1 - z0), ux = (x1 - x0) / largo, uz = (z1 - z0) / largo, nx = -uz * grosor / 2, nz = ux * grosor / 2;
-      const n = Math.max(1, Math.round((largo + hueco) / (trazo + hueco))), paso = (largo + hueco) / n, lleno = paso - hueco;
-      for (let i = 0; i < n; i++) {
-        const a = i * paso, b = Math.min(largo, a + lleno), base = posiciones.length / 3;
-        const pa = [x0 + ux * a, z0 + uz * a], pb = [x0 + ux * b, z0 + uz * b];
-        posiciones.push(pa[0] + nx, y, pa[1] + nz, pb[0] + nx, y, pb[1] + nz, pb[0] - nx, y, pb[1] - nz, pa[0] - nx, y, pa[1] - nz);
-        indices.push(base, base + 1, base + 2, base, base + 2, base + 3);
-      }
-    });
-    const geometria = new THREE.BufferGeometry();
-    geometria.setAttribute('position', new THREE.Float32BufferAttribute(posiciones, 3));
-    geometria.setIndex(indices);
-    contorno.geometry.dispose();
-    contorno.geometry = geometria;
-  }
-  armarContorno(1);
 
   // Una mano está cerca del borde (con histéresis: se apaga solo al alejarse un poco más).
   function manoCercaDelBorde(lado) {
@@ -116,10 +89,12 @@ export function crearManipulacion({ manos, espacio, raiz, area, cabeza, superfic
     const meta = mostrar ? 1 : 0;
     estado.contorno += (meta - estado.contorno) * (1 - Math.exp(-B.fundido * dt));
     if (Math.abs(estado.contorno - meta) < .01) estado.contorno = meta;
-    material.opacity = estado.contorno;
-    contorno.visible = estado.contorno > .01;
+    esquinas.opacidad = estado.contorno;
+    if (!contorno.visible) return;
     const k = raiz.scale.x;
-    if (contorno.visible && Math.abs(k - escalaContorno) / k > .04) armarContorno(k);
+    contorno.scale.setScalar(1 / k);
+    contorno.position.set(0, superficie + .0015 / k, 0);
+    esquinas.colocar(area.ancho * k, area.fondo * k, 1);
   }
 
   // Seguimiento de los pellizcos: dónde empezó cada uno (borde o no) y cuántos cuadros lleva.
@@ -132,11 +107,30 @@ export function crearManipulacion({ manos, espacio, raiz, area, cabeza, superfic
     }
   }
 
+  // Paneles anclados: tamaño relativo (1 a la escala con que apareció el escenario). Los que van junto a otro
+  // panel (la frase y la flecha junto a la barra) quedan en su mismo plano, a `dx` m a su derecha y `dy` m hacia
+  // arriba medidos a ese tamaño, así crecen y se reducen sin superponerse.
+  const relativa = () => raiz.scale.x / escalaInicial;
+  const derecha = new THREE.Vector3(), giroPanel = new THREE.Quaternion(), junto = new THREE.Vector3();
+  function ubicarJunto(panel, referencia, dx, dy) {
+    const k = relativa();
+    referencia.objeto.updateWorldMatrix(true, false);
+    referencia.objeto.getWorldQuaternion(giroPanel);
+    derecha.set(1, 0, 0).applyQuaternion(giroPanel);
+    referencia.objeto.getWorldPosition(junto).addScaledVector(derecha, dx * k).addScaledVector(ARRIBA, dy * k);
+    colocarAlineado(panel, junto, giroPanel);
+    escalarPanel(panel, k);
+  }
   function acompanar() {
     if (!anclas.size) return;
     raiz.updateWorldMatrix(true, false);
-    const ojo = cabeza();
-    anclas.forEach((posicion, panel) => colocar(panel, raiz.localToWorld(objetivo.copy(posicion)), ojo));
+    const ojo = cabeza(), k = relativa();
+    anclas.forEach((ancla, panel) => {
+      if (ancla.referencia) return;
+      colocar(panel, raiz.localToWorld(objetivo.copy(ancla.posicion)), ojo);
+      escalarPanel(panel, k);
+    });
+    anclas.forEach((ancla, panel) => { if (ancla.referencia) ubicarJunto(panel, ancla.referencia, ancla.dx, ancla.dy); });
   }
 
   function empezar(modo) {
@@ -191,12 +185,21 @@ export function crearManipulacion({ manos, espacio, raiz, area, cabeza, superfic
     get escalando() { return estado.modo === 'escalar' && !!estado.inicio?.escalando; },
     // Para las pruebas: distancia de un punto al borde de la superficie y si cuenta como borde.
     respectoDelBorde, enBorde: mundo => enBorde(mundo),
-    // El panel acompaña al escenario desde su posición actual (en el espacio del escenario).
-    anclar(panel) {
+    // El panel acompaña al escenario desde su posición actual (en el espacio del escenario) y toma el tamaño que le
+    // corresponde a la escala actual. Con `junto` (otro panel anclado) va en su plano, a `dx`, `dy` m de él.
+    anclar(panel, { junto: referencia = null, dx = 0, dy = 0 } = {}) {
+      if (referencia) {
+        anclas.set(panel, { referencia, dx, dy });
+        ubicarJunto(panel, referencia, dx, dy);
+        return;
+      }
       raiz.updateWorldMatrix(true, false);
       panel.objeto.updateWorldMatrix(true, false);
-      anclas.set(panel, raiz.worldToLocal(panel.objeto.getWorldPosition(new THREE.Vector3())));
+      anclas.set(panel, { posicion: raiz.worldToLocal(panel.objeto.getWorldPosition(new THREE.Vector3())) });
+      escalarPanel(panel, relativa());
     },
+    // Tamaño relativo actual de los paneles anclados (pruebas).
+    get escalaPaneles() { return relativa(); },
     // `permitido`: el escenario está activo y sin transición. `ocupado`: alguna mano sostiene o maneja un objeto
     // (crayola, caja, hoja, perilla, gafas, panel…): entonces ni se escala ni se muestra el contorno.
     update(dt, { permitido, ocupado }) {

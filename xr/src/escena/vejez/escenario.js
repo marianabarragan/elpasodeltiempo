@@ -7,7 +7,7 @@ import { crearSombras } from '../sombras.js';
 import { crearGafas } from './gafas.js';
 import { crearMacetas } from './macetas.js';
 import { crearRegadera } from './regadera.js';
-import { crearCotidianos } from './cotidianos.js';
+import { crearTaza } from './taza.js';
 import { crearIndicadorRiego } from './indicador.js';
 import { crearRadio, prepararPerillas } from './radio.js';
 import { cajaLocal } from '../adultez/dedos.js';
@@ -61,8 +61,8 @@ export function prepararVejez() {
  * Escenario 3 sobre la mesa real: mesa pintada recortada a su rectángulo, marco de ventana detrás, gafas,
  * dos macetas, regadera, radio y taza. Empieza con la vista deteriorada (vision.js: lo virtual desenfocado y un velo sobre toda la vista; solo
  * las gafas se ven nítidas);
- * el orden es el de OldAgeActivity (gafas → maceta → regadera → riego), y la taza (con el índice) o la radio
- * (girando una perilla) suman el hito «extra» después de las gafas.
+ * el orden es el de OldAgeActivity (gafas → maceta → regadera → riego), y beber de la taza (levantarla y llevarla
+ * a la boca) o encender la radio (girando una perilla) suman el hito «extra» después de las gafas.
  */
 export async function crearVejez(world, espacio, base, { sonido, cabeza, manos, luz, alHito, alTerminarActividad }) {
   const app = window.TimeExperience, cfg = app.Config.oldage, A = AJUSTES.vejez;
@@ -122,15 +122,18 @@ export async function crearVejez(world, espacio, base, { sonido, cabeza, manos, 
     composicion.min.z - A.ventana.detras
   );
   ventana.root.rotation.set(0, 0, 0);
-  // Barra de progreso y frase final por encima del marco de la ventana (no dentro ni detrás), y la flecha
-  // adelante a la derecha. Posiciones en metros, en el espacio de `escena`.
+  // Barra de progreso por encima del marco de la ventana (no dentro ni detrás); al terminar, la frase va debajo de
+  // ella, aún sobre el marco, y la flecha a la derecha de la frase (narrativa.js, mostrarFinal). Metros, en el
+  // espacio de `escena`.
   const cajaVentana = cajaLocal(escena, ventana.root);
   const sobreVentana = { x: (cajaVentana.min.x + cajaVentana.max.x) / 2, y: cajaVentana.max.y, z: cajaVentana.max.z + A.paneles.delante };
   const paneles = {
-    barra: [sobreVentana.x, sobreVentana.y + A.paneles.barra, sobreVentana.z],
-    frase: [sobreVentana.x, sobreVentana.y + A.paneles.frase, sobreVentana.z],
-    flecha: [THREE.MathUtils.clamp(area.ancho * .4, .2, area.ancho / 2), .2, -area.fondo * .15]
+    barra: [sobreVentana.x, sobreVentana.y + A.paneles.barra, sobreVentana.z]
   };
+
+  // Halos de la web (OldAgeScene.buildGlows). Se arman antes de separar la taza de su plato: el halo de cada pieza es
+  // hija de esa pieza, así el de la taza la acompaña cuando se levanta.
+  const halos = app.OldAgeScene.prototype.buildGlows.call({ props });
 
   // Entidades: cada objeto es un Tocable; la narrativa decide qué hace cada id.
   const tocar = (item, id) => {
@@ -140,16 +143,18 @@ export async function crearVejez(world, espacio, base, { sonido, cabeza, manos, 
   };
   const entidades = {
     gafas: tocar(glasses, 'vejez-gafas'), pot1: tocar(pot1, 'vejez-pot1'), pot2: tocar(pot2, 'vejez-pot2'),
-    regadera: tocar(wateringCan, 'vejez-regadera'), radio: tocar(radio, 'vejez-radio'), taza: tocar(coffeeCup, 'vejez-taza')
+    regadera: tocar(wateringCan, 'vejez-regadera'), radio: tocar(radio, 'vejez-radio')
   };
+  // La taza se separa de su plato y se puede levantar y beber (el plato se queda en la mesa).
+  const hitoTaza = { alBeber: null };
+  const taza = crearTaza({ world, manos, taza: props.coffeeCup, grupo: props.group, entidadPadre: entidadProps, sonido, cabeza, alBeber: () => hitoTaza.alBeber?.() });
+  entidades.taza = taza.entidad;
 
-  // Halos de la web (OldAgeScene.buildGlows).
-  const halos = app.OldAgeScene.prototype.buildGlows.call({ props });
   // Sombras de contacto sobre la mesa pintada (no del marco de la ventana, que está suspendido).
   props.group.updateMatrixWorld(true);
   const techoMesa = Math.max(props.tableTopY, cubierta ? cajaLocal(props.group, cubierta).max.y : props.tableTopY);
   const sombras = crearSombras(props.group, { superficie: () => techoMesa, metros: () => s * escena.scale.x });
-  [glasses, pot1, pot2, wateringCan, radio, coffeeCup].forEach(({ root }) => sombras.agregar(root));
+  [glasses, pot1, pot2, wateringCan, radio, coffeeCup, { root: taza.raiz }].forEach(({ root }) => sombras.agregar(root));
   // Visión deteriorada (desenfoque de lo virtual y velo sobre toda la vista); las gafas quedan nítidas.
   const vision = crearVision(world, { raiz: escena, excluir: [glasses.root], luz });
 
@@ -157,8 +162,8 @@ export async function crearVejez(world, espacio, base, { sonido, cabeza, manos, 
   const hechos = new Set();
   const hito = paso => { hechos.add(paso); alHito(paso); };
   const indicador = await crearIndicadorRiego(world, espacio, { regadera: wateringCan, cabeza });
-  // La taza responde al toque del índice; la radio se enciende girando una de sus perillas.
-  const cotidianos = crearCotidianos({ objetos: { radio: props.radio, coffeeCup: props.coffeeCup }, entidades: { 'vejez-taza': entidades.taza }, sonido, alUsar: hito });
+  // Beber de la taza suma el hito «extra»; la radio se enciende girando una de sus perillas.
+  hitoTaza.alBeber = () => hito('extra');
   const radioPerillas = crearRadio({
     world, manos, radio, perillas, sonido,
     // La respuesta de la web al encender (se mece, la antena oscila, suena y suma el hito «extra»).
@@ -180,7 +185,7 @@ export async function crearVejez(world, espacio, base, { sonido, cabeza, manos, 
       actividad.set('wearing');
       gsap.to(vision, {
         nivel: 0, duration: A.vision.aclarar, ease: 'sine.inOut',
-        onComplete: () => { hito('glasses'); actividad.set('choose'); macetas.habilitar(); cotidianos.habilitar(); radioPerillas.habilitar(); }
+        onComplete: () => { hito('glasses'); actividad.set('choose'); macetas.habilitar(); taza.habilitar(); radioPerillas.habilitar(); }
       });
     }
   });
@@ -204,12 +209,12 @@ export async function crearVejez(world, espacio, base, { sonido, cabeza, manos, 
   };
 
   // Aparición: la mesa se funde, luego el marco y los objetos crecen uno tras otro; las gafas al final.
-  const objetos = [ventana, pot1, pot2, wateringCan, radio, coffeeCup, glasses];
+  const objetos = [ventana, pot1, pot2, wateringCan, radio, coffeeCup, { root: taza.raiz }, glasses];
   const escalas = new Map(objetos.map(({ root }) => [root, root.scale.clone()]));
   const opacidades = new Map([...materialesMesa].map(m => [m, m.opacity]));
 
   const vejez = {
-    escena, props, actividad, gafas, macetas, regadera, cotidianos, radio: radioPerillas, vision, sombras, indicador, entidades, hechos, paneles,
+    escena, props, actividad, gafas, macetas, regadera, taza, radio: radioPerillas, vision, sombras, indicador, entidades, hechos, paneles,
     // Metros por unidad del escenario, incluida la escala que el usuario le dé con las manos.
     get escala() { return s * escena.scale.x; },
     // Altura de la mesa pintada (m, en el espacio de `escena`): el contorno del escalado va sobre ella.
@@ -217,13 +222,13 @@ export async function crearVejez(world, espacio, base, { sonido, cabeza, manos, 
     // Área de la mesa pintada (m, en el espacio de `escena`): zona donde las manos toman el escenario.
     area,
     get completa() { return actividad.complete; },
-    // Girando una perilla, el pellizco es de la radio: no se toma el escenario completo.
-    get ocupado() { return radioPerillas.girando; },
+    // Girando una perilla (el pellizco es de la radio) o con la taza en la mano: no se toma el escenario completo.
+    get ocupado() { return radioPerillas.girando || taza.envuelta; },
     manejadores: {
       'vejez-pot1': { senalar: activo => macetas.senalar('pot1', activo), sostener: activo => macetas.sostener('pot1', activo) },
       'vejez-pot2': { senalar: activo => macetas.senalar('pot2', activo), sostener: activo => macetas.sostener('pot2', activo) },
       'vejez-regadera': { senalar: activo => regadera.senalar(activo), sostener: activo => regadera.sostener(activo) },
-      'vejez-taza': { senalar: activo => cotidianos.senalar('vejez-taza', activo), presionar: () => cotidianos.presionar('vejez-taza') }
+      'vejez-taza': { sostener: activo => taza.sostener(activo) }
     },
     preparar() {
       vision.nivel = gafas.estado.modo === 'puestas' ? 0 : 1;
@@ -254,13 +259,14 @@ export async function crearVejez(world, espacio, base, { sonido, cabeza, manos, 
       macetas.update();
       regadera.update(dt);
       radioPerillas.update(dt, enEscena);
+      taza.update(dt, enEscena);
       balanceo.target = actividad.pouring ? 1 : 0;
       app.OldAgeScene.prototype.updateSway.call(prestado, dt);
       actualizarHalos(dt);
     },
     ocultar() {
       macetas.deshabilitar();
-      cotidianos.deshabilitar();
+      taza.deshabilitar();
       radioPerillas.deshabilitar();
       regadera.detener();
       indicador.ocultar();

@@ -21,9 +21,17 @@ export async function crearFinal(world, espacio, { alContinuar, texto = TEXTOS.f
   alPulsar(flecha, 'flecha', alContinuar);
   return {
     paneles: { frase, flecha },
-    async mostrar(posicionFrase, posicionFlecha, cabeza) {
-      colocar(frase, posicionFrase, cabeza);
-      colocar(flecha, posicionFlecha, cabeza);
+    // Tamaño de la tarjeta de la frase (m, a escala 1) según su diseño ya calculado; si aún no hay, una estimación.
+    medidaFrase() {
+      const tam = frase.el('tarjeta')?.size?.value;
+      if (tam?.[0] > 0 && tam?.[1] > 0) return [tam[0] / 100, tam[1] / 100];
+      const ancho = (tarjeta?.maxWidth ?? 50) / 100;
+      return [ancho, texto.length * .011 > ancho ? .097 : .068];
+    },
+    // Sin posiciones, la frase y la flecha ya están ubicadas (junto a la barra de progreso).
+    async mostrar(posicionFrase = null, posicionFlecha = null, cabeza = null) {
+      if (posicionFrase) colocar(frase, posicionFrase, cabeza);
+      if (posicionFlecha) colocar(flecha, posicionFlecha, cabeza);
       mostrar(frase, { duracion: .75 });
       await esperar(.75 + .6);
       mostrar(flecha, { duracion: .55 });

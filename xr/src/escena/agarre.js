@@ -15,8 +15,10 @@ const ABAJO = new THREE.Vector3(0, -1, 0);
  * - 'palmar': cruza el puño entre el pulgar y el índice; la punta sale por el lado del meñique, abajo.
  * - 'escritura' (lapicero y crayola): pasa por la pinza y se apoya en el pliegue entre pulgar e índice; la punta
  *   sale delante de la pinza, inclinada hacia el papel. Con `haciaMedio` se apoya además en el dedo medio.
- * - 'envolvente' (termo): el cilindro queda delante de la palma, con su eje a lo largo de los nudillos y la
+ * - 'envolvente' (termo y taza): el cilindro queda delante de la palma, con su eje a lo largo de los nudillos y la
  *   tapa hacia el lado del pulgar.
+ * - 'rigido' (taza tomada con un pellizco, p. ej. por el asa): conserva la pose que tenía respecto de la pinza
+ *   (o del control) en el momento de tomarlo, y la sigue con la mano: girar la muñeca la inclina.
  * Con controles (sin articulaciones) se usa el espacio de agarre con una dirección configurable.
  *
  * `medida` describe el objeto en su espacio local: `centro`, `eje` (unitario, hacia la punta o la tapa),
@@ -29,6 +31,9 @@ export function crearAgarre({ world, manos, objeto, perfil, ajustes: A, medida }
   const pliegue = new THREE.Vector3(), desfase = new THREE.Vector3(), escala = new THREE.Vector3(), tmp = new THREE.Vector3();
   const giro = new THREE.Quaternion(), giroPadre = new THREE.Quaternion(), base = new THREE.Matrix4();
   const pose = { sujecion: new THREE.Vector3(), giro: new THREE.Quaternion() };
+  // Perfil 'rigido': pose del objeto en el marco de la mano, fijada en el primer cuadro sostenido.
+  const rigido = { listo: false, posicion: new THREE.Vector3(), giro: new THREE.Quaternion() };
+  const origenMano = new THREE.Vector3(), giroMano = new THREE.Quaternion(), giroObjeto = new THREE.Quaternion(), ejeZ = new THREE.Vector3(), ejeY = new THREE.Vector3();
   const filtro = { sujecion: new THREE.Vector3(), giro: new THREE.Quaternion() };
   const desde = { sujecion: new THREE.Vector3(), giro: new THREE.Quaternion() };
   // Base local del objeto (eje, lateral, frente) y punto de sujeción en su espacio.
@@ -81,8 +86,42 @@ export function crearAgarre({ world, manos, objeto, perfil, ajustes: A, medida }
     lateral.set(1, 0, 0).applyQuaternion(giro);
   }
 
+  // Marco de la mano (origen y giro en el mundo): la pinza con los nudillos, la palma y los dedos; con control, el
+  // espacio de agarre.
+  function marcoDeMano(lado) {
+    const mano = manos[lado];
+    if (mano.seguida) {
+      origenMano.copy(mano.pinza);
+      lateral.copy(mano.nudillos).normalize();
+      ejeZ.copy(mano.dedos).addScaledVector(lateral, -mano.dedos.dot(lateral)).normalize();
+      ejeY.crossVectors(ejeZ, lateral);
+      giroMano.setFromRotationMatrix(base.makeBasis(lateral, ejeY, ejeZ));
+      return true;
+    }
+    if (!mano.control) return false;
+    const agarre = world.player.gripSpaces[lado];
+    agarre.updateWorldMatrix(true, false);
+    agarre.matrixWorld.decompose(origenMano, giroMano, escala);
+    return true;
+  }
+  function calcularRigido(lado) {
+    if (!marcoDeMano(lado)) return false;
+    if (!rigido.listo) {
+      objeto.updateWorldMatrix(true, false);
+      objeto.localToWorld(rigido.posicion.copy(puntoLocal)).sub(origenMano);
+      const inversa = giro.copy(giroMano).invert();
+      rigido.posicion.applyQuaternion(inversa);
+      rigido.giro.copy(inversa).multiply(objeto.getWorldQuaternion(giroObjeto));
+      rigido.listo = true;
+    }
+    pose.sujecion.copy(rigido.posicion).applyQuaternion(giroMano).add(origenMano);
+    pose.giro.copy(giroMano).multiply(rigido.giro);
+    return true;
+  }
+
   // Pose objetivo (punto de sujeción y giro en el mundo): false si no hay datos de esa mano.
   function calcular(lado) {
+    if (perfil === 'rigido') return calcularRigido(lado);
     const mano = manos[lado];
     if (mano.seguida) tomaConMano(mano);
     else if (mano.control) tomaConControl(lado);
@@ -116,6 +155,7 @@ export function crearAgarre({ world, manos, objeto, perfil, ajustes: A, medida }
       objeto.getWorldQuaternion(desde.giro);
       objeto.localToWorld(desde.sujecion.copy(puntoLocal));
       Object.assign(estado, { tiempo: 0, filtrada: false, lado: null });
+      rigido.listo = false;
     },
     soltar() { estado.lado = null; },
     // `lado`: mano que lo sostiene si no lo decide IWSDK (agarre envolvente). Devuelve si pudo colocarlo.

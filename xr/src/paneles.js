@@ -16,7 +16,9 @@ export async function crearPanel(world, assetId, { padre = null, hojas = null } 
   const entidad = world.createTransformEntity(objeto, padre ? { parent: padre } : undefined);
   objeto.visible = false;
   objeto.scale.setScalar(.001);
-  const panel = { entidad, objeto, visible: false, el: id => objeto.getElementById(id) };
+  // `escala`: tamaño del panel (1 = el de su diseño); el usuario lo cambia con las dos manos (mover-paneles.js) y los
+  // paneles anclados a un escenario lo siguen (manipulacion.js). `aparicion` anima mostrar y ocultar.
+  const panel = { entidad, objeto, visible: false, escala: 1, aparicion: 0, el: id => objeto.getElementById(id) };
   PANELES.add(panel);
   if (hojas) texturaHojas(...hojas).then(textura => panel.el('hojas')?.setProperties({ src: textura }));
   return panel;
@@ -30,6 +32,12 @@ export function colocar(panel, posicion, objetivo) {
   orientarHacia(panel.objeto, objetivo);
 }
 
+// Ubica el panel en `posicion` (mundo) con el giro `giroMundo`: queda en el mismo plano que otro panel.
+export function colocarAlineado(panel, posicion, giroMundo) {
+  setWorldPosition(panel.objeto, posicion);
+  setWorldQuaternion(panel.objeto, giroMundo);
+}
+
 // Los paneles miran hacia +Z: el giro es atan2(dx, dz) hacia el objetivo.
 export function orientarHacia(objeto, objetivo) {
   objeto.updateWorldMatrix(true, false);
@@ -38,14 +46,24 @@ export function orientarHacia(objeto, objetivo) {
   setWorldQuaternion(objeto, giro);
 }
 
+// Tamaño en pantalla: su escala por la animación de aparición.
+export function aplicarEscala(panel) {
+  panel.objeto.scale.setScalar(Math.max(.001, panel.escala * panel.aparicion));
+}
+// Cambia el tamaño del panel (también si está oculto o apareciendo).
+export function escalarPanel(panel, escala) {
+  panel.escala = escala;
+  if (panel.aparicion > 0) aplicarEscala(panel);
+}
+
 // Muestra el panel creciendo desde su centro y habilita el rayo y el toque.
 export function mostrar(panel, { duracion = .45, retraso = 0 } = {}) {
   panel.visible = true;
   panel.objeto.visible = true;
   if (!panel.entidad.hasComponent(RayInteractable)) panel.entidad.addComponent(RayInteractable);
   if (!panel.entidad.hasComponent(PokeInteractable)) panel.entidad.addComponent(PokeInteractable);
-  gsap.killTweensOf(panel.objeto.scale);
-  return gsap.fromTo(panel.objeto.scale, { x: .9, y: .9, z: .9 }, { x: 1, y: 1, z: 1, duration: duracion, delay: retraso, ease: 'back.out(1.6)' });
+  gsap.killTweensOf(panel);
+  return gsap.fromTo(panel, { aparicion: .9 }, { aparicion: 1, duration: duracion, delay: retraso, ease: 'back.out(1.6)', onStart: () => aplicarEscala(panel), onUpdate: () => aplicarEscala(panel) });
 }
 
 // Oculta el panel y deja de recibir el rayo y el toque mientras está oculto.
@@ -53,10 +71,10 @@ export function ocultar(panel, { duracion = .3 } = {}) {
   panel.visible = false;
   if (panel.entidad.hasComponent(RayInteractable)) panel.entidad.removeComponent(RayInteractable);
   if (panel.entidad.hasComponent(PokeInteractable)) panel.entidad.removeComponent(PokeInteractable);
-  gsap.killTweensOf(panel.objeto.scale);
-  return new Promise(resolve => gsap.to(panel.objeto.scale, {
-    x: .001, y: .001, z: .001, duration: duracion, ease: 'power2.in',
-    onComplete: () => { panel.objeto.visible = false; resolve(); }
+  gsap.killTweensOf(panel);
+  return new Promise(resolve => gsap.to(panel, {
+    aparicion: 0, duration: duracion, ease: 'power2.in', onUpdate: () => aplicarEscala(panel),
+    onComplete: () => { aplicarEscala(panel); panel.objeto.visible = false; resolve(); }
   }));
 }
 

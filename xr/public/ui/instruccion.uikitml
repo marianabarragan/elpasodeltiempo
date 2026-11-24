@@ -10,5 +10,5 @@
 <div class="panel">
   <img id="hojas" class="hojas" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" />
   <span id="texto" class="texto">Selecciona una superficie para comenzar</span>
-  <span id="detalle" class="detalle">Apunta a la mesa con la mano derecha y pellizca (o aprieta el gatillo).</span>
+  <span id="detalle" class="detalle">Mira hacia la superficie deseada y pon una de tus manos extendida sobre esta.</span>
 </div>

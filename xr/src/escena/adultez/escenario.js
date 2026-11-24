@@ -124,8 +124,8 @@ export function crearAdultez(world, espacio, base, { sonido, hielo, teclado, cab
     const atras = new THREE.Box3().setFromObject(objeto).min.z;
     if (atras < limites.minZ) objeto.position.z += limites.minZ - atras;
   });
-  // Barra y frase van sobre el monitor (al fondo y al centro, donde en otros escenarios no hay nada alto),
-  // y la flecha adelante a la derecha, sobre el escritorio. Posiciones en metros, en el espacio de `escena`.
+  // La barra va sobre el monitor (al fondo y al centro); la frase y la flecha se ubican debajo de ella al terminar
+  // (narrativa.js, mostrarFinal). Posición en metros, en el espacio de `escena`.
   const cajaMonitor = new THREE.Box3().setFromObject(models.monitor.root);
   const monitor = {
     x: ((cajaMonitor.min.x + cajaMonitor.max.x) / 2 - centro.x) * s,
@@ -133,10 +133,8 @@ export function crearAdultez(world, espacio, base, { sonido, hielo, teclado, cab
     z: ((cajaMonitor.min.z + cajaMonitor.max.z) / 2 - centro.z) * s
   };
   const paneles = {
-    // La tarjeta de la frase (dos renglones) mide ~10 cm de alto: su borde inferior queda ~3 cm sobre el monitor.
-    barra: [monitor.x, monitor.alto + .175, monitor.z],
-    frase: [monitor.x, monitor.alto + .085, monitor.z + .02],
-    flecha: [THREE.MathUtils.clamp(area.ancho * .36, .15, area.ancho / 2 - .08), E.grosor + .1, area.fondo * .2]
+    // Debajo de la barra va la frase (dos renglones, ~10 cm de alto): su borde inferior queda ~3,5 cm sobre el monitor.
+    barra: [monitor.x, monitor.alto + .175, monitor.z]
   };
 
   const escena = new THREE.Group();

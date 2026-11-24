@@ -100,35 +100,41 @@ export function superficieManual(centro, cabeza) {
 }
 
 /*
- * Selección manual, ruta principal para elegir la superficie: un aro sigue el rayo de la mano o el
- * control derechos sobre superficies reales (hit test) y el pellizco o el gatillo de esa mano
- * entrega el punto señalado. Los puntos a la altura del piso se ignoran.
+ * Respaldo con controles (sin seguimiento de manos): un aro sigue el rayo del control derecho sobre superficies
+ * reales (hit test) y el gatillo entrega el punto señalado. Con las manos la superficie se elige poniendo una mano
+ * extendida sobre ella (mano-superficie.js): el aro no aparece y el pellizco no elige. Los puntos a la altura del
+ * piso se ignoran.
  */
-export function crearColocacionManual(world, { alColocar }) {
+export function crearColocacionManual(world, { alColocar, manos }) {
   const aro = new THREE.Mesh(new THREE.RingGeometry(.035, .05, 32).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#3fb3d3', transparent: true, opacity: .9, toneMapped: false }));
   aro.name = 'aro-colocacion';
   aro.visible = false;
   const entidad = world.createTransformEntity(aro, { persistent: true });
   const estado = { activo: false };
   const alSeleccionar = evento => {
-    if (!estado.activo || !entidad.getValue(EnvironmentRaycastTarget, 'xrHitTestResult')) return;
-    if (evento?.inputSource?.handedness && evento.inputSource.handedness !== 'right') return;
+    if (!estado.activo || !entidad.hasComponent(EnvironmentRaycastTarget) || !entidad.getValue(EnvironmentRaycastTarget, 'xrHitTestResult')) return;
+    if (evento?.inputSource?.hand || (evento?.inputSource?.handedness && evento.inputSource.handedness !== 'right')) return;
     const punto = aro.getWorldPosition(new THREE.Vector3());
     if (punto.y < AJUSTES.mesa.alturaSenalMin) return;
     alColocar(punto);
   };
+  // El aro solo sigue el rayo cuando la entrada derecha es un control.
+  const rayo = activo => {
+    if (activo && !entidad.hasComponent(EnvironmentRaycastTarget)) entidad.addComponent(EnvironmentRaycastTarget, { space: RaycastSpace.Right });
+    if (!activo && entidad.hasComponent(EnvironmentRaycastTarget)) { entidad.removeComponent(EnvironmentRaycastTarget); aro.visible = false; }
+  };
   return {
+    estado,
     iniciar() {
       estado.activo = true;
-      if (!entidad.hasComponent(EnvironmentRaycastTarget)) entidad.addComponent(EnvironmentRaycastTarget, { space: RaycastSpace.Right });
       world.session?.addEventListener('select', alSeleccionar);
     },
     detener() {
       estado.activo = false;
       world.session?.removeEventListener('select', alSeleccionar);
-      if (entidad.hasComponent(EnvironmentRaycastTarget)) entidad.removeComponent(EnvironmentRaycastTarget);
-      aro.visible = false;
-    }
+      rayo(false);
+    },
+    actualizar() { if (estado.activo) rayo(!!manos?.right.control); }
   };
 }
 

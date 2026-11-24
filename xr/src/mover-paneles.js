@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { setWorldPosition } from '@iwsdk/core';
 import { AJUSTES } from './config.js';
+import { escalarPanel } from './paneles.js';
+import { crearEsquinas } from './escena/esquinas.js';
 
 const LADOS = ['left', 'right'];
 // Colores del diseño del botón: círculo blanco con las flechas de mover en café claro.
@@ -46,9 +48,12 @@ function texturaBoton(fondo, flechas) {
  *   modo de mover: el botón se invierte (círculo café, flechas blancas). Con el modo activo, el panel se toma
  *   con el rayo (pellizco o gatillo sobre él) o con un pellizco junto a su superficie, y se arrastra.
  * - También se puede arrastrar directamente desde el botón: se pulsa y, sin soltar, se mueve.
- * - Solo cambia la posición: el panel no gira, no cambia de tamaño y no sigue la mirada. Al soltarlo queda
- *   ahí y el modo se apaga. Mientras el modo está activo sus botones no responden. Un panel que el usuario
- *   acomodó ya no se reubica solo (paneles.colocar lo respeta).
+ * - Mover solo cambia la posición: el panel no gira y no sigue la mirada. Al soltarlo queda ahí y el modo se
+ *   apaga. Mientras el modo está activo sus botones no responden. Un panel que el usuario acomodó ya no se
+ *   reubica solo (paneles.colocar lo respeta).
+ * - Escalar (corrección): con una mano cerca del borde del panel aparecen cuatro esquinas (la misma señal de los
+ *   escenarios); un pellizco con cada mano que empiece junto a su borde (no sobre el botón de mover) y separar o
+ *   juntar las manos lo amplía o lo reduce desde su centro. Con el modo de mover activo no se escala.
  */
 export function crearMovilidad(world, manos) {
   const cfg = AJUSTES.paneles;
@@ -56,7 +61,9 @@ export function crearMovilidad(world, manos) {
   const texturas = { normal: texturaBoton(BLANCO, CAFE), activo: texturaBoton(CAFE, BLANCO) };
   const geometria = new THREE.CircleGeometry(cfg.diametro / 2, 48);
   // `arrastre`: { panel, tipo: 'puntero' | 'mano', id | lado, desde, inicio, desdeBoton, recorrido }.
-  const estado = { arrastre: null, toque: null, movimientos: 0 };
+  const estado = { arrastre: null, toque: null, movimientos: 0, escalado: null, escalados: 0 };
+  // Pellizco de cada mano para escalar: si está activo, desde cuántos cuadros y junto al borde de qué panel empezó.
+  const pinzas = Object.fromEntries(LADOS.map(lado => [lado, { activo: false, cuadros: 0, panel: null, cerca: null }]));
   const previo = { left: false, right: false };
   const objetivo = new THREE.Vector3(), actual = new THREE.Vector3(), punto = new THREE.Vector3(), local = new THREE.Vector3();
 
@@ -105,7 +112,11 @@ export function crearMovilidad(world, manos) {
     // Centrado bajo el borde inferior del panel, un poco por delante de su superficie.
     boton.position.set(0, -(alto / 2 + cfg.separacion + cfg.diametro / 2), .003);
     panel.objeto.add(boton);
-    panel.movil = { boton, material, alto, ancho, espera: 0, objetivo: new THREE.Vector3() };
+    // Esquinas de escalado en el plano del panel, un poco por delante; su escala compensa la del panel.
+    const esquinas = crearEsquinas({ renderOrder: 3 });
+    esquinas.grupo.position.z = .004;
+    panel.objeto.add(esquinas.grupo);
+    panel.movil = { boton, material, alto, ancho, espera: 0, objetivo: new THREE.Vector3(), esquinas, senal: 0 };
     panel.moviendo = false;
     panel.movidoPorUsuario = false;
 
@@ -154,6 +165,72 @@ export function crearMovilidad(world, manos) {
     return Math.abs(local.z) <= m && local.x >= caja.min.x - m && local.x <= caja.max.x + m && local.y >= caja.min.y - m && local.y <= caja.max.y + m;
   }
 
+  // Distancia (m) de un punto al contorno del panel en su plano (positiva afuera, negativa adentro) y a su plano.
+  function respectoDelBorde(panel, mundo) {
+    panel.objeto.updateWorldMatrix(true, false);
+    panel.objeto.worldToLocal(local.copy(mundo));
+    const k = panel.objeto.scale.x, qx = Math.abs(local.x) - (panel.movil.ancho ?? .6) / 2, qy = Math.abs(local.y) - panel.movil.alto / 2;
+    const afuera = Math.hypot(Math.max(qx, 0), Math.max(qy, 0)), adentro = Math.min(Math.max(qx, qy), 0);
+    return { distancia: (afuera + adentro) * k, profundidad: Math.abs(local.z) * k };
+  }
+  // Junto al borde del panel (y no sobre su botón de mover), con un margen extra para que la señal no parpadee.
+  function enBorde(panel, mundo, extra = 0) {
+    if (!panel.visible || panel.aparicion < .5) return false;
+    if (panel.movil.boton.getWorldPosition(punto).distanceTo(mundo) <= cfg.alcance) return false;
+    const { distancia, profundidad } = respectoDelBorde(panel, mundo);
+    return distancia >= -cfg.bordeDentro - extra && distancia <= cfg.bordeFuera + extra && profundidad <= cfg.profundidad + extra;
+  }
+  const panelEnBorde = (mundo, extra = 0) => [...paneles].find(panel => enBorde(panel, mundo, extra)) ?? null;
+
+  // Escalar con las dos manos: los dos pellizcos empezaron junto al borde del mismo panel.
+  function escalar(dt) {
+    for (const lado of LADOS) {
+      const mano = manos[lado], p = pinzas[lado], activo = mano.seguida && mano.pellizco;
+      if (activo && !p.activo) { p.panel = estado.arrastre ? null : panelEnBorde(mano.pinza); p.cuadros = 0; }
+      if (activo) p.cuadros += 1;
+      p.activo = activo;
+    }
+    const e = estado.escalado, L = pinzas.left, D = pinzas.right;
+    if (e) {
+      if (!L.activo || !D.activo || !e.panel.visible) { estado.escalado = null; return; }
+      const separacion = manos.left.pinza.distanceTo(manos.right.pinza);
+      if (!e.escalando) {
+        if (Math.abs(separacion / e.separacion - 1) < AJUSTES.manipulacion.zonaMuerta) return;
+        Object.assign(e, { escalando: true, separacion, escala: e.panel.escala });
+      }
+      const meta = THREE.MathUtils.clamp(e.escala * separacion / e.separacion, cfg.escalaMin * e.original, cfg.escalaMax * e.original);
+      escalarPanel(e.panel, e.panel.escala + (meta - e.panel.escala) * (1 - Math.exp(-AJUSTES.manipulacion.suavizado * dt)));
+      return;
+    }
+    // Se espera un cuadro más para que, si el pellizco era del botón (arrastre), ese gesto lo tome primero.
+    if (estado.arrastre || !L.activo || !D.activo || !L.panel || L.panel !== D.panel || L.cuadros < 2 || D.cuadros < 2 || L.panel.moviendo) return;
+    const panel = L.panel;
+    panel.movil.original ??= panel.escala;
+    estado.escalado = { panel, separacion: manos.left.pinza.distanceTo(manos.right.pinza), escala: panel.escala, original: panel.movil.original, escalando: false };
+    estado.escalados += 1;
+  }
+
+  // Señal de escalado: las esquinas del panel que tiene una mano cerca de su borde (o que se está escalando).
+  function senales(dt) {
+    for (const lado of LADOS) {
+      const mano = manos[lado], p = pinzas[lado];
+      p.cerca = mano.seguida && !estado.arrastre ? (p.cerca && enBorde(p.cerca, mano.pinza, AJUSTES.manipulacion.esquinas.histeresis) ? p.cerca : panelEnBorde(mano.pinza)) : null;
+    }
+    const fundido = 1 - Math.exp(-AJUSTES.manipulacion.esquinas.fundido * dt);
+    for (const panel of paneles) {
+      const m = panel.movil;
+      const meta = panel.visible && !panel.moviendo && (estado.escalado?.panel === panel || pinzas.left.cerca === panel || pinzas.right.cerca === panel) ? 1 : 0;
+      m.senal += (meta - m.senal) * fundido;
+      if (Math.abs(m.senal - meta) < .01) m.senal = meta;
+      m.esquinas.opacidad = m.senal;
+      if (m.esquinas.grupo.visible) {
+        const k = Math.max(panel.objeto.scale.x, .001);
+        m.esquinas.grupo.scale.setScalar(1 / k);
+        m.esquinas.colocar((m.ancho ?? .6) * k, m.alto * k, 1);
+      }
+    }
+  }
+
   // Pellizco directo con las manos (sin rayo): junto al botón, o junto al panel con el modo activo.
   function pellizcos() {
     for (const lado of LADOS) {
@@ -165,7 +242,7 @@ export function crearMovilidad(world, manos) {
         else terminar();
         continue;
       }
-      if (!empieza || a) continue;
+      if (!empieza || a || estado.escalado) continue;
       for (const panel of paneles) {
         if (!panel.visible) continue;
         const enBoton = panel.movil.boton.getWorldPosition(punto).distanceTo(mano.pinza) <= cfg.alcance;
@@ -178,11 +255,13 @@ export function crearMovilidad(world, manos) {
   }
 
   return {
-    estado, paneles, registrar,
-    // Alguna mano o rayo está moviendo un panel: los gestos de los escenarios no lo toman.
-    get ocupado() { return !!estado.arrastre; },
+    estado, paneles, registrar, respectoDelBorde, enBorde,
+    // Alguna mano o rayo está moviendo o escalando un panel: los gestos de los escenarios no lo toman.
+    get ocupado() { return !!estado.arrastre || !!estado.escalado; },
     actualizar(dt) {
       pellizcos();
+      escalar(dt);
+      senales(dt);
       const alfa = 1 - Math.exp(-cfg.suavizado * dt);
       for (const panel of paneles) {
         if (!panel.visible) {

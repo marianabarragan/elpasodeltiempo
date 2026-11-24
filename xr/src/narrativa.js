@@ -4,9 +4,10 @@ import { AJUSTES } from './config.js';
 import { ADULTHOOD_FINAL_PHRASE, TEXTOS } from './textos.js';
 import { SistemaExperiencia } from './sistema.js';
 import { avanzarGsap } from './gsap-xr.js';
-import { alPulsar, colocar, crearPanel, mostrar, ocultar } from './paneles.js';
+import { alPulsar, colocar, crearPanel, escalarPanel, mostrar, ocultar } from './paneles.js';
 import { crearReticula } from './mesa/reticula.js';
 import { crearColocacionManual, crearMesaSimulada, leerCandidatas, superficieEn, superficieManual } from './mesa/deteccion.js';
+import { crearManoSobreSuperficie } from './mesa/mano-superficie.js';
 import { aEscena, aMundo, cabezaLocal, crearEspacio, medirFrente } from './mesa/espacio.js';
 import { crearManos } from './manos.js';
 import { crearOclusion } from './oclusion.js';
@@ -58,11 +59,15 @@ export async function iniciarExperiencia(world) {
       tablero: () => e.tablero?.raiz ?? null,
       escenario: () => ({ ninez: e.manipNinez, adultez: e.manipAdultez, vejez: e.manipVejez })[e.fase] ?? null,
       cuerpos: () => cuerposActivos(),
-      // El termo en la mano: los dedos dibujados lo rodean.
-      envolturas: () => (e.fase === 'adultez' && e.adultez?.termo.sostenido ? [e.adultez.termo.cilindroMundo(cilindroTermo)] : [])
+      // El vaso de la adultez o la taza de la vejez en la mano: los dedos dibujados los rodean según su diámetro.
+      envolturas: () => {
+        if (e.fase === 'adultez' && e.adultez?.termo.sostenido) return [e.adultez.termo.cilindroMundo(cilindroTermo)];
+        if (e.fase === 'vejez' && e.vejez?.taza.sostenido) return [e.vejez.taza.cilindroMundo(cilindroTaza)];
+        return [];
+      }
     })
   });
-  const cilindroTermo = {};
+  const cilindroTermo = {}, cilindroTaza = {};
   // Paneles de texto con botón de mover (instrucción, confirmación y pregunta inicial). Las barras de progreso no se
   // mueven solas: acompañan a su escenario cuando se traslada.
   const movilidad = crearMovilidad(world, manos);
@@ -85,7 +90,7 @@ export async function iniciarExperiencia(world) {
       const v = e.vejez, i = v.props.interactive, c = v.props.curiosities;
       return [{ objeto: i.glasses.root, libre: v.gafas.estado.modo === 'mesa' }, { objeto: i.pot1.root, libre: !enLaMano(v.entidades.pot1) },
         { objeto: i.pot2.root, libre: !enLaMano(v.entidades.pot2) }, { objeto: i.wateringCan.root, libre: !enLaMano(v.entidades.regadera) },
-        { objeto: c.radio.root, libre: !v.radio.girando }, { objeto: c.coffeeCup.root }, { objeto: c.window.root }];
+        { objeto: c.radio.root, libre: !v.radio.girando }, { objeto: c.coffeeCup.root }, { objeto: v.taza.raiz, libre: !v.taza.sostenido }, { objeto: c.window.root }];
     }
     if (e.fase === 'introduccion' && e.reloj) return [{ objeto: e.reloj.soporte, libre: !enLaMano(e.reloj.entidad) }];
     return [];
@@ -102,6 +107,8 @@ export async function iniciarExperiencia(world) {
     crearPanel(world, 'panel-confirmar', { hojas: [52, 25] })
   ]);
   e.paneles = { instruccion, confirmar };
+  // El primer panel aparece más cerca y más grande (corrección): a 0,8 m y 1,3 veces su tamaño.
+  escalarPanel(instruccion, AJUSTES.mesa.panel.escala);
   movilidad.registrar(instruccion, { alto: .14, ancho: .46 });
   movilidad.registrar(confirmar, { alto: .25, ancho: .52 });
   // La composición de niñez se arma una vez, con los juguetes de Blender ya cargados.
@@ -117,14 +124,16 @@ export async function iniciarExperiencia(world) {
   const avisar = texto => {
     instruccion.el('texto')?.setProperties({ text: texto });
     instruccion.el('detalle')?.setProperties({ text: TEXTOS.comoSeleccionar });
-    colocar(instruccion, frente(1.1, .18), cabeza());
+    colocar(instruccion, frente(AJUSTES.mesa.panel.distancia, AJUSTES.mesa.panel.bajar), cabeza());
     if (!instruccion.visible) mostrar(instruccion);
   };
 
   // ---------- Selección de la superficie ----------
-  // El usuario la señala con el rayo derecho; si el punto cae sobre una superficie que el visor ya
-  // reconoció, se usa esa superficie completa (apoyo interno); si no, una del tamaño manual.
-  const manual = crearColocacionManual(world, { alColocar: elegirPunto });
+  // El usuario pone una mano extendida sobre la superficie (izquierda o derecha) hasta que se llena el círculo
+  // (con controles, la señala con el rayo derecho y el gatillo). Si el punto cae sobre una superficie que el visor
+  // ya reconoció, se usa esa superficie completa (apoyo interno); si no, una del tamaño manual.
+  const manual = crearColocacionManual(world, { alColocar: elegirPunto, manos });
+  const manoSuperficie = crearManoSobreSuperficie(world, manos, sistema, { cabeza, alElegir: elegirPunto });
 
   // Al empezar la sesión la cabeza tarda unos cuadros en tener pose; sin ella los paneles quedarían en el piso.
   const esperarCabeza = () => new Promise(resolve => {
@@ -143,8 +152,9 @@ export async function iniciarExperiencia(world) {
     e.fase = 'seleccion';
     avisar(texto);
     manual.iniciar();
+    manoSuperficie.iniciar();
     // En el emulador sin sala sintética se ofrece una mesa simulada, rotulada como tal.
-    if (window.IWER_DEVICE && !leerCandidatas(sistema, cabeza()).length) {
+    if (window.IWER_DEVICE && AJUSTES.mesa.simulada.auto && !leerCandidatas(sistema, cabeza()).length) {
       setTimeout(() => {
         if (e.fase !== 'seleccion') return;
         e.simulada ??= crearMesaSimulada(world, cabeza(), TEXTOS.simulada);
@@ -162,6 +172,7 @@ export async function iniciarExperiencia(world) {
     e.fase = 'confirmando';
     e.candidata = candidata;
     manual.detener();
+    manoSuperficie.detener();
     const { ancho, fondo } = medirFrente(candidata, cabeza());
     const { modo } = evaluarMesa(base, ancho, fondo);
     const aviso = confirmar.el('aviso');
@@ -190,6 +201,7 @@ export async function iniciarExperiencia(world) {
     if (e.fase !== 'confirmando') return;
     e.fase = 'introduccion';
     manual.detener();
+    manoSuperficie.detener();
     ocultar(confirmar);
     reticula.ocultar(.8);
     const espacio = e.espacio = crearEspacio(world, e.candidata, cabeza());
@@ -260,7 +272,7 @@ export async function iniciarExperiencia(world) {
     await transicion.destapar();
     await revelado;
     // La barra se ubica respecto del escenario (que el usuario pudo mover antes) y lo acompaña después.
-    e.progreso.mostrar(aEscena(e.ninez.escena, 0, .2, -e.espacio.fondo / 2 + .04), cabeza());
+    e.progreso.mostrar(aEscena(e.ninez.escena, 0, .3, -e.espacio.fondo / 2 + .04), cabeza());
     e.manipNinez.anclar(e.progreso.panel);
     e.fase = 'ninez';
     e.bloqueado = false;
@@ -288,16 +300,22 @@ export async function iniciarExperiencia(world) {
     sistema.manejadores.set('crayola', {
       sostener: activo => { if (activo) { e.progreso.marcar('crayon'); e.crayola.tomar(); } else e.crayola.soltar(); }
     });
-    // Caja de crayolas: señalar una la asoma y suena su nota (como la paleta web); pulsarla y soltarla elige su
-    // color. Mientras la caja está en la mano (o baja, o se manipula el escenario) las crayolas no eligen color, y
-    // si entre pulsar y soltar se tomó la caja (un pellizco que empezó rozando una crayola), no se elige.
+    // Caja de crayolas: con las manos, el color se elige (y suena su nota) solo cuando la yema de un dedo toca la
+    // punta de una crayola desde arriba (ninez.js, revisarYemas); acercarse o moverse cerca no suena. Con controles
+    // (sin seguimiento de manos) el rayo la asoma y pulsar y soltar con el gatillo la elige. Mientras la caja está en
+    // la mano (o baja, o se manipula el escenario) no se elige color, ni si entre pulsar y soltar se tomó la caja.
+    const conManos = () => manos.left.seguida || manos.right.seguida;
+    ninez.alElegirColor = indice => {
+      if (e.fase !== 'ninez' || e.bloqueado || e.manipNinez.activo || e.ninez.cajaOcupada) return;
+      sonido.tono.play(indice);
+      elegirColor(base.colores[indice], indice);
+    };
     base.colores.forEach((hex, indice) => sistema.manejadores.set(`color-${indice}`, {
       senalar: activo => {
-        if (e.fase !== 'ninez' || (activo && e.ninez.cajaOcupada)) return;
+        if (e.fase !== 'ninez' || (activo && (e.ninez.cajaOcupada || conManos()))) return;
         e.ninez.caja.senalar(indice, activo, AJUSTES.caja);
-        if (activo) sonido.tono.play(indice);
       },
-      presionar: () => { if (e.fase === 'ninez' && !e.bloqueado && !e.ninez.cajaOcupada) e.colorPulsado = { hex, indice, cajas: e.ninez.estadoCaja.movimientos }; },
+      presionar: () => { if (e.fase === 'ninez' && !e.bloqueado && !e.ninez.cajaOcupada && !conManos()) e.colorPulsado = { hex, indice, cajas: e.ninez.estadoCaja.movimientos }; },
       soltar: () => { if (e.colorPulsado?.indice === indice) { e.colorPendiente = e.colorPulsado; e.colorPulsado = null; } }
     }));
   }
@@ -306,6 +324,7 @@ export async function iniciarExperiencia(world) {
     if (!pendiente) return;
     e.colorPendiente = null;
     if (e.fase !== 'ninez' || e.bloqueado || e.ninez.cajaOcupada || e.manipNinez.activo || pendiente.cajas !== e.ninez.estadoCaja.movimientos) return;
+    sonido.tono.play(pendiente.indice);
     elegirColor(pendiente.hex, pendiente.indice);
   }
 
@@ -323,18 +342,22 @@ export async function iniciarExperiencia(world) {
     ['sun', 'house', 'tree'].forEach(figura => { if (avance[figura] >= umbral) e.progreso.marcar(figura); });
   }
 
-  // Frase y flecha junto al escenario (donde esté) y ancladas a él.
-  function mostrarFinal(final, manipulacion, posicionFrase, posicionFlecha) {
-    const raiz = manipulacion.raiz;
-    final.mostrar(aEscena(raiz, ...posicionFrase), aEscena(raiz, ...posicionFlecha), cabeza());
-    manipulacion.anclar(final.paneles.frase);
-    manipulacion.anclar(final.paneles.flecha);
+  // Orden fijo en los tres escenarios (corrección): la barra de progreso arriba, la frase debajo de ella con un
+  // espacio y la flecha a la derecha de la frase, en el mismo plano que la barra. Van ancladas al escenario y crecen
+  // o se reducen con él, así nada se superpone ni se recorta.
+  const ALTO_BARRA = .044, ANCHO_FLECHA = .066;
+  function mostrarFinal(final, manipulacion, progreso) {
+    const { separacion, separacionFlecha } = AJUSTES.cierre;
+    const [anchoFrase, altoFrase] = final.medidaFrase();
+    const dy = -(ALTO_BARRA / 2 + separacion + altoFrase / 2);
+    manipulacion.anclar(final.paneles.frase, { junto: progreso.panel, dx: 0, dy });
+    manipulacion.anclar(final.paneles.flecha, { junto: progreso.panel, dx: anchoFrase / 2 + separacionFlecha + ANCHO_FLECHA / 2, dy });
+    final.mostrar();
   }
 
   function completarNinez() {
     e.completo = true;
-    const { ancho, fondo } = e.espacio;
-    mostrarFinal(e.final, e.manipNinez, [0, .32, -fondo / 2 + .04], [limitar(ancho * .4, .2, ancho / 2), .2, -fondo * .15]);
+    mostrarFinal(e.final, e.manipNinez, e.progreso);
   }
 
   // La flecha cierra la niñez y regresa al tablero, que desbloquea la adultez.
@@ -409,8 +432,7 @@ export async function iniciarExperiencia(world) {
     mostrarFinAdultez();
   }
   function mostrarFinAdultez() {
-    const { frase, flecha } = e.adultez.paneles;
-    mostrarFinal(e.finalAdultez, e.manipAdultez, frase, flecha);
+    mostrarFinal(e.finalAdultez, e.manipAdultez, e.progresoAdultez);
   }
 
   // La flecha cierra la adultez y regresa al tablero, que desbloquea la vejez.
@@ -482,8 +504,8 @@ export async function iniciarExperiencia(world) {
   function revisarFinVejez() {
     if (!e.vejez || e.vejez.terminada || !e.vejez.completa || !e.progresoVejez.logica.complete) return;
     e.vejez.terminada = true;
-    // La frase va por encima del marco de la ventana (no dentro ni detrás).
-    mostrarFinal(e.finalVejez, e.manipVejez, e.vejez.paneles.frase, e.vejez.paneles.flecha);
+    // La barra va por encima del marco de la ventana; la frase, debajo de la barra y aún sobre el marco.
+    mostrarFinal(e.finalVejez, e.manipVejez, e.progresoVejez);
   }
 
   // Punto de salida del escenario 3. La pantalla siguiente (el cierre) aún no existe en realidad mixta:
@@ -512,6 +534,8 @@ export async function iniciarExperiencia(world) {
   sistema.alActualizar = dt => {
     avanzarGsap();
     manos.actualizar();
+    manual.actualizar();
+    manoSuperficie.actualizar(dt);
     movilidad.actualizar(dt);
     e.sombrasMesa?.actualizar();
     e.reloj?.paso(dt);
@@ -564,7 +588,7 @@ export async function iniciarExperiencia(world) {
     if (!inmersivo && e.fase !== 'entrada') location.reload();
   });
 
-  const experiencia = { world, sistema, estado: e, base, sonido, manos, oclusion, movilidad, alSalirDeVejez: null };
+  const experiencia = { world, sistema, estado: e, base, sonido, manos, oclusion, movilidad, manoSuperficie, alSalirDeVejez: null };
   // Solo en desarrollo: abre el escenario 2 o el 3 desde el tablero sin pasar por la foto (pruebas automáticas).
   if (import.meta.env.DEV) {
     // Ajustes a mano para el emulador (corre a ~1 cuadro por segundo y algunos tiempos no se alcanzan).

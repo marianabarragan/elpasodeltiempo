@@ -3,7 +3,7 @@ export const TEXTOS = {
   sinSoporte: 'Este navegador no puede entrar en realidad mixta. Abre esta página en el navegador de Meta Quest 3.',
   seleccionar: 'Selecciona una superficie para comenzar',
   buscarOtra: 'Selecciona otra superficie',
-  comoSeleccionar: 'Apunta a la mesa con la mano derecha y pellizca (o aprieta el gatillo).',
+  comoSeleccionar: 'Mira hacia la superficie deseada y pon una de tus manos extendida sobre esta.',
   pequena: 'Esta superficie es pequeña: la escena se verá compacta.',
   insuficiente: 'Esta superficie es muy pequeña para la escena. Te sugerimos buscar otra.',
   simulada: 'MESA SIMULADA · solo en el emulador',

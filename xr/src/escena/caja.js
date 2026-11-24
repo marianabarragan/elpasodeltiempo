@@ -113,7 +113,8 @@ export function crearCaja(colores) {
     // Un leve abanico separa las puntas para tocar una a la vez.
     crayola.rotation.z = -(columna - 3.5) * .025;
     crayola.rotation.x = fila === 'atras' ? -.06 : .06;
-    Object.assign(crayola.userData, { indice: i, color: hex, reposo: crayola.position.y });
+    // `puntaY`: altura del vértice de la punta en el espacio de la crayola (la yema elige color al tocarlo).
+    Object.assign(crayola.userData, { indice: i, color: hex, reposo: crayola.position.y, puntaY: largo + MEDIDA.punta });
     grupo.add(crayola);
     return crayola;
   });

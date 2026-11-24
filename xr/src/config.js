@@ -15,14 +15,32 @@ export const AJUSTES = {
     margen: .03,
     // Ancho y fondo de la superficie elegida cuando el punto no cae sobre una superficie detectada.
     tamanoManual: [.9, .6],
-    // Mesa simulada, solo en el emulador cuando no entrega superficies.
-    simulada: { ancho: 1.2, fondo: .7, alto: .74, distancia: .8 }
+    // Elegir la superficie poniendo una mano extendida sobre ella (mesa/mano-superficie.js), izquierda o derecha.
+    mano: {
+      // Mano extendida y plana: al menos `dedos` de los cuatro dedos estirados (la punta a más de `extendido` veces
+      // la distancia del nudillo a la muñeca), la palma hacia abajo (coseno con la vertical) y los dedos casi
+      // horizontales (seno máximo de su inclinación).
+      dedos: 4, extendido: 1.55, palmaAbajo: .75, inclinacion: .45,
+      // Sobre una superficie reconocida por el visor, la palma debe quedar a menos de `apoyo` m de ella; sin
+      // superficies reconocidas, la altura de la superficie se toma de la mano apoyada (la articulación más baja).
+      apoyo: .06,
+      // La mano debe quedar quieta (se mueve menos de `quieta` m) durante `sostener` s; el círculo se llena en ese
+      // tiempo y se vacía `vaciar` veces más rápido si la mano se levanta o se mueve.
+      quieta: .025, sostener: 1, vaciar: 3,
+      // Círculo blanco bajo la mano: radio, grosor del anillo (m) y opacidad de la pista y del relleno.
+      circulo: { radio: .11, grosor: .012, pista: .3, relleno: .95 }
+    },
+    // Panel de instrucción: distancia delante de los ojos (m), cuánto más abajo de ellos y tamaño relativo.
+    panel: { distancia: .8, bajar: .18, escala: 1.3 },
+    // Mesa simulada, solo en el emulador cuando no entrega superficies (`auto`: se propone sola a los 2,5 s).
+    simulada: { ancho: 1.2, fondo: .7, alto: .74, distancia: .8, auto: true }
   },
   escala: {
     // La hoja de niñez mide 11,5 unidades: 0,036 m por unidad la deja en ~41 cm.
     ninezMax: .036, ninezMin: .024,
     tablero: .03,
-    reloj: .034
+    // Reloj de arena de la introducción: 1,4 veces el tamaño anterior (0,034), como en la corrección.
+    reloj: .0476
   },
   intro: {
     // Altura del centro del panel sobre la mesa, limitada a este rango.
@@ -74,9 +92,10 @@ export const AJUSTES = {
     // `bordeFuera` m hacia afuera del contorno de la superficie base, y entre `bordeAbajo` y `bordeArriba` m de
     // su altura. Mientras dura, el gesto sigue aunque las manos se alejen del borde.
     bordeDentro: .06, bordeFuera: .09, bordeAbajo: -.1, bordeArriba: .12,
-    // Contorno punteado que aparece con una mano cerca del borde: color del diseño, trazo, hueco y grosor (m),
-    // margen extra para que se apague (evita parpadeos) y rapidez del fundido (1/s).
-    contorno: { color: '#fa5200', trazo: .03, hueco: .007, grosor: .005, histeresis: .03, fundido: 9 },
+    // Señal de escalado: cuatro esquinas (forma de L, blancas con un borde gris como en el diseño) que aparecen
+    // junto a las esquinas de la superficie con una mano cerca del borde. Largo de cada brazo, grosor y
+    // separación por fuera de la esquina (m), margen extra para que se apague (evita parpadeos) y fundido (1/s).
+    esquinas: { brazo: .045, grosor: .011, separacion: .012, relleno: '#f7f5f1', borde: '#5f5a54', histeresis: .03, fundido: 9 },
     // Suavizado del movimiento (1/s; más alto sigue a las manos más de cerca).
     suavizado: 16
   },
@@ -113,8 +132,13 @@ export const AJUSTES = {
   caja: {
     normal: { x: -8.25, z: 1.9, giro: .2 },
     compacta: { x: -8.1, z: 1.6, giro: .14 },
-    // Elevación de una crayola señalada y de la elegida.
+    // Elevación de una crayola señalada (solo con el rayo de un control) y de la elegida.
     senalada: .16, elegida: .32,
+    // Elegir color con la mano: solo cuenta la yema de un dedo que toca la punta de una crayola desde arriba. La yema
+    // (su centro) debe quedar a menos de su radio más `margen` m de la punta, y no más abajo que la base del cono.
+    // Para volver a elegir, esa yema se aleja `rearme` m de todas las puntas. El color se confirma `confirmar` s
+    // después del toque si en ese tiempo no se tomó la caja.
+    toque: { margen: .004, rearme: .02, confirmar: .08 },
     // Al moverla: holgura (unidades) con la hoja, los juguetes y la crayola, y con el borde del piso.
     holgura: .2, bordePiso: .3,
     // Segundos tras soltarla en que tocar una crayola no elige color (la mano se está retirando). Además, la
@@ -170,8 +194,17 @@ export const AJUSTES = {
     // Desplazamiento (m) por debajo del cual soltar cuenta como pulsar (activar el modo) y no como mover.
     pulsar: .012,
     // Suavizado del movimiento (1/s).
-    suavizado: 22
+    suavizado: 22,
+    // Escalar un panel con las dos manos: cada pellizco debe empezar junto a su borde (entre `bordeDentro` m hacia
+    // adentro y `bordeFuera` m hacia afuera de su contorno, a menos de `profundidad` m de su plano). Con una mano
+    // cerca del borde aparecen las cuatro esquinas (AJUSTES.manipulacion.esquinas). Tamaño entre `escalaMin` y
+    // `escalaMax` veces el original.
+    bordeDentro: .035, bordeFuera: .07, profundidad: .08, escalaMin: .6, escalaMax: 2.2
   },
+  // Barra de progreso, frase y flecha de cada escenario: la barra arriba, la frase debajo con `separacion` m entre
+  // ellas, y la flecha a la derecha de la frase con `separacionFlecha` m (medidas al tamaño original del escenario;
+  // crecen y se reducen con él).
+  cierre: { separacion: .02, separacionFlecha: .02 },
   pintura: {
     // La punta pinta al acercarse a menos de `contacto` y deja de pintar al alejarse más de `separacion`.
     contacto: .004, separacion: .009,
@@ -198,7 +231,9 @@ export const AJUSTES = {
       clockDigital: { escala: 1.05 },
       // El teclado es grande desde el inicio: sus teclas (~3 cm) se pulsan cómodamente con la yema de cada dedo.
       keyboard: { escala: 1.6 },
-      wallCalendar: { escala: 1.15 }
+      // El corcho del calendario, al costado derecho del monitor y a su misma profundidad (antes quedaba ~1,4 u más
+      // atrás y costaba alcanzarlo); queda detrás del termo sin tocarlo.
+      wallCalendar: { escala: 1.15, dz: 1.41 }
     },
     // Escritorio (mesa.glb con su textura de madera): cubre la mesa elegida, y como mínimo la composición con
     // `margen` unidades alrededor; `grosor` m de canto. Los objetos se apoyan sobre su cara superior.
@@ -240,7 +275,8 @@ export const AJUSTES = {
     termo: {
       // Agarre envolvente: la palma a menos de `palma` m del eje del termo (además de su radio) y al menos
       // `dedos` puntas de dedo a menos de `puntas` m de su superficie, durante `confirmar` s. Se suelta si
-      // quedan menos de dos puntas cerca durante `soltar` s. El pellizco y el botón lateral siguen sirviendo.
+      // quedan menos de dos puntas cerca durante `soltar` s. Con las manos el pellizco no lo toma (solo
+      // rodeándolo); con controles, el botón lateral.
       palma: .05, puntas: .03, dedos: 3, confirmar: .1, soltar: .25,
       // En la mano (perfil 'envolvente' de agarre.js): el eje del termo sigue los nudillos (la tapa hacia el
       // pulgar) y queda `holgura` m delante de la palma, `haciaDedos` fracción del radio hacia los dedos;
@@ -290,13 +326,35 @@ export const AJUSTES = {
     escalaMax: .09, escalaMin: .075,
     // Ajuste propio de cada objeto respecto de las manos: la radio crece para que sus perillas se puedan girar.
     objetos: { radio: { escala: 1.25 } },
+    // Taza de café (escena/vejez/taza.js): se toma con un pellizco (en el asa o el cuerpo; queda en la mano tal como
+    // se tomó) o rodeándola con toda la mano (perfil 'envolvente' de agarre.js, como el termo: la palma a menos de
+    // `palma` m de su eje y al menos `dedos` puntas a menos de `puntas` m de su superficie durante `confirmar` s;
+    // se suelta si quedan menos de dos puntas durante `soltar` s). Se bebe con el borde a menos de `boca` m de la
+    // boca (estimada `bajoOjos` m bajo los ojos y `delante` m delante) e inclinada más de `inclinacion` rad: el café
+    // baja poco a poco mientras dura el gesto (`beber` s la vacían) y el sorbo de la web suena cada `sorbo` s. El
+    // primer sorbo suma el hito «extra» (el mismo de la radio). Al soltarla vuelve a su plato en `regreso` s.
+    taza: {
+      palma: .045, puntas: .03, dedos: 3, confirmar: .1, soltar: .25,
+      agarre: {
+        sujecion: .55, holgura: .006, haciaDedos: .2, haciaAbajo: 0,
+        izquierda: { desplazamiento: [0, 0, 0] }, derecha: { desplazamiento: [0, 0, 0] },
+        control: { direccion: [0, 0, -1], desplazamiento: [0, -.01, .03] },
+        acomodar: .15, suavizado: 30
+      },
+      boca: .11, bajoOjos: .075, delante: .05, inclinacion: .5,
+      beber: 4, sorbo: 1.4,
+      // Café: baja `profundidad` (fracción del alto de la taza) desde su nivel inicial y se estrecha hasta
+      // `estrechar` de su radio; vacía, la superficie del café desaparece.
+      liquido: { profundidad: .42, estrechar: .8 },
+      regreso: .6
+    },
     // Grosor de la mesa pintada que cubre la mesa real (m) y cuánto excede su borde antes del recorte;
     // cubre la mesa elegida y, como mínimo, la composición con `margenMesa` unidades alrededor.
     grosorMesa: .004, cubrirMesa: 1.25, margenMesa: 1.2,
     // Marco de la ventana: tamaño relativo a la composición y separación detrás de ella (unidades).
     ventana: { escala: .85, detras: 1.2, sobreMesa: .4 },
-    // Barra de progreso y frase final por encima del marco de la ventana (m sobre su borde superior).
-    paneles: { barra: .17, frase: .08, delante: .05 },
+    // Barra de progreso por encima del marco de la ventana (m sobre su borde superior; la frase va debajo de ella).
+    paneles: { barra: .17, delante: .05 },
     aparecer: { mesa: 1.1, objetos: .55, intervalo: .12 },
     // Visión deteriorada al entrar (escena/vejez/vision.js). Todo menos las gafas.
     vision: {

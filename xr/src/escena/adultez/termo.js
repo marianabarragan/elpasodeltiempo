@@ -10,12 +10,13 @@ const ARRIBA = new THREE.Vector3(0, 1, 0);
 /*
  * Termo de café (storyboard 8, corregido tras las pruebas en Quest 3).
  *
- * Agarre con toda la mano. IWSDK solo dispara el agarre con el pellizco (pulgar contra índice) o con el botón
- * lateral, y al envolver un cilindro de ~9 cm el pulgar y el índice no se tocan. Por eso, además de esos dos
- * agarres, se detecta el contacto de la mano con el cuerpo del termo: la palma junto a su eje y al menos tres
- * puntas de dedo alrededor de su superficie durante un instante. No es un reconocedor de posturas: mide
- * distancias entre las articulaciones (las que IWSDK ya lee) y el cilindro. Se suelta al abrir la mano.
- * Sostenido, el termo se coloca en la mano con el perfil 'envolvente' de agarre.js (igual en las dos manos).
+ * Agarre con toda la mano (corrección): con las manos el vaso solo se toma rodeándolo; el pellizco ya no lo
+ * levanta (la mano lo atravesaba). Se detecta el contacto de la mano con el cuerpo del termo: la palma junto a su
+ * eje y al menos tres puntas de dedo alrededor de su superficie durante un instante. No es un reconocedor de
+ * posturas: mide distancias entre las articulaciones (las que IWSDK ya lee) y el cilindro. Se suelta al abrir la
+ * mano. Sostenido, el termo se coloca en la mano con el perfil 'envolvente' de agarre.js (igual en las dos manos) y
+ * la mano dibujada lo rodea (oclusion.js empuja sus articulaciones a la superficie del cilindro, según su diámetro).
+ * Con controles (sin manos) se toma con el botón lateral (agarre de IWSDK).
  *
  * Sacudirlo hace sonar el hielo (sonido-hielo.js) según la fuerza del movimiento; es opcional y no suma.
  * Beber (el hito): acercar la tapa a la boca, estimada desde la pose del visor, e inclinar el termo; suena
@@ -156,11 +157,7 @@ export function crearTermo({ world, manos, termo, entidad, hielo, sonido, cabeza
     // Sostenido con el agarre envolvente (IWSDK no lo marca como Grabbed): bloquea el gesto del escenario.
     get envuelto() { return estado.modo === 'envolvente'; },
     get sostenido() { return !!estado.modo; },
-    habilitar() {
-      estado.habilitado = true;
-      // El pellizco y el botón lateral (IWSDK) también lo toman; la pose en la mano la calcula agarre.js.
-      if (!entidad.hasComponent(OneHandGrabbable)) entidad.addComponent(OneHandGrabbable, { rotate: false, translate: false });
-    },
+    habilitar() { estado.habilitado = true; },
     deshabilitar() {
       estado.habilitado = false;
       world.getSystem(GrabSystem)?.forceRelease(entidad);
@@ -175,6 +172,10 @@ export function crearTermo({ world, manos, termo, entidad, hielo, sonido, cabeza
     // `ocupadas`: manos que sostienen otra cosa (no pueden envolver el termo).
     update(dt, habilitado, ocupadas = []) {
       if (!estado.habilitado) return;
+      // El agarre de IWSDK (pellizco o botón lateral) solo existe con controles: con las manos, solo rodeándolo.
+      const conControl = manos.left.control || manos.right.control;
+      if (conControl && !entidad.hasComponent(OneHandGrabbable)) entidad.addComponent(OneHandGrabbable, { rotate: false, translate: false });
+      if (!conControl && estado.modo !== 'iwsdk' && entidad.hasComponent(OneHandGrabbable)) entidad.removeComponent(OneHandGrabbable);
       if (!estado.modo && habilitado) {
         // Una mano libre que envuelve el termo durante `confirmar` s lo toma.
         const lado = manos.lados.find(l => manos[l].seguida && !ocupadas.includes(l) && (() => { const e = envoltura(manos[l], A.puntas); return e.palmaJunto && e.puntas >= A.dedos; })());

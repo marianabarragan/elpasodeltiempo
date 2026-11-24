@@ -399,6 +399,49 @@ export function crearNinez(world, espacio, base, encaje) {
       if (!empieza || estadoCaja.sostenida || !disponible || !manoLibre(lado)) continue;
       if (enZona(lista[lado].pinza, !lista[lado].seguida)) { tomarCaja(lado); break; }
     }
+    revisarYemas(dt, lista, disponible);
+  }
+
+  // ---------- Elegir color con la yema ----------
+  // Solo cuenta la yema de un dedo que toca la punta de una crayola desde arriba: acercarse, moverse cerca o
+  // pellizcar no eligen ni suenan. Cada yema se arma al alejarse de todas las puntas y elige al tocar una (pasar de
+  // una punta a otra sin levantar el dedo no vuelve a elegir). El color se confirma `toque.confirmar` s después,
+  // si en ese tiempo no se tomó la caja.
+  const PUNTAS_DEDOS = ['thumb-tip', 'index-finger-tip', 'middle-finger-tip', 'ring-finger-tip', 'pinky-finger-tip'];
+  const yemas = new Map();
+  const puntasCrayolas = caja.crayolas.map(() => new THREE.Vector3()), enCrayola = new THREE.Vector3();
+  const toque = { pendiente: null, elecciones: 0, ultimo: null };
+  function revisarYemas(dt, lista, disponible) {
+    const T = C.toque;
+    if (toque.pendiente) {
+      const p = toque.pendiente;
+      if (estadoCaja.sostenida || estadoCaja.bajando || estadoCaja.movimientos !== p.cajas) toque.pendiente = null;
+      else if ((p.t += dt) >= T.confirmar) { toque.pendiente = null; toque.elecciones += 1; ninez.alElegirColor?.(p.indice); }
+    }
+    if (!lista || !escena.visible) return;
+    caja.crayolas.forEach((crayola, i) => { crayola.updateWorldMatrix(true, false); crayola.localToWorld(puntasCrayolas[i].set(0, crayola.userData.puntaY, 0)); });
+    for (const lado of ['left', 'right']) {
+      const mano = lista[lado];
+      for (const nombre of PUNTAS_DEDOS) {
+        const clave = `${lado}:${nombre}`;
+        if (!yemas.has(clave)) yemas.set(clave, { armada: false });
+        const yema = yemas.get(clave), punto = mano?.seguida ? mano.puntos.get(nombre) : null;
+        if (!punto) { yema.armada = false; continue; }
+        const radio = mano.radios.get(nombre) ?? .008;
+        let cerca = -1, distancia = Infinity;
+        puntasCrayolas.forEach((p, i) => { const d = p.distanceTo(punto); if (d < distancia) { distancia = d; cerca = i; } });
+        if (distancia > radio + T.rearme) { yema.armada = true; continue; }
+        if (!yema.armada || distancia > radio + T.margen) continue;
+        // Desde arriba: la yema no queda por debajo de la base del cono de la punta.
+        const crayola = caja.crayolas[cerca];
+        crayola.worldToLocal(enCrayola.copy(punto));
+        if (enCrayola.y < crayola.userData.puntaY - M.punta) continue;
+        yema.armada = false;
+        if (!disponible || mano.pellizco || ninez.cajaOcupada || toque.pendiente) continue;
+        toque.pendiente = { indice: cerca, cajas: estadoCaja.movimientos, t: 0 };
+        toque.ultimo = { lado, nombre, indice: cerca };
+      }
+    }
   }
 
   // Sombras de contacto sobre el piso (y sobre la hoja: quedan apenas por encima de ella).
@@ -452,18 +495,20 @@ export function crearNinez(world, espacio, base, encaje) {
     rings: tocar(rings, 'juguete-rings'), xylophone: tocar(xylophone, 'juguete-xylophone'), crayon: tocar(crayon, 'crayola'),
     caja: entidadCaja, colores: caja.crayolas.map((crayola, i) => tocar(crayola, `color-${i}`, entidadCaja))
   };
-  const tocables = [entidades.rings, entidades.xylophone, ...entidades.colores];
+  // Las crayolas de la caja solo responden al rayo de un control: con las manos se elige color tocando su punta
+  // con la yema (revisarYemas), no con el toque genérico del índice.
+  const tocables = [entidades.rings, entidades.xylophone];
   // Elegir un color y mover la caja son gestos distintos: las crayolas responden al toque del índice y al
   // rayo, nunca al agarre; la caja se toma solo con un pellizco sobre la parte alta de su cuerpo (actualizarCaja),
   // así un toque sobre una crayola o el cartón no la desplaza.
   caja.crayolas.forEach(crayola => { crayola.pointerEventsType = { deny: 'grab' }; });
   const interactuar = activo => {
-    tocables.forEach(entidad => {
-      for (const Componente of [RayInteractable, PokeInteractable]) {
-        if (activo && !entidad.hasComponent(Componente)) entidad.addComponent(Componente);
-        if (!activo && entidad.hasComponent(Componente)) entidad.removeComponent(Componente);
-      }
-    });
+    const poner = (entidad, Componente) => {
+      if (activo && !entidad.hasComponent(Componente)) entidad.addComponent(Componente);
+      if (!activo && entidad.hasComponent(Componente)) entidad.removeComponent(Componente);
+    };
+    tocables.forEach(entidad => [RayInteractable, PokeInteractable].forEach(Componente => poner(entidad, Componente)));
+    entidades.colores.forEach(entidad => poner(entidad, RayInteractable));
     estadoCaja.activa = activo;
     if (!activo) soltarCaja();
   };
@@ -506,6 +551,9 @@ export function crearNinez(world, espacio, base, encaje) {
     get cajaOcupada() { return estadoCaja.sostenida || estadoCaja.bajando || !!estadoCaja.retirandose || performance.now() - estadoCaja.soltadaEn < C.pausaColor * 1000; },
     // Zona de agarre de la caja (para las pruebas) y soltarla desde fuera (al salir del escenario).
     zonaCaja: enZona, soltarCaja,
+    // Elección de color con la yema (la narrativa decide con alElegirColor) y punta de cada crayola (pruebas).
+    toque, alElegirColor: null,
+    puntaCrayola: i => puntasCrayolas[i].clone(),
     color: app.Config.colors.green,
     alTocarTecla: null,
     // Todo oculto y encogido, listo para la transformación.
