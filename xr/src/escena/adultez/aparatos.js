@@ -58,6 +58,14 @@ export function crearAparatos({ props, sonido, alHito, alPantalla }) {
   };
 
   return {
+    // REPETIR: monitor apagado y reloj encendido, como al empezar.
+    reiniciar() {
+      estado.pantalla = false;
+      props.monitorScreen.setPower(false);
+      estado.reloj = true;
+      props.clock.setPower(true);
+      estado.ultimo.monitor = estado.ultimo.reloj = -Infinity;
+    },
     estado, botones, alternarPantalla, alternarReloj,
     // Centro de cada botón en el mundo (para las pruebas y para ubicar ayudas).
     centro: id => {

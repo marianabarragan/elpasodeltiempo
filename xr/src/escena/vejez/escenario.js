@@ -3,7 +3,8 @@ import gsap from 'gsap';
 import { Tocable } from '../../componentes.js';
 import { AJUSTES } from '../../config.js';
 import { crearVision } from './vision.js';
-import { crearSombras } from '../sombras.js';
+import { crearBordeSombra, crearSombras } from '../sombras.js';
+import { crearCanto } from '../canto.js';
 import { crearGafas } from './gafas.js';
 import { crearMacetas } from './macetas.js';
 import { crearRegadera } from './regadera.js';
@@ -93,21 +94,56 @@ export async function crearVejez(world, espacio, base, { sonido, cabeza, manos, 
   };
   const area = { ancho: 2 * medio.x * s, fondo: 2 * medio.z * s };
   const cubierta = props.tableFit?.object ?? table.visual.getObjectByName('table-top');
+  // Superficie 3D (corrección): la mesa pintada tiene el grosor del escritorio de la adultez; su cara de arriba queda a
+  // la altura donde se apoyan los objetos (props.tableTopY) y la de abajo sobre la mesa real.
+  const grosorMesa = AJUSTES.adultez.escritorio.grosor;
   if (props.tableFit) {
     const { width, depth } = props.tableFit;
     const k =Math.max(2 * medio.x / width, 2 * medio.z / depth) * A.cubrirMesa;
-    cubierta.scale.set(k, A.grosorMesa / s / grosor, k);
+    cubierta.scale.set(k, grosorMesa / s / grosor, k);
     cubierta.position.set(centro.x, props.tableTopY, centro.z - depth * k / 2);
   } else if (cubierta) {
-    cubierta.scale.y = A.grosorMesa / s / grosor;
-    cubierta.position.set(centro.x, props.tableTopY - A.grosorMesa / s / 2, centro.z);
+    cubierta.scale.y = grosorMesa / s / grosor;
+    cubierta.position.set(centro.x, props.tableTopY - grosorMesa / s / 2, centro.z);
   }
+  if (cubierta) {
+    props.group.updateMatrixWorld(true);
+    cubierta.position.y += props.tableTopY - cajaLocal(props.group, cubierta).max.y;
+  }
+  props.group.position.y = grosorMesa - props.tableTopY * s + .0005;
   const local = [[1, 0, area.ancho / 2], [-1, 0, area.ancho / 2], [0, 1, area.fondo / 2], [0, -1, area.fondo / 2]]
     .map(([x, z, d]) => new THREE.Plane(new THREE.Vector3(-x, 0, -z), d));
   const planos = local.map(plano => plano.clone());
   const materialesMesa = new Set();
   table.visual.traverse(o => { if (o.isMesh) [].concat(o.material).forEach(m => materialesMesa.add(m)); });
   materialesMesa.forEach(m => { m.clippingPlanes = planos; m.clipShadows = true; m.transparent = true; m.needsUpdate = true; });
+
+  // Canto de la mesa: el color de los costados del propio modelo (su textura trae la cara de arriba con vetas y un
+  // ocre liso para los costados; `A.canto` es un punto de esa zona). Sin la mesa pintada, la textura completa.
+  const uvCanto = props.tableFit ? A.canto : null;
+  const materialCanto = (() => {
+    const original = cubierta ? (() => { let mat = null; cubierta.traverse(o => { if (!mat && o.isMesh) mat = [].concat(o.material)[0]; }); return mat; })() : null;
+    const mat = original ? original.clone() : new THREE.MeshStandardMaterial({ color: '#b98f6a', roughness: .9 });
+    mat.clippingPlanes = null;
+    mat.transparent = true;
+    mat.side = THREE.FrontSide;
+    mat.needsUpdate = true;
+    return mat;
+  })();
+  const hxMesa = area.ancho / 2, hzMesa = area.fondo / 2;
+  const canto = crearCanto({
+    hx: hxMesa, hz: hzMesa, alto: grosorMesa, material: materialCanto,
+    uv: (lado, t, h) => uvCanto ?? [t, h],
+    uvAbajo: () => uvCanto ?? [.5, .5]
+  });
+  canto.position.y = .0005;
+  escena.add(canto);
+  const bordeSombra = crearBordeSombra(area.ancho, area.fondo);
+  bordeSombra.position.y = .0005;
+  escena.add(bordeSombra);
+  // Aparecen con la mesa (su opacidad se anima con la de la mesa pintada).
+  materialesMesa.add(materialCanto);
+  materialesMesa.add(bordeSombra.material);
   const actualizarRecorte = () => {
     escena.updateWorldMatrix(true, false);
     planos.forEach((plano, i) => plano.copy(local[i]).applyMatrix4(escena.matrixWorld));
@@ -218,7 +254,7 @@ export async function crearVejez(world, espacio, base, { sonido, cabeza, manos, 
     // Metros por unidad del escenario, incluida la escala que el usuario le dé con las manos.
     get escala() { return s * escena.scale.x; },
     // Altura de la mesa pintada (m, en el espacio de `escena`): el contorno del escalado va sobre ella.
-    superficie: (techoMesa - props.tableTopY) * s + .001,
+    superficie: props.group.position.y + techoMesa * s + .0005,
     // Área de la mesa pintada (m, en el espacio de `escena`): zona donde las manos toman el escenario.
     area,
     get completa() { return actividad.complete; },
@@ -263,6 +299,20 @@ export async function crearVejez(world, espacio, base, { sonido, cabeza, manos, 
       balanceo.target = actividad.pouring ? 1 : 0;
       app.OldAgeScene.prototype.updateSway.call(prestado, dt);
       actualizarHalos(dt);
+    },
+    // REPETIR: la vista borrosa otra vez, las gafas en la mesa y ningún paso de la actividad hecho.
+    reiniciar() {
+      hechos.clear();
+      actividad.reset();
+      gafas.reiniciar();
+      macetas.reiniciar();
+      regadera.reiniciar();
+      taza.reiniciar();
+      radioPerillas.reiniciar();
+      indicador.ocultar();
+      Object.values(halos).forEach(halo => { halo.value = 0; halo.material.uniforms.uOpacity.value = 0; });
+      Object.assign(balanceo, { amount: 0, target: 0 });
+      vision.nivel = 1;
     },
     ocultar() {
       macetas.deshabilitar();

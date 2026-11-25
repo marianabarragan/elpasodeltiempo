@@ -363,6 +363,17 @@ export function crearComputador({ props, manos, dedos, teclado: sonidoTeclado, a
       revisarTeclas(habilitado);
       animarTeclas(dt);
     },
-    detener() { teclas.forEach(t => { t.dedos = 0; t.objetivo = 0; }); estadosDedo.clear(); }
+    detener() { teclas.forEach(t => { t.dedos = 0; t.objetivo = 0; }); estadosDedo.clear(); },
+    // REPETIR: monitor apagado, correo vacío y teclas arriba.
+    reiniciar() {
+      gsap.killTweensOf(correo.anchos);
+      gsap.killTweensOf(correo);
+      Object.assign(estado, { encendido: false, pulsaciones: 0, completo: false, terminando: false, teclasPulsadas: 0 });
+      Object.assign(correo, { anchos: [0, 0], lineas: 1, texto: 0 });
+      teclas.forEach(t => { t.dedos = 0; t.objetivo = 0; t.hundido = 0; t.ultimo = -Infinity; uniforme.value[t.indice] = 0; });
+      estadosDedo.clear();
+      if (correo.ctx) dibujarCuerpo();
+      if (correo.grupo) correo.grupo.visible = false;
+    }
   };
 }

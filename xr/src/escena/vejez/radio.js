@@ -148,6 +148,8 @@ export function crearRadio({ world, manos, radio, perillas, sonido, alEncender }
     get girando() { return !!estado.giro; },
     habilitar() { estado.habilitada = true; },
     deshabilitar() { estado.habilitada = false; estado.giro = null; perillas.forEach(p => senalar(p, false)); },
+    // REPETIR: apagada.
+    reiniciar() { this.deshabilitar(); estado.encendida = false; },
     // Centro de una perilla en el mundo (pruebas).
     centroPerilla: i => centroDe(perillas[i]).clone(),
     update(dt, habilitado) {

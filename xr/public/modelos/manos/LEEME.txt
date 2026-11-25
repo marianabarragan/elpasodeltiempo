@@ -1,0 +1,4 @@
+Modelos de mano "generic-hand" de WebXR Input Profiles (@webxr-input-profiles/assets 1.0.20,
+https://github.com/immersive-web/webxr-input-profiles), licencia MIT. Son los mismos que IWSDK
+carga desde internet para su mano; aquí van incluidos para que la mano dibujada (src/oclusion.js)
+funcione sin conexión. Solo se usa su malla y su esqueleto; el material lo pone oclusion.js.

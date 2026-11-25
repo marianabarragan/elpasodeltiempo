@@ -133,6 +133,8 @@ export function crearCaja(colores) {
       if (i === elegida) return;
       elevar(i, activo ? alturas.senalada : 0);
     },
+    // Ninguna crayola elegida (REPETIR); sus posiciones las restaura la instantánea del escenario.
+    reiniciar() { elegida = -1; },
     elegir(i, alturas) {
       const anterior = elegida;
       elegida = i;

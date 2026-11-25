@@ -1,0 +1,19 @@
+<!-- Tarjeta del centro del carrusel de aportes (desplegada): título, resumen, texto y foto abajo. Medidas en centímetros. -->
+<style>
+  @font-face { font-family: "Raleway"; src: url("../fuentes/Raleway-Regular.ttf"); font-weight: 400; }
+  @font-face { font-family: "Raleway"; src: url("../fuentes/Raleway-Bold.ttf"); font-weight: 700; }
+  .tarjeta { width: 31; height: 35.3; flex-direction: column; align-items: center; border-radius: 4.5; border-width: 0.12; border-color: #f4f0d8; background-color: #fff9c9; overflow: hidden; }
+  .hojas { position-type: absolute; position-top: 0; position-left: 0; width: 31; height: 35.3; border-radius: 4.5; }
+  .pildora { z-index: 2; margin-top: 3.4; width: 25; padding-top: 0.7; padding-bottom: 0.7; align-items: center; justify-content: center; border-radius: 99; background-color: #c4561f; }
+  .titulo { font-family: "Raleway"; font-weight: 700; font-size: 2.1; color: #fff1dc; text-align: center; }
+  .resumen { margin-top: 2.4; padding-left: 3.2; padding-right: 3.2; font-family: "Raleway"; font-weight: 700; font-size: 1.25; line-height: 1.4; color: #5a3d14; text-align: center; }
+  .detalle { margin-top: 1.8; padding-left: 3.2; padding-right: 3.2; font-family: "Raleway"; font-weight: 400; font-size: 1.1; line-height: 1.45; color: #6a5530; text-align: center; }
+  .foto { position-type: absolute; position-bottom: 0; position-left: 0; width: 31; height: 11.7; border-top-left-radius: 3.4; border-top-right-radius: 3.4; }
+</style>
+<div id="tarjeta" class="tarjeta">
+  <img id="hojas" class="hojas" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" />
+  <div class="pildora"><span id="titulo" class="titulo">COMPARTE TU TIEMPO</span></div>
+  <span id="resumen" class="resumen">UNA CONVERSACIÓN, UNA CAMINATA O UNA TARDE DE JUEGOS PUEDEN CONVERTIRSE EN UN RECUERDO VALIOSO.</span>
+  <span id="detalle" class="detalle">Empieza con algo sencillo y cercano.</span>
+  <img id="foto" class="foto" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" />
+</div>

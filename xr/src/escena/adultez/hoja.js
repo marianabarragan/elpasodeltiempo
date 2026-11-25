@@ -343,6 +343,14 @@ export function crearHoja({ world, props, entidadLapicero, escala, sonido, manos
       if (fila && fila !== estado.ultimaFila) checklist.mark(fila);
       estado.ultimaFila = fila;
     },
+    // REPETIR: la lista sin marcar y la hoja y el lapicero en la mesa (sus poses las restaura la instantánea).
+    reiniciar() {
+      alTerminarLista?.kill();
+      checklist.reset();
+      apagarBrillo();
+      gesto = null;
+      Object.assign(estado, { fase: 'mesa', sostenido: false, terminando: false, ultimaFila: null, contacto: false });
+    },
     detener() {
       alTerminarLista?.kill();
       apagarBrillo();

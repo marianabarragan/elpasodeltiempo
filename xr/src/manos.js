@@ -21,12 +21,12 @@ export function crearManos(world) {
   // `radios`: radio de cada articulación (m), del centro a la piel, en el orden de `puntos` (XRFrame.fillJointRadii;
   // depende del tamaño real de la mano). `conRadios` indica si el visor los entregó en este cuadro.
   const nueva = lado => ({
-    lado, seguida: false, control: false, puntos: new Map(), radios: new Map(), conRadios: false,
+    lado, seguida: false, control: false, puntos: new Map(), giros: new Map(), radios: new Map(), conRadios: false,
     nudillos: new THREE.Vector3(), dedos: new THREE.Vector3(), palma: new THREE.Vector3(),
     pinza: new THREE.Vector3(), centro: new THREE.Vector3(), abierta: false, bandeja: false, pellizco: false
   });
   const manos = { left: nueva('left'), right: nueva('right') };
-  const matriz = new THREE.Matrix4(), a = new THREE.Vector3(), b = new THREE.Vector3();
+  const matriz = new THREE.Matrix4(), mundo = new THREE.Matrix4(), escala = new THREE.Vector3(), a = new THREE.Vector3(), b = new THREE.Vector3();
   const punto = (mano, nombre) => {
     if (!mano.puntos.has(nombre)) mano.puntos.set(nombre, new THREE.Vector3());
     return mano.puntos.get(nombre);
@@ -42,8 +42,11 @@ export function crearManos(world) {
 
   function leerArticulaciones(mano, adaptador, agarre) {
     agarre.updateWorldMatrix(true, false);
+    // Posición y giro de cada articulación en el mundo (el giro lo usa la mano dibujada, oclusion.js).
     adaptador.jointSpaces.forEach((articulacion, i) => {
-      punto(mano, articulacion.jointName).setFromMatrixPosition(matriz.fromArray(adaptador.jointTransforms, i * 16)).applyMatrix4(agarre.matrixWorld);
+      const nombre = articulacion.jointName;
+      if (!mano.giros.has(nombre)) mano.giros.set(nombre, new THREE.Quaternion());
+      mundo.multiplyMatrices(agarre.matrixWorld, matriz.fromArray(adaptador.jointTransforms, i * 16)).decompose(punto(mano, nombre), mano.giros.get(nombre), escala);
     });
     leerRadios(mano, adaptador);
     const p = nombre => mano.puntos.get(nombre);

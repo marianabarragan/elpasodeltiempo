@@ -1,39 +1,36 @@
 import { CanvasTexture, SRGBColorSpace } from 'three';
 import { url } from './rutas.js';
 
-// Lee el motivo de hojas de assets/Diseño/inicio página.svg (el <pattern> de tus diseños).
-let motivo;
-function leerMotivo() {
-  motivo ??= fetch(url('assets/Diseño/inicio página.svg'))
-    .then(respuesta => respuesta.text())
-    .then(texto => {
-      const patron = new DOMParser().parseFromString(texto, 'image/svg+xml').querySelector('pattern');
-      return {
-        ancho: parseFloat(patron.getAttribute('width')), alto: parseFloat(patron.getAttribute('height')),
-        trazos: [...patron.querySelectorAll('path')].map(path => new Path2D(path.getAttribute('d')))
-      };
-    })
-    .catch(() => null);
-  return motivo;
+// Fondo de los paneles de texto (línea visual de la corrección): amarillo claro y, encima, la foto de hojas
+// (public/imagenes/hojas-paneles.jpg) con un 15 % de opacidad.
+// El amarillo (#fff9c9) es el background-color de cada panel; esta textura lleva solo las hojas.
+const FOTO = 'imagenes/hojas-paneles.jpg';
+let foto;
+function cargarFoto() {
+  foto ??= new Promise(resolve => {
+    const imagen = new Image();
+    imagen.onload = () => resolve(imagen);
+    imagen.onerror = () => resolve(null);
+    imagen.src = url(FOTO);
+  });
+  return foto;
 }
 
-// Dibuja el patrón al 12 % sobre transparente para el fondo verde de un panel de anchoCm × altoCm.
-export async function texturaHojas(anchoCm, altoCm, { hojaCm = 4.6, opacidad = .12, color = '#7c652a', pxCm = 22 } = {}) {
-  const hojas = await leerMotivo();
+// Textura del fondo para un panel de anchoCm × altoCm: la foto cubre el panel entero (recortada, sin deformarse).
+// `opacidad`: la de la foto sobre el amarillo (las tarjetas laterales del carrusel la usan más tenue).
+export async function texturaHojas(anchoCm, altoCm, { opacidad = .15, pxCm = 16 } = {}) {
+  const imagen = await cargarFoto();
   const lienzo = document.createElement('canvas');
   lienzo.width = Math.round(anchoCm * pxCm);
   lienzo.height = Math.round(altoCm * pxCm);
   const ctx = lienzo.getContext('2d');
-  if (hojas) {
-    const k = hojaCm * pxCm / hojas.ancho, paso = { x: hojas.ancho * k, y: hojas.alto * k };
-    ctx.fillStyle = color;
+  // El amarillo es el color del panel (background-color en su .uikitml): aquí solo van las hojas, así lo que esté
+  // encima de la imagen (botones) no queda tapado.
+  if (imagen) {
+    const k = Math.max(lienzo.width / imagen.width, lienzo.height / imagen.height);
+    const w = imagen.width * k, h = imagen.height * k;
     ctx.globalAlpha = opacidad;
-    for (let y = -paso.y * .4; y < lienzo.height; y += paso.y) {
-      for (let x = -paso.x * .3; x < lienzo.width + paso.x; x += paso.x) {
-        ctx.setTransform(k, 0, 0, k, x, y);
-        hojas.trazos.forEach(trazo => ctx.fill(trazo));
-      }
-    }
+    ctx.drawImage(imagen, (lienzo.width - w) / 2, (lienzo.height - h) / 2, w, h);
   }
   const textura = new CanvasTexture(lienzo);
   textura.colorSpace = SRGBColorSpace;

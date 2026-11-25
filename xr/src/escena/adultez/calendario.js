@@ -57,6 +57,12 @@ export function crearCalendario({ calendario, dedos, sonido, alArrancar }) {
 
   return {
     estado, arrancar, ancho, alto,
+    // REPETIR: el mes del principio, con la hoja colgada.
+    reiniciar() {
+      Object.assign(estado, { mes: 0, arrastre: null, cayendo: false, arrancadas: 0, avance: 0 });
+      setMonth(0);
+      colgar();
+    },
     // Punto de la hoja del mes en el mundo: u de 0 (izquierda) a 1, v de 0 (arriba) a 1 (abajo).
     puntoEnMundo(u, v) {
       visual.updateWorldMatrix(true, false);

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { setWorldPosition } from '@iwsdk/core';
+import { setWorldPosition, setWorldQuaternion } from '@iwsdk/core';
 import { AJUSTES } from './config.js';
 import { escalarPanel } from './paneles.js';
 import { crearEsquinas } from './escena/esquinas.js';
@@ -48,9 +48,11 @@ function texturaBoton(fondo, flechas) {
  *   modo de mover: el botón se invierte (círculo café, flechas blancas). Con el modo activo, el panel se toma
  *   con el rayo (pellizco o gatillo sobre él) o con un pellizco junto a su superficie, y se arrastra.
  * - También se puede arrastrar directamente desde el botón: se pulsa y, sin soltar, se mueve.
- * - Mover solo cambia la posición: el panel no gira y no sigue la mirada. Al soltarlo queda ahí y el modo se
- *   apaga. Mientras el modo está activo sus botones no responden. Un panel que el usuario acomodó ya no se
- *   reubica solo (paneles.colocar lo respeta).
+ * - Mover cambia la posición; al soltarlo queda ahí y el modo se apaga. Mientras el modo está activo sus botones no
+ *   responden. Un panel que el usuario acomodó ya no se reubica solo (paneles.colocar lo respeta).
+ * - Siempre de frente (corrección): estos paneles giran solos hacia la cara del usuario, mientras se mueven y también
+ *   cuando el usuario camina a su alrededor (en horizontal y en vertical, con un suavizado leve). Al aparecer ya
+ *   están de frente.
  * - Escalar (corrección): con una mano cerca del borde del panel aparecen cuatro esquinas (la misma señal de los
  *   escenarios); un pellizco con cada mano que empiece junto a su borde (no sobre el botón de mover) y separar o
  *   juntar las manos lo amplía o lo reduce desde su centro. Con el modo de mover activo no se escala.
@@ -66,6 +68,20 @@ export function crearMovilidad(world, manos) {
   const pinzas = Object.fromEntries(LADOS.map(lado => [lado, { activo: false, cuadros: 0, panel: null, cerca: null }]));
   const previo = { left: false, right: false };
   const objetivo = new THREE.Vector3(), actual = new THREE.Vector3(), punto = new THREE.Vector3(), local = new THREE.Vector3();
+  const escalaPanel = new THREE.Vector3(), frente = new THREE.Vector3();
+  const ojo = new THREE.Vector3(), centroPanel = new THREE.Vector3(), mira = new THREE.Matrix4(), giroMeta = new THREE.Quaternion(), giroActual = new THREE.Quaternion();
+  const ARRIBA = new THREE.Vector3(0, 1, 0);
+  // Gira el panel (su cara, +Z) hacia los ojos del usuario; `directo`: sin suavizado (al aparecer).
+  function mirarAlUsuario(panel, dt, directo) {
+    world.player.head.getWorldPosition(ojo);
+    panel.objeto.updateWorldMatrix(true, false);
+    panel.objeto.getWorldPosition(centroPanel);
+    if (ojo.distanceToSquared(centroPanel) < 1e-4) return;
+    giroMeta.setFromRotationMatrix(mira.lookAt(ojo, centroPanel, ARRIBA));
+    panel.objeto.getWorldQuaternion(giroActual);
+    if (!directo) giroMeta.copy(giroActual.slerp(giroMeta, 1 - Math.exp(-cfg.girar * dt)));
+    setWorldQuaternion(panel.objeto, giroMeta);
+  }
 
   const posicionDe = (panel, destino) => { panel.objeto.updateWorldMatrix(true, false); return panel.objeto.getWorldPosition(destino); };
   const aspecto = panel => {
@@ -112,10 +128,10 @@ export function crearMovilidad(world, manos) {
     // Centrado bajo el borde inferior del panel, un poco por delante de su superficie.
     boton.position.set(0, -(alto / 2 + cfg.separacion + cfg.diametro / 2), .003);
     panel.objeto.add(boton);
-    // Esquinas de escalado en el plano del panel, un poco por delante; su escala compensa la del panel.
+    // Esquinas de escalado: van en la escena (no dentro del panel, así no cuentan en su tamaño para la mano dibujada)
+    // y cada cuadro se ponen en el plano del panel, un poco por delante.
     const esquinas = crearEsquinas({ renderOrder: 3 });
-    esquinas.grupo.position.z = .004;
-    panel.objeto.add(esquinas.grupo);
+    world.scene.add(esquinas.grupo);
     panel.movil = { boton, material, alto, ancho, espera: 0, objetivo: new THREE.Vector3(), esquinas, senal: 0 };
     panel.moviendo = false;
     panel.movidoPorUsuario = false;
@@ -224,8 +240,11 @@ export function crearMovilidad(world, manos) {
       if (Math.abs(m.senal - meta) < .01) m.senal = meta;
       m.esquinas.opacidad = m.senal;
       if (m.esquinas.grupo.visible) {
-        const k = Math.max(panel.objeto.scale.x, .001);
-        m.esquinas.grupo.scale.setScalar(1 / k);
+        const g = m.esquinas.grupo;
+        panel.objeto.updateWorldMatrix(true, false);
+        panel.objeto.matrixWorld.decompose(g.position, g.quaternion, escalaPanel);
+        g.position.add(frente.set(0, 0, .004).applyQuaternion(g.quaternion));
+        const k = Math.max(escalaPanel.x, .001);
         m.esquinas.colocar((m.ancho ?? .6) * k, m.alto * k, 1);
       }
     }
@@ -267,10 +286,13 @@ export function crearMovilidad(world, manos) {
         if (!panel.visible) {
           if (estado.arrastre?.panel === panel) estado.arrastre = null;
           if (panel.moviendo) modo(panel, false);
+          panel.movil.deFrente = false;
           continue;
         }
+        mirarAlUsuario(panel, dt, !panel.movil.deFrente);
+        panel.movil.deFrente = true;
         if (estado.arrastre?.panel === panel) {
-          // Solo la posición sigue al gesto (con un suavizado leve); el giro y el tamaño no cambian.
+          // La posición sigue al gesto (con un suavizado leve); el giro lo da mirarAlUsuario y el tamaño no cambia.
           setWorldPosition(panel.objeto, posicionDe(panel, actual).lerp(panel.movil.objetivo, alfa));
         } else if (panel.moviendo && (panel.movil.espera += dt) > cfg.espera) {
           modo(panel, false);

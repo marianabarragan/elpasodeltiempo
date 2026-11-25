@@ -49,6 +49,7 @@ export const RECURSOS_ORIGINALES = [
   'audio/ageold/regadera-agua.wav',
   'audio/ageold/bebercafe.mp3',
   'audio/ageold/radio.mp3',
-  // Fuente del patrón de hojas de los paneles.
-  'Diseño/inicio página.svg'
+  // Fotos de las tarjetas del carrusel de aportes (textos.js, APORTES).
+  'photos/tarjetas/acompana.webp',
+  'photos/tarjetas/dona.webp'
 ];

@@ -123,6 +123,11 @@ export function crearRegadera({ world, regadera, entidad, grupo, actividad, mace
       // El agua suena solo mientras cae sobre la planta.
       sonido.setPainting(estado.tiempo - estado.ultimaGota < sostenerSonido);
     },
+    // REPETIR: en su lugar y sin poder tomarla hasta elegir maceta.
+    reiniciar() {
+      this.detener();
+      Object.assign(estado, { habilitada: false, sostenida: false, inclinacion: 0, cerca: false, tiempo: 0, ultimaGota: -Infinity });
+    },
     detener() {
       actividad.pouring = false;
       gotas.forEach(gota => { gota.viva = false; gota.malla.visible = false; });

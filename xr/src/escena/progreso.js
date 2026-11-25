@@ -20,6 +20,12 @@ export async function crearProgreso(world, espacio, { sonido, alCompletar, Logic
     marcar: paso => logica.mark(paso),
     mostrar(posicion, cabeza) { colocar(panel, posicion, cabeza); actualizarIcono(); return mostrar(panel); },
     ocultar: () => ocultar(panel),
+    // REPETIR: la barra vuelve a 0 % (lógica de la web: reset).
+    reiniciar() {
+      logica.reset?.();
+      dibujado = -1;
+      if (panel.visible) ocultar(panel);
+    },
     // Misma geometría que la barra web: relleno de 2,7 cm más 31,5 cm por el avance.
     update() {
       const avance = logica.shown.value;

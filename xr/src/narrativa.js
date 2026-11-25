@@ -25,6 +25,8 @@ import { crearProgreso } from './escena/progreso.js';
 import { crearFinal } from './escena/final.js';
 import { crearVejez, prepararVejez } from './escena/vejez/escenario.js';
 import { crearAdultez, prepararAdultez, progresoAdultez } from './escena/adultez/escenario.js';
+import { crearAportes } from './escena/aportes.js';
+import { restaurarInstantanea, tomarInstantanea } from './escena/instantanea.js';
 import { crearSonido } from './sonido.js';
 
 const ETAPAS = ['childhood', 'adulthood', 'oldage'];
@@ -92,7 +94,7 @@ export async function iniciarExperiencia(world) {
         { objeto: i.pot2.root, libre: !enLaMano(v.entidades.pot2) }, { objeto: i.wateringCan.root, libre: !enLaMano(v.entidades.regadera) },
         { objeto: c.radio.root, libre: !v.radio.girando }, { objeto: c.coffeeCup.root }, { objeto: v.taza.raiz, libre: !v.taza.sostenido }, { objeto: c.window.root }];
     }
-    if (e.fase === 'introduccion' && e.reloj) return [{ objeto: e.reloj.soporte, libre: !enLaMano(e.reloj.entidad) }];
+    if ((e.fase === 'introduccion' || e.fase === 'aportes') && e.reloj) return [{ objeto: e.reloj.soporte, libre: !enLaMano(e.reloj.entidad) }];
     return [];
   }
   // Alguna mano sostiene un objeto del escenario (crayola, caja, lapicero, vaso, maceta, regadera…) o un
@@ -215,19 +217,38 @@ export async function iniciarExperiencia(world) {
     movilidad.registrar(e.intro, { alto: .33, ancho: .62 });
     alPulsar(e.intro, 'inicia', iniciarRecorrido);
     e.tablero = crearTablero(world, espacio);
-    const ojo = cabezaLocal(espacio, cabeza());
     // Reloj a la derecha sobre la mesa; pregunta flotando frente al usuario, a la altura de lectura.
-    const x = limitar(espacio.ancho * .3, .12, espacio.ancho / 2 - .1);
-    e.reloj.soporte.position.set(x, 0, -espacio.fondo * .1);
-    e.reloj.soporte.rotation.y = Math.atan2(ojo.x - x, ojo.z + espacio.fondo * .1);
-    const altura = limitar(ojo.y - .2, AJUSTES.intro.panelMin, AJUSTES.intro.panelMax);
-    colocar(e.intro, aMundo(espacio, -espacio.ancho * .06, altura, -espacio.fondo * AJUSTES.intro.panelFondo), cabeza());
+    ubicarReloj();
+    colocar(e.intro, lugarPregunta(), cabeza());
     await e.reloj.aparecer();
     mostrar(e.intro);
     // El reloj se puede agarrar, levantar y girar mientras la pregunta espera.
     e.reloj.habilitarAgarre(true);
   }
   sistema.manejadores.set('reloj', { sostener: activo => e.reloj?.sostener(activo) });
+
+  // Reloj de arena a la derecha sobre la mesa, mirando al usuario (pregunta inicial e inicio de los aportes).
+  function ubicarReloj() {
+    const espacio = e.espacio, ojo = cabezaLocal(espacio, cabeza());
+    const x = limitar(espacio.ancho * .3, .12, espacio.ancho / 2 - .1);
+    e.reloj.soporte.position.set(x, 0, -espacio.fondo * .1);
+    e.reloj.soporte.quaternion.identity();
+    e.reloj.soporte.rotation.y = Math.atan2(ojo.x - x, ojo.z + espacio.fondo * .1);
+  }
+  // Lugar de la pregunta inicial (y de los paneles de los aportes): flotando frente al usuario, a la altura de lectura.
+  function lugarPregunta() {
+    const espacio = e.espacio, ojo = cabezaLocal(espacio, cabeza());
+    const altura = limitar(ojo.y - .2, AJUSTES.intro.panelMin, AJUSTES.intro.panelMax);
+    return aMundo(espacio, -espacio.ancho * .06, altura, -espacio.fondo * AJUSTES.intro.panelFondo);
+  }
+
+  // Lugar del inicio de los aportes: el panel (60 cm de ancho) queda a la izquierda del reloj de arena, no delante de él.
+  function lugarAportes() {
+    const espacio = e.espacio, ojo = cabezaLocal(espacio, cabeza());
+    const altura = limitar(ojo.y - .2, AJUSTES.intro.panelMin, AJUSTES.intro.panelMax);
+    const reloj = limitar(espacio.ancho * .3, .12, espacio.ancho / 2 - .1);
+    return aMundo(espacio, reloj - .3 - .15, altura, -espacio.fondo * AJUSTES.intro.panelFondo);
+  }
 
   async function iniciarRecorrido() {
     if (e.fase !== 'introduccion') return;
@@ -292,6 +313,7 @@ export async function iniciarExperiencia(world) {
     ninez.alTocarTecla = indice => { if (e.fase === 'ninez' && !e.manipNinez.activo) sonido.nota(indice); };
     // El bucle XR usa e.ninez solo cuando progreso y crayola ya existen.
     e.ninez = ninez;
+    e.instantaneas = { ...e.instantaneas, ninez: tomarInstantanea(ninez.escena) };
     sistema.manejadores.set('juguete-rings', {
       senalar: activo => { if (e.fase === 'ninez') e.ninez.senalarJuguete('rings', activo); },
       presionar: () => { if (e.fase === 'ninez') sonido.efecto('rings'); }
@@ -410,12 +432,13 @@ export async function iniciarExperiencia(world) {
     const base = await prepararAdultez();
     [e.progresoAdultez, e.finalAdultez] = await Promise.all([
       crearProgreso(world, espacio, { sonido, alCompletar: revisarFinAdultez, Logica: progresoAdultez() }),
-      // Frase en panel flotante con el color de .adulthood-message en la web; el texto es ADULTHOOD_FINAL_PHRASE.
-      crearFinal(world, espacio, { alContinuar: salirDeAdultez, texto: ADULTHOOD_FINAL_PHRASE, colorTexto: '#4a3520', tarjeta: { maxWidth: 58 } })
+      // Frase en panel flotante con el mismo estilo de los demás paneles de texto; el texto es ADULTHOOD_FINAL_PHRASE.
+      crearFinal(world, espacio, { alContinuar: salirDeAdultez, texto: ADULTHOOD_FINAL_PHRASE, tarjeta: { maxWidth: 58 } })
     ]);
     e.adultez = crearAdultez(world, espacio, base, {
       sonido: sonido.adultez, hielo: sonido.hielo, teclado: sonido.teclado, cabeza, manos, alHito: paso => { e.progresoAdultez.marcar(paso); revisarFinAdultez(); }
     });
+    e.instantaneas = { ...e.instantaneas, adultez: tomarInstantanea(e.adultez.escena) };
     e.manipAdultez = crearManipulacion({ manos, espacio, raiz: e.adultez.escena, area: e.adultez.area, superficie: e.adultez.superficie, cabeza });
     Object.entries(e.adultez.manejadores).forEach(([id, manejador]) => sistema.manejadores.set(id, {
       presionar: () => { if (e.fase === 'adultez' && !e.bloqueado) manejador.presionar?.(); },
@@ -483,15 +506,15 @@ export async function iniciarExperiencia(world) {
     const base = await prepararVejez();
     [e.progresoVejez, e.finalVejez] = await Promise.all([
       crearProgreso(world, espacio, { sonido, alCompletar: revisarFinVejez, Logica: app.OldAgeProgress }),
-      // Frase con los colores de .oldage-message en la web.
+      // Frase con el mismo estilo de los demás paneles de texto.
       crearFinal(world, espacio, {
-        alContinuar: salirDeVejez, texto: app.Config.oldage.message, colorTexto: '#5a323a',
-        tarjeta: { backgroundColor: '#fffbef', borderWidth: .2, borderColor: '#fadd87', maxWidth: 64 }
+        alContinuar: salirDeVejez, texto: app.Config.oldage.message, tarjeta: { maxWidth: 64 }
       })
     ]);
     e.vejez = await crearVejez(world, espacio, base, {
       sonido: sonido.vejez, cabeza, manos, luz: () => transicion.nivelLuz, alHito: paso => e.progresoVejez.marcar(paso), alTerminarActividad: revisarFinVejez
     });
+    e.instantaneas = { ...e.instantaneas, vejez: tomarInstantanea(e.vejez.escena) };
     e.manipVejez = crearManipulacion({ manos, espacio, raiz: e.vejez.escena, area: e.vejez.area, superficie: e.vejez.superficie, cabeza });
     Object.entries(e.vejez.manejadores).forEach(([id, manejador]) => sistema.manejadores.set(id, {
       senalar: activo => { if (e.fase === 'vejez') manejador.senalar?.(activo); },
@@ -508,24 +531,72 @@ export async function iniciarExperiencia(world) {
     mostrarFinal(e.finalVejez, e.manipVejez, e.progresoVejez);
   }
 
-  // Punto de salida del escenario 3. La pantalla siguiente (el cierre) aún no existe en realidad mixta:
-  // si experiencia.alSalirDeVejez está definido, la flecha lo llama; mientras tanto se vuelve al tablero.
+  // La flecha del escenario 3 abre la sección de aportes (corrección): el mismo paso de luz y, sobre la mesa, el panel
+  // de inicio con el reloj de arena a su derecha.
   async function salirDeVejez() {
     if (e.bloqueado || e.fase !== 'vejez') return;
-    if (experiencia.alSalirDeVejez) { experiencia.alSalirDeVejez(); return; }
     e.bloqueado = true;
-    e.fase = 'regreso';
+    e.fase = 'transicion';
     e.finalVejez.ocultar();
     await transicion.cubrir();
     e.vejez.ocultar();
     e.progresoVejez.ocultar();
     sonido.salirVejez();
+    await entrarAportes();
+  }
+
+  // ---------- Sección de aportes ----------
+  async function entrarAportes() {
+    e.aportes ??= await crearAportes(world, e.espacio, {
+      manos, movilidad,
+      reloj: {
+        mostrar: () => { ubicarReloj(); e.reloj.aparecer().then(() => { if (e.fase === 'aportes') e.reloj.habilitarAgarre(true); }); },
+        ocultar: () => { if (e.reloj.soporte.visible) e.reloj.desaparecer(); }
+      },
+      alRepetir: repetirExperiencia,
+      alSalir: () => world.session?.end()
+    });
+    await transicion.pausa();
+    e.fase = 'aportes';
+    e.aportes.iniciar(lugarAportes());
+    await transicion.destapar();
+    e.bloqueado = false;
+  }
+
+  // REPETIR: la experiencia vuelve a empezar desde el tablero, con la segunda y la tercera foto con candado y los
+  // tres escenarios sin resolver.
+  async function repetirExperiencia() {
+    if (e.bloqueado || e.fase !== 'aportes') return;
+    e.bloqueado = true;
+    e.fase = 'transicion';
+    e.aportes.ocultarTodo();
+    if (e.reloj.soporte.visible) e.reloj.desaparecer();
+    await transicion.cubrir();
+    reiniciarEscenarios();
+    e.tablero.reiniciar();
     e.tablero.mostrar();
     await transicion.pausa();
     await transicion.destapar();
     e.tablero.habilitarInteraccion();
     e.fase = 'tablero';
     e.bloqueado = false;
+  }
+
+  // Cada escenario vuelve a su estado inicial (sin progreso, objetos en su lugar) y su manipulación se reinicia.
+  function reiniciarEscenarios() {
+    e.completo = false;
+    [['ninez', 'manipNinez', 'progreso', 'final'], ['adultez', 'manipAdultez', 'progresoAdultez', 'finalAdultez'], ['vejez', 'manipVejez', 'progresoVejez', 'finalVejez']]
+      .forEach(([clave, manip, progreso, final]) => {
+        if (!e[clave]) return;
+        e[final]?.ocultar();
+        e[progreso]?.reiniciar?.();
+        e[clave].reiniciar?.();
+        if (e.instantaneas?.[clave]) restaurarInstantanea(e.instantaneas[clave]);
+        e[manip]?.reiniciar?.();
+        e[clave].terminada = false;
+      });
+    e.crayola?.reiniciar?.();
+    e.colorPulsado = e.colorPendiente = null;
   }
 
   // ---------- Bucle XR ----------
@@ -537,6 +608,7 @@ export async function iniciarExperiencia(world) {
     manual.actualizar();
     manoSuperficie.actualizar(dt);
     movilidad.actualizar(dt);
+    e.aportes?.actualizar(dt);
     e.sombrasMesa?.actualizar();
     e.reloj?.paso(dt);
     if (e.tablero) e.tablero.update(cabeza());
@@ -588,13 +660,16 @@ export async function iniciarExperiencia(world) {
     if (!inmersivo && e.fase !== 'entrada') location.reload();
   });
 
-  const experiencia = { world, sistema, estado: e, base, sonido, manos, oclusion, movilidad, manoSuperficie, alSalirDeVejez: null };
+  const experiencia = { world, sistema, estado: e, base, sonido, manos, oclusion, movilidad, manoSuperficie };
   // Solo en desarrollo: abre el escenario 2 o el 3 desde el tablero sin pasar por la foto (pruebas automáticas).
   if (import.meta.env.DEV) {
     // Ajustes a mano para el emulador (corre a ~1 cuadro por segundo y algunos tiempos no se alcanzan).
     experiencia.ajustes = AJUSTES;
     experiencia.abrirAdultez = () => (e.fase === 'tablero' && !e.bloqueado ? entrarAdultez() : null);
     experiencia.abrirVejez = () => (e.fase === 'tablero' && !e.bloqueado ? entrarVejez() : null);
+    experiencia.reiniciarEscenarios = reiniciarEscenarios;
+    // Abre la sección de aportes desde la vejez sin terminarla (pruebas automáticas).
+    experiencia.abrirAportes = () => (e.fase === 'vejez' && !e.bloqueado ? (e.bloqueado = true, e.fase = 'transicion', transicion.cubrir().then(() => { e.vejez.ocultar(); e.progresoVejez.ocultar(); sonido.salirVejez(); return entrarAportes(); })) : null);
   }
   return experiencia;
 }

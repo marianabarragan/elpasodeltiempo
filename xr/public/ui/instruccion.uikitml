@@ -1,11 +1,12 @@
-<!-- Instrucción breve para elegir la superficie. Medidas en centímetros. -->
+<!-- Instrucción breve para elegir la superficie, con el estilo de los paneles de texto (corrección): fondo de hojas,
+     título naranja y texto café en Raleway. Medidas en centímetros. -->
 <style>
-  @font-face { font-family: "Barlow"; src: url("../fuentes/Barlow-Bold.ttf"); font-weight: 700; }
-  @font-face { font-family: "Barlow"; src: url("../fuentes/Barlow-Light.ttf"); font-weight: 300; }
-  .panel { width: 46; height: 14; flex-direction: column; align-items: center; justify-content: center; gap: 1.2; padding-left: 3; padding-right: 3; border-radius: 3; background-color: #d3e59d; overflow: hidden; }
-  .hojas { position-type: absolute; position-top: 0; position-left: 0; width: 46; height: 14; }
-  .texto { font-family: "Barlow"; font-weight: 700; font-size: 2.5; line-height: 1.2; color: #6b440b; text-align: center; }
-  .detalle { font-family: "Barlow"; font-weight: 300; font-size: 1.8; line-height: 1.2; color: #6b440b; text-align: center; }
+  @font-face { font-family: "Raleway"; src: url("../fuentes/Raleway-SemiBold.ttf"); font-weight: 600; }
+  @font-face { font-family: "Raleway"; src: url("../fuentes/Raleway-ExtraBold.ttf"); font-weight: 800; }
+  .panel { width: 46; height: 14; flex-direction: column; align-items: center; justify-content: center; gap: 1.1; padding-left: 3; padding-right: 3; border-radius: 4; border-width: 0.15; border-color: #f4f2d8; background-color: #fff9c9; overflow: hidden; }
+  .hojas { position-type: absolute; position-top: 0; position-left: 0; width: 46; height: 14; border-radius: 4; }
+  .texto { font-family: "Raleway"; font-weight: 800; font-size: 2.45; line-height: 1.2; color: #c4561f; text-align: center; }
+  .detalle { font-family: "Raleway"; font-weight: 600; font-size: 1.7; line-height: 1.3; color: #5c3d10; text-align: center; }
 </style>
 <div class="panel">
   <img id="hojas" class="hojas" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" />

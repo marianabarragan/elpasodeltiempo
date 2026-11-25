@@ -79,6 +79,12 @@ export function crearMacetas({ world, macetas, entidades, destino, mantel, sonid
       const cerca = distancia(id) <= iman;
       if (cerca !== estado.cerca) { estado.cerca = cerca; avivar(cerca); }
     },
-    deshabilitar() { estado.habilitadas = false; ids.forEach(id => agarrable(id, false)); }
+    deshabilitar() { estado.habilitadas = false; ids.forEach(id => agarrable(id, false)); },
+    // REPETIR: ninguna maceta elegida y el mantel sin brillo.
+    reiniciar() {
+      this.deshabilitar();
+      Object.assign(estado, { elegida: null, sostenida: null, cerca: false });
+      brillo.forEach(material => { gsap.killTweensOf(material); material.emissiveIntensity = 0; });
+    }
   };
 }

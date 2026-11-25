@@ -2,6 +2,31 @@ import * as THREE from 'three';
 import { GrabSystem } from '@iwsdk/core';
 
 const ABAJO = new THREE.Vector3(0, -1, 0);
+const DEDOS_LARGOS = ['index', 'middle', 'ring', 'pinky'];
+
+/*
+ * Agarre con toda la mano (vaso y taza), corrección: el objeto se suelta solo cuando la mano se abre claramente (al
+ * menos `A.dedosAbiertos` dedos estirados: la punta a más de `A.abrir` veces la distancia de su nudillo a la muñeca)
+ * durante `A.soltar` s, o cuando el visor pierde la mano más de `A.perdida` s. Ya no depende de cuántas puntas
+ * quedan cerca de su superficie (con la mano cerrada el visor pierde de vista algunos dedos y el objeto se caía).
+ * Devuelve true si debe soltarse; `estado.suelto` y `estado.sinMano` llevan los tiempos.
+ */
+export function seSuelta(mano, estado, dt, A) {
+  if (!mano?.seguida) {
+    estado.suelto = 0;
+    estado.sinMano = (estado.sinMano ?? 0) + dt;
+    return estado.sinMano >= A.perdida;
+  }
+  estado.sinMano = 0;
+  const muneca = mano.puntos.get('wrist');
+  const abiertos = muneca ? DEDOS_LARGOS.filter(dedo => {
+    const nudillo = mano.puntos.get(`${dedo}-finger-phalanx-proximal`), punta = mano.puntos.get(`${dedo}-finger-tip`);
+    return nudillo && punta && punta.distanceTo(muneca) > A.abrir * nudillo.distanceTo(muneca);
+  }).length : 0;
+  if (abiertos >= A.dedosAbiertos) { estado.suelto += dt; return estado.suelto >= A.soltar; }
+  estado.suelto = 0;
+  return false;
+}
 
 /*
  * Pose de un objeto en la mano que lo sostiene. El agarre sigue siendo el de IWSDK (pellizco o botón lateral

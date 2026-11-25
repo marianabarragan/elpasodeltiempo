@@ -134,11 +134,11 @@ export const AJUSTES = {
     compacta: { x: -8.1, z: 1.6, giro: .14 },
     // Elevación de una crayola señalada (solo con el rayo de un control) y de la elegida.
     senalada: .16, elegida: .32,
-    // Elegir color con la mano: solo cuenta la yema de un dedo que toca la punta de una crayola desde arriba. La yema
-    // (su centro) debe quedar a menos de su radio más `margen` m de la punta, y no más abajo que la base del cono.
-    // Para volver a elegir, esa yema se aleja `rearme` m de todas las puntas. El color se confirma `confirmar` s
-    // después del toque si en ese tiempo no se tomó la caja.
-    toque: { margen: .004, rearme: .02, confirmar: .08 },
+    // Elegir color con la mano (escena/ninez.js): solo la punta del índice, sobre los últimos `largo` m de la crayola
+    // (la parte que sobresale de la caja), a menos de su radio más `alcance` m, quedándose `sostener` s; mientras tanto
+    // la crayola se asoma en silencio. Una vez tocada, la suelta al alejarse `histeresis` m más; para volver a elegir
+    // la misma, el índice se aleja `rearme` m más de ella.
+    toque: { largo: .018, alcance: .01, histeresis: .005, sostener: .2, rearme: .012 },
     // Al moverla: holgura (unidades) con la hoja, los juguetes y la crayola, y con el borde del piso.
     holgura: .2, bordePiso: .3,
     // Segundos tras soltarla en que tocar una crayola no elige color (la mano se está retirando). Además, la
@@ -158,22 +158,25 @@ export const AJUSTES = {
   // blanco, sin recortar lo virtual alrededor de la mano real. Se arma cada cuadro con las 25 articulaciones de
   // WebXR Hand Input y el radio que el visor da a cada una. No se usa el sensor de profundidad del visor.
   manos: {
-    // Multiplica el radio de cada articulación: menos de 1 ajusta la silueta, más de 1 la engruesa.
+    // Multiplica el radio de cada articulación (grosor de los dedos dibujados): más de 1 los engruesa.
     ajuste: 1,
-    // La palma es más ancha que gruesa: su grosor es esta fracción del radio de sus articulaciones.
-    aplanado: .62,
-    // Membrana entre el pulgar y el índice (fracción del radio del pulgar).
-    membrana: .55,
-    // Contorno blanco que marca el borde de los dedos (grosor en m y opacidad; 0 lo apaga).
-    contorno: { grosor: .0025, opacidad: .7 },
-    // Silueta de la mano sobre lo virtual (paneles, objetos, superficies): color y opacidad. Sobre la habitación
-    // real no se pinta. Opacidad 0 la apaga.
-    silueta: { color: '#2b2620', opacidad: .42 },
+    // Grosor del modelo de mano respecto de su forma original, según el radio real de cada articulación: límites para
+    // los dedos y para la palma (el ancho de la palma ya lo dan las posiciones reales de sus huesos).
+    grosor: { dedos: [.75, 1.6], palma: [.85, 1.25] },
+    // Contorno blanco alrededor de la mano (grosor en m y opacidad; 0 lo apaga); se desvanece hacia la muñeca entre
+    // esas dos distancias (m) desde ella, como en las manos de Meta.
+    contorno: { grosor: .0022, opacidad: .95, desvanecer: [.03, .08] },
+    // Relleno oscuro de la mano sobre lo virtual (paneles, objetos, superficies), como en las manos de Meta; sobre la
+    // habitación real no se pinta. Se desvanece hacia la muñeca entre esas dos distancias (m). Opacidad 0 lo apaga.
+    relleno: { color: '#17130f', opacidad: .8, desvanecer: [.02, .075] },
     // Se detiene en la cara de paneles, tablero y superficie base del escenario: margen (m) alrededor de cada cara,
     // hundimiento máximo (m) que se corrige (más hondo, la mano queda oculta detrás) y suavizado al soltarse (1/s).
     // Con la muñeca detrás de un panel (a menos de `detras` m) y dentro de su contorno, la mano no se dibuja.
     // Los objetos 3D cuentan si alguna de sus piezas está a menos de `alcance` m de la muñeca.
-    superficie: { margen: .02, max: .12, suavizado: 25, detras: .6, alcance: .35 }
+    superficie: { margen: .02, max: .12, suavizado: 25, detras: .6, alcance: .35 },
+    // Postura de agarre (vaso y taza rodeados con toda la mano): separación extra (m) entre la piel de los dedos y el
+    // objeto, cuánto pueden enrollarse como máximo (rad) y rapidez de la mezcla al tomarlo y soltarlo (1/s).
+    agarre: { holgura: .002, vueltaMax: 4.4, rapidez: 8 }
   },
   // Sombras de contacto: una mancha suave bajo cada objeto (sin mapas de sombra ni un segundo dibujo de la
   // escena). Se encoge y se aclara cuando el objeto se levanta.
@@ -193,14 +196,20 @@ export const AJUSTES = {
     alcance: .035, alcancePanel: .05, espera: 8,
     // Desplazamiento (m) por debajo del cual soltar cuenta como pulsar (activar el modo) y no como mover.
     pulsar: .012,
-    // Suavizado del movimiento (1/s).
-    suavizado: 22,
+    // Suavizado del movimiento (1/s) y rapidez con que giran para quedar de frente al usuario (1/s).
+    suavizado: 22, girar: 10,
     // Escalar un panel con las dos manos: cada pellizco debe empezar junto a su borde (entre `bordeDentro` m hacia
     // adentro y `bordeFuera` m hacia afuera de su contorno, a menos de `profundidad` m de su plano). Con una mano
     // cerca del borde aparecen las cuatro esquinas (AJUSTES.manipulacion.esquinas). Tamaño entre `escalaMin` y
     // `escalaMax` veces el original.
     bordeDentro: .035, bordeFuera: .07, profundidad: .08, escalaMin: .6, escalaMax: 2.2
   },
+  // Sección de aportes (escena/aportes.js). Carrusel: distancia (m) entre el centro de una tarjeta y el de la siguiente,
+  // altura de las tarjetas respecto del centro del marco y separación por delante de él. Una punta de dedo cuenta como
+  // apoyada a menos de su radio más `contacto` m delante de la cara del marco (o hasta `detras` m por detrás); durante el
+  // arrastre se tolera `holgura` m más. Un gesto que se mueve menos de `toqueMax` m es un toque. `ajustar`: segundos que
+  // tarda en acomodarse en una tarjeta.
+  aportes: { paso: .294, alturaTarjetas: -.037, delante: .006, contacto: .012, detras: .03, holgura: .01, toqueMax: .015, ajustar: .35 },
   // Barra de progreso, frase y flecha de cada escenario: la barra arriba, la frase debajo con `separacion` m entre
   // ellas, y la flecha a la derecha de la frase con `separacionFlecha` m (medidas al tamaño original del escenario;
   // crecen y se reducen con él).
@@ -222,19 +231,28 @@ export const AJUSTES = {
     escalaMax: .085, escalaMin: .07,
     // Ajuste propio de cada objeto respecto de la manos (no un mismo porcentaje para todos): factor de tamaño
     // (desde su base, sin despegarlo del escritorio) y desplazamiento en unidades para que nada se cruce.
+    // Acomodo del escritorio según el dibujo de la corrección: monitor grande al centro y el teclado delante; el reloj a
+    // la izquierda del monitor y la repisa con los libros encima de él; el corcho con el calendario a la derecha, a la
+    // altura de la parte alta del monitor; el vaso a la derecha del teclado; el lapicero en vertical entre la hoja y el
+    // teclado. `giro`: giro (rad) alrededor de la vertical; `dy`: desplazamiento hacia arriba (unidades).
     objetos: {
-      // Hoja, lapicero y termo se apartan del teclado grande (ver keyboard).
-      checklistPaper: { escala: 1.15, dx: -1.6, dz: 1.5 },
-      pen: { escala: 1.2, dx: .08, dz: .85 },
+      // La hoja se corre a la izquierda para dejar sitio al lapicero entre ella y el teclado.
+      checklistPaper: { escala: 1.15, dx: -2.3, dz: 1.5 },
+      pen: { escala: 1.2, dx: -1.98, dz: .85, giro: -Math.PI / 2 },
       // El termo conserva su tamaño: a 0,07–0,085 m/u mide 8–9,8 cm de ancho, lo que una mano alcanza a envolver.
-      coffeeThermos: { escala: 1, dx: 1.3 },
-      clockDigital: { escala: 1.05 },
+      coffeeThermos: { escala: 1, dx: 1.3, dz: .6 },
+      clockDigital: { escala: 1.05, dx: -1.4 },
       // El teclado es grande desde el inicio: sus teclas (~3 cm) se pulsan cómodamente con la yema de cada dedo.
       keyboard: { escala: 1.6 },
+      // El monitor crece lo mismo que el teclado (la proporción original entre los dos) y se corre hacia atrás para
+      // quedar detrás del teclado.
+      monitor: { escala: 1.6, dz: -.65 },
       // El corcho del calendario, al costado derecho del monitor y a su misma profundidad (antes quedaba ~1,4 u más
       // atrás y costaba alcanzarlo); queda detrás del termo sin tocarlo.
-      wallCalendar: { escala: 1.15, dz: 1.41 }
+      wallCalendar: { escala: 1.15, dx: 1.9, dy: 3.27, dz: .8 }
     },
+    // Repisa con los libros (suspendida): a la izquierda del monitor, sobre el reloj.
+    repisa: { dx: -2.2, dy: .8 },
     // Escritorio (mesa.glb con su textura de madera): cubre la mesa elegida, y como mínimo la composición con
     // `margen` unidades alrededor; `grosor` m de canto. Los objetos se apoyan sobre su cara superior.
     escritorio: { grosor: .03, margen: 1.2 },
@@ -274,10 +292,12 @@ export const AJUSTES = {
     },
     termo: {
       // Agarre envolvente: la palma a menos de `palma` m del eje del termo (además de su radio) y al menos
-      // `dedos` puntas de dedo a menos de `puntas` m de su superficie, durante `confirmar` s. Se suelta si
-      // quedan menos de dos puntas cerca durante `soltar` s. Con las manos el pellizco no lo toma (solo
-      // rodeándolo); con controles, el botón lateral.
+      // `dedos` puntas de dedo a menos de `puntas` m de su superficie, durante `confirmar` s. Con las manos el pellizco
+      // no lo toma (solo rodeándolo); con controles, el botón lateral.
       palma: .05, puntas: .03, dedos: 3, confirmar: .1, soltar: .25,
+      // Se suelta solo al abrir la mano: `dedosAbiertos` dedos con la punta a más de `abrir` veces la distancia de su
+      // nudillo a la muñeca, durante `soltar` s (o si el visor pierde la mano más de `perdida` s).
+      abrir: 1.75, dedosAbiertos: 3, perdida: .8,
       // En la mano (perfil 'envolvente' de agarre.js): el eje del termo sigue los nudillos (la tapa hacia el
       // pulgar) y queda `holgura` m delante de la palma, `haciaDedos` fracción del radio hacia los dedos;
       // la mano lo sujeta a `sujecion` de su altura desde la base. Ajuste fino por mano en metros.
@@ -329,12 +349,12 @@ export const AJUSTES = {
     // Taza de café (escena/vejez/taza.js): se toma con un pellizco (en el asa o el cuerpo; queda en la mano tal como
     // se tomó) o rodeándola con toda la mano (perfil 'envolvente' de agarre.js, como el termo: la palma a menos de
     // `palma` m de su eje y al menos `dedos` puntas a menos de `puntas` m de su superficie durante `confirmar` s;
-    // se suelta si quedan menos de dos puntas durante `soltar` s). Se bebe con el borde a menos de `boca` m de la
+    // se suelta al abrir la mano, como el termo). Se bebe con el borde a menos de `boca` m de la
     // boca (estimada `bajoOjos` m bajo los ojos y `delante` m delante) e inclinada más de `inclinacion` rad: el café
     // baja poco a poco mientras dura el gesto (`beber` s la vacían) y el sorbo de la web suena cada `sorbo` s. El
     // primer sorbo suma el hito «extra» (el mismo de la radio). Al soltarla vuelve a su plato en `regreso` s.
     taza: {
-      palma: .045, puntas: .03, dedos: 3, confirmar: .1, soltar: .25,
+      palma: .045, puntas: .03, dedos: 3, confirmar: .1, soltar: .25, abrir: 1.75, dedosAbiertos: 3, perdida: .8,
       agarre: {
         sujecion: .55, holgura: .006, haciaDedos: .2, haciaAbajo: 0,
         izquierda: { desplazamiento: [0, 0, 0] }, derecha: { desplazamiento: [0, 0, 0] },
@@ -348,9 +368,11 @@ export const AJUSTES = {
       liquido: { profundidad: .42, estrechar: .8 },
       regreso: .6
     },
-    // Grosor de la mesa pintada que cubre la mesa real (m) y cuánto excede su borde antes del recorte;
+    // Cuánto excede la mesa pintada el borde de la mesa real antes del recorte;
     // cubre la mesa elegida y, como mínimo, la composición con `margenMesa` unidades alrededor.
-    grosorMesa: .004, cubrirMesa: 1.25, margenMesa: 1.2,
+    // (El grosor es el del escritorio de la adultez: AJUSTES.adultez.escritorio.grosor.) `canto`: coordenada de textura
+    // del ocre liso de los costados de mesa.glb, que pinta el canto de 3 cm.
+    cubrirMesa: 1.25, margenMesa: 1.2, canto: [.16, .2],
     // Marco de la ventana: tamaño relativo a la composición y separación detrás de ella (unidades).
     ventana: { escala: .85, detras: 1.2, sobreMesa: .4 },
     // Barra de progreso por encima del marco de la ventana (m sobre su borde superior; la frase va debajo de ella).

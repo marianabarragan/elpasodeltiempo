@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import gsap from 'gsap';
-import { OneHandGrabbable } from '@iwsdk/core';
+import { GrabSystem, OneHandGrabbable } from '@iwsdk/core';
 import { AJUSTES } from '../config.js';
 import { crearAgarre } from './agarre.js';
 
@@ -56,6 +56,17 @@ export function crearCrayola({ world, manos, ninez, sonido, alPintar }) {
     habilitarAgarre() {
       if (estado.modo === 'reposo') estado.modo = 'lista';
       if (!entidades.crayon.hasComponent(OneHandGrabbable)) entidades.crayon.addComponent(OneHandGrabbable, { rotate: false, translate: false });
+    },
+    // Vuelve al principio (REPETIR): en reposo, sin color elegido y sin poder tomarla hasta elegir uno.
+    reiniciar() {
+      terminarTrazo();
+      agarre.soltar();
+      estado.regreso?.kill();
+      estado.regreso = null;
+      estado.modo = 'reposo';
+      movimiento.anterior = null;
+      world.getSystem(GrabSystem)?.forceRelease(entidades.crayon);
+      if (entidades.crayon.hasComponent(OneHandGrabbable)) entidades.crayon.removeComponent(OneHandGrabbable);
     },
     tomar() {
       estado.regreso?.kill();

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import gsap from 'gsap';
 import { GrabSystem, OneHandGrabbable } from '@iwsdk/core';
 import { AJUSTES } from '../../config.js';
-import { crearAgarre } from '../agarre.js';
+import { crearAgarre, seSuelta } from '../agarre.js';
 
 const PUNTAS = ['thumb-tip', 'index-finger-tip', 'middle-finger-tip', 'ring-finger-tip', 'pinky-finger-tip'];
 const ARRIBA = new THREE.Vector3(0, 1, 0);
@@ -13,9 +13,10 @@ const ARRIBA = new THREE.Vector3(0, 1, 0);
  * Agarre con toda la mano (corrección): con las manos el vaso solo se toma rodeándolo; el pellizco ya no lo
  * levanta (la mano lo atravesaba). Se detecta el contacto de la mano con el cuerpo del termo: la palma junto a su
  * eje y al menos tres puntas de dedo alrededor de su superficie durante un instante. No es un reconocedor de
- * posturas: mide distancias entre las articulaciones (las que IWSDK ya lee) y el cilindro. Se suelta al abrir la
- * mano. Sostenido, el termo se coloca en la mano con el perfil 'envolvente' de agarre.js (igual en las dos manos) y
- * la mano dibujada lo rodea (oclusion.js empuja sus articulaciones a la superficie del cilindro, según su diámetro).
+ * posturas: mide distancias entre las articulaciones (las que IWSDK ya lee) y el cilindro. Se suelta solo al abrir
+ * la mano con claridad (agarre.js, seSuelta), no cuando el visor pierde de vista un dedo. Sostenido, el termo se coloca
+ * en la mano con el perfil 'envolvente' de agarre.js (igual en las dos manos) y la mano dibujada toma la postura de
+ * agarre (oclusion.js): sus dedos lo envuelven según su diámetro, sin atravesarlo ni deformarse.
  * Con controles (sin manos) se toma con el botón lateral (agarre de IWSDK).
  *
  * Sacudirlo hace sonar el hielo (sonido-hielo.js) según la fuerza del movimiento; es opcional y no suma.
@@ -158,6 +159,13 @@ export function crearTermo({ world, manos, termo, entidad, hielo, sonido, cabeza
     get envuelto() { return estado.modo === 'envolvente'; },
     get sostenido() { return !!estado.modo; },
     habilitar() { estado.habilitado = true; },
+    // REPETIR: en su lugar (la instantánea), sin haber bebido.
+    reiniciar() {
+      regreso?.kill();
+      regreso = null;
+      if (estado.modo) agarre.soltar();
+      Object.assign(estado, { modo: null, lado: null, candidato: null, espera: 0, suelto: 0, bebido: false, sorbos: 0, listoParaBeber: true });
+    },
     deshabilitar() {
       estado.habilitado = false;
       world.getSystem(GrabSystem)?.forceRelease(entidad);
@@ -178,7 +186,8 @@ export function crearTermo({ world, manos, termo, entidad, hielo, sonido, cabeza
       if (!conControl && estado.modo !== 'iwsdk' && entidad.hasComponent(OneHandGrabbable)) entidad.removeComponent(OneHandGrabbable);
       if (!estado.modo && habilitado) {
         // Una mano libre que envuelve el termo durante `confirmar` s lo toma.
-        const lado = manos.lados.find(l => manos[l].seguida && !ocupadas.includes(l) && (() => { const e = envoltura(manos[l], A.puntas); return e.palmaJunto && e.puntas >= A.dedos; })());
+        // Pellizcando no cuenta como rodearlo (solo la mano completa lo toma).
+        const lado = manos.lados.find(l => manos[l].seguida && !manos[l].pellizco && !ocupadas.includes(l) && (() => { const e = envoltura(manos[l], A.puntas); return e.palmaJunto && e.puntas >= A.dedos; })());
         if (lado && lado === estado.candidato) {
           if ((estado.espera += dt) >= A.confirmar) { estado.envolturas += 1; tomar('envolvente', lado); }
         } else { estado.candidato = lado ?? null; estado.espera = 0; }
@@ -187,12 +196,7 @@ export function crearTermo({ world, manos, termo, entidad, hielo, sonido, cabeza
       // Primero sigue a la mano; después se comprueba si la mano lo sigue envolviendo (con el termo ya en ella).
       agarre.update(dt, entidad, estado.modo === 'envolvente' ? estado.lado : null);
       apoyar(root, visual);
-      if (estado.modo === 'envolvente') {
-        const mano = manos[estado.lado];
-        // Al abrir la mano (o perder el seguimiento) quedan menos de dos puntas alrededor: se suelta.
-        const e = mano.seguida ? envoltura(mano, A.puntas * 1.6) : { puntas: 0 };
-        if (e.puntas < 2) { if ((estado.suelto += dt) >= A.soltar) { soltar(); return; } } else estado.suelto = 0;
-      }
+      if (estado.modo === 'envolvente' && seSuelta(manos[estado.lado], estado, dt, A)) { soltar(); return; }
       revisarHielo(dt);
       if (habilitado) revisarSorbo();
     },
@@ -207,6 +211,9 @@ export function crearTermo({ world, manos, termo, entidad, hielo, sonido, cabeza
       destino.eje = (destino.eje ?? new THREE.Vector3()).copy(eje);
       destino.radio = radio;
       destino.mitad = alto / 2;
+      // Con el agarre envolvente, la mano que lo rodea dibuja la postura de agarre (oclusion.js).
+      destino.envolvente = estado.modo === 'envolvente';
+      destino.lado = estado.lado;
       return destino;
     }
   };

@@ -3,7 +3,7 @@ import gsap from 'gsap';
 import { GrabSystem, OneHandGrabbable } from '@iwsdk/core';
 import { Tocable } from '../../componentes.js';
 import { AJUSTES } from '../../config.js';
-import { crearAgarre } from '../agarre.js';
+import { crearAgarre, seSuelta } from '../agarre.js';
 
 const PUNTAS = ['thumb-tip', 'index-finger-tip', 'middle-finger-tip', 'ring-finger-tip', 'pinky-finger-tip'];
 const ARRIBA = new THREE.Vector3(0, 1, 0);
@@ -169,6 +169,14 @@ export function crearTaza({ world, manos, taza, grupo, entidadPadre, sonido, cab
       if (entidad.hasComponent(OneHandGrabbable)) entidad.removeComponent(OneHandGrabbable);
       soltar();
     },
+    // REPETIR: en su plato, llena y sin haber bebido.
+    reiniciar() {
+      this.deshabilitar();
+      regreso?.kill();
+      regreso = null;
+      Object.assign(estado, { modo: null, lado: null, candidato: null, espera: 0, suelto: 0, nivel: 1, bebiendo: false, sorbos: 0, bebido: false, desdeSorbo: Infinity, ultimaMedida: null });
+      dibujarCafe(1);
+    },
     // Agarre de IWSDK (pellizco o botón lateral).
     sostener(activo) {
       if (activo) { if (estado.habilitado && estado.modo !== 'envolvente') tomar('pinza', null); return; }
@@ -185,11 +193,7 @@ export function crearTaza({ world, manos, taza, grupo, entidadPadre, sonido, cab
       }
       if (!estado.modo) return;
       agarreActivo().update(dt, entidad, estado.modo === 'envolvente' ? estado.lado : null);
-      if (estado.modo === 'envolvente') {
-        const mano = manos[estado.lado];
-        const e = mano.seguida ? envoltura(mano, A.puntas * 1.6) : { puntas: 0 };
-        if (e.puntas < 2) { if ((estado.suelto += dt) >= A.soltar) { soltar(); return; } } else estado.suelto = 0;
-      }
+      if (estado.modo === 'envolvente' && seSuelta(manos[estado.lado], estado, dt, A)) { soltar(); return; }
       if (habilitado) revisarSorbo(dt);
     },
     // Centro del cuerpo de la taza en el mundo y su cilindro (pruebas y mano dibujada que la rodea).
@@ -202,6 +206,9 @@ export function crearTaza({ world, manos, taza, grupo, entidadPadre, sonido, cab
       destino.eje = (destino.eje ?? new THREE.Vector3()).copy(eje);
       destino.radio = radio;
       destino.mitad = alto / 2;
+      // Con el agarre envolvente, la mano que lo rodea dibuja la postura de agarre (oclusion.js).
+      destino.envolvente = estado.modo === 'envolvente';
+      destino.lado = estado.lado;
       return destino;
     }
   };

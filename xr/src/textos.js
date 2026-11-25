@@ -24,3 +24,29 @@ export const PENDIENTES = {
     'Paseo pa’ puebliar el próximo festivo.'
   ]
 };
+
+// Sección de aportes (después del escenario 3). Las tarjetas del carrusel van en este orden (circular): la primera
+// empieza al centro. `foto`: ruta en assets/ del proyecto original (copiada al compilar, ver recursos.js) o en public/.
+export const APORTES = {
+  tarjetas: [
+    {
+      titulo: 'COMPARTE TU TIEMPO',
+      resumen: 'UNA CONVERSACIÓN, UNA CAMINATA O UNA TARDE DE JUEGOS PUEDEN CONVERTIRSE EN UN RECUERDO VALIOSO.',
+      detalle: 'Empieza con algo sencillo y cercano. Muchas organizaciones realizan encuentros abiertos en los que puedes conversar, leer, caminar o compartir un conocimiento, habilidades, historias y momentos especiales.',
+      foto: 'assets/photos/tarjetas/acompana.webp'
+    },
+    {
+      titulo: 'APADRINA',
+      resumen: 'SÚMATE COMO VOLUNTARIO ECONÓMICO PARA UN ABUELITO DÁNDOLE ESPERANZAS Y CONSTRUYE UN VÍNCULO.',
+      detalle: 'Ellos nos dieron todo; hoy es nuestro turno de abrazarlos. Únete, apadrina a un abuelo y cambia su soledad por sonrisas.',
+      // Foto del diseño (el abuelito con el mercado), en public/imagenes de la app.
+      foto: 'imagenes/apadrina.jpeg'
+    },
+    {
+      titulo: 'DONA',
+      resumen: 'DONA MATERIALES PARA ACTIVIDADES, ALIMENTOS O UN APORTE ECONÓMICO A UNA ORGANIZACIÓN CERCANA',
+      detalle: 'Un aporte material o económico ayuda a financiar actividades y espacios de encuentro. Antes de donar, pregunta a la organización qué necesita realmente.',
+      foto: 'assets/photos/tarjetas/dona.webp'
+    }
+  ]
+};

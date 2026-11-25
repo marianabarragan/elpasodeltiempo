@@ -4,13 +4,12 @@ import { PokeInteractable, RayInteractable } from '@iwsdk/core';
 import { Tocable } from '../componentes.js';
 import { AJUSTES } from '../config.js';
 import { crearCaja } from './caja.js';
-import { crearSombras } from './sombras.js';
+import { crearBordeSombra, crearSombras } from './sombras.js';
+import { crearCanto, puntoDelLado } from './canto.js';
 import { cajaLocal } from './adultez/dedos.js';
 
 // Distribución compacta para mesas angostas: juguetes más cerca de la hoja, en unidades originales.
 const COMPACTA = { rings: { x: -7.4, z: -3.3 }, xylophone: { x: 8.2, z: .3 } };
-// Bajo la espuma hay una capa de 0,045 unidades que debe apoyarse en la mesa (js/childhood-props.js).
-const BASE_PISO = .045;
 const HOJA = { ancho: 8.2, fondo: 6.15 };
 // Teclas del xilófono: «Cube…» en toys.glb y «xylophone-key-…» en el sustituto de js/childhood-props.js.
 const TECLA = /^(Cube\d*|xylophone-key-\d+)$/;
@@ -184,7 +183,10 @@ export function crearNinez(world, espacio, base, encaje) {
   escena.visible = false;
   escena.add(props.group);
   props.group.scale.setScalar(s);
-  props.group.position.set(-centro.x * s, BASE_PISO * s, -centro.z * s);
+  // Superficie 3D (corrección): el rompecabezas tiene el grosor del escritorio de la adultez; su cara de abajo queda
+  // sobre la mesa real y la de arriba (props.floorY), `grosor` m más arriba.
+  const grosor = AJUSTES.adultez.escritorio.grosor;
+  props.group.position.set(-centro.x * s, grosor - props.floorY * s, -centro.z * s);
   const entidadEscena = world.createTransformEntity(escena, { parent: espacio.entidad });
   const entidadProps = world.createTransformEntity(props.group, { parent: entidadEscena });
 
@@ -212,6 +214,55 @@ export function crearNinez(world, espacio, base, encaje) {
     escena.updateWorldMatrix(true, false);
     planos.forEach((plano, i) => plano.copy(local[i]).applyMatrix4(escena.matrixWorld));
   };
+
+  // Canto del rompecabezas: cada lado muestra el color de la pieza que llega a ese borde (la más cercana a cada
+  // punto), con una línea más oscura entre piezas, como un rompecabezas grueso. Debajo, la base del piso.
+  const hx = espacio.ancho / 2 - margen, hz = espacio.fondo / 2 - margen;
+  const centros = [];
+  const matrizPieza = new THREE.Matrix4(), centroPieza = new THREE.Vector3();
+  floor.traverse(malla => {
+    if (!malla.isInstancedMesh) return;
+    const color = '#' + malla.material.color.getHexString(THREE.SRGBColorSpace);
+    for (let i = 0; i < malla.count; i++) { malla.getMatrixAt(i, matrizPieza); centroPieza.setFromMatrixPosition(matrizPieza); centros.push({ x: centroPieza.x, z: centroPieza.z, color }); }
+  });
+  const MUESTRAS = 512, FILA = 32;
+  const lienzoCanto = document.createElement('canvas');
+  lienzoCanto.width = MUESTRAS; lienzoCanto.height = FILA * 4;
+  const ctxCanto = lienzoCanto.getContext('2d');
+  for (let lado = 0; lado < 4; lado++) {
+    let anterior = null;
+    for (let i = 0; i < MUESTRAS; i++) {
+      const p = puntoDelLado(lado, (i + .5) / MUESTRAS, hx, hz);
+      const px = (p.x - props.group.position.x) / s, pz = (p.z - props.group.position.z) / s;
+      let mejor = null, distancia = Infinity;
+      for (const c of centros) { const d = (c.x - px) ** 2 + (c.z - pz) ** 2; if (d < distancia) { distancia = d; mejor = c; } }
+      const color = mejor?.color ?? '#f4e6b0';
+      const degradado = ctxCanto.createLinearGradient(0, lado * FILA, 0, (lado + 1) * FILA);
+      degradado.addColorStop(0, color);
+      degradado.addColorStop(1, new THREE.Color(color).multiplyScalar(.86).getStyle());
+      ctxCanto.fillStyle = degradado;
+      ctxCanto.fillRect(i, lado * FILA, 1, FILA);
+      if (anterior && mejor !== anterior) { ctxCanto.fillStyle = 'rgba(90,60,30,.35)'; ctxCanto.fillRect(i, lado * FILA, 1.5, FILA); }
+      anterior = mejor;
+    }
+  }
+  const texturaCanto = new THREE.CanvasTexture(lienzoCanto);
+  texturaCanto.colorSpace = THREE.SRGBColorSpace;
+  texturaCanto.anisotropy = 4;
+  // Como las piezas: color propio con un poco de emisión para conservar los tonos pastel.
+  const materialCanto = new THREE.MeshStandardMaterial({ map: texturaCanto, emissive: '#ffffff', emissiveMap: texturaCanto, emissiveIntensity: .32, roughness: 1, metalness: 0 });
+  const fila = lado => [1 - (lado + 1) / 4 + .02 / 4, 1 - lado / 4 - .02 / 4];
+  const canto = crearCanto({
+    hx, hz, alto: grosor, material: materialCanto,
+    uv: (lado, t, h) => { const [abajo, arriba] = fila(lado); return [t, h ? arriba : abajo]; },
+    uvAbajo: () => [.5, 1 - 2.5 / 4]
+  });
+  canto.visible = false;
+  escena.add(canto);
+  const bordeSombra = crearBordeSombra(2 * hx, 2 * hz);
+  bordeSombra.position.y = .0005;
+  bordeSombra.visible = false;
+  escena.add(bordeSombra);
 
   // ---------- Caja de crayolas ----------
   // Se toma con un pellizco (o con el botón lateral del control) sobre la parte alta de su cuerpo, nunca sobre
@@ -402,46 +453,74 @@ export function crearNinez(world, espacio, base, encaje) {
     revisarYemas(dt, lista, disponible);
   }
 
-  // ---------- Elegir color con la yema ----------
-  // Solo cuenta la yema de un dedo que toca la punta de una crayola desde arriba: acercarse, moverse cerca o
-  // pellizcar no eligen ni suenan. Cada yema se arma al alejarse de todas las puntas y elige al tocar una (pasar de
-  // una punta a otra sin levantar el dedo no vuelve a elegir). El color se confirma `toque.confirmar` s después,
-  // si en ese tiempo no se tomó la caja.
-  const PUNTAS_DEDOS = ['thumb-tip', 'index-finger-tip', 'middle-finger-tip', 'ring-finger-tip', 'pinky-finger-tip'];
-  const yemas = new Map();
-  const puntasCrayolas = caja.crayolas.map(() => new THREE.Vector3()), enCrayola = new THREE.Vector3();
-  const toque = { pendiente: null, elecciones: 0, ultimo: null };
+  // ---------- Elegir color con el índice ----------
+  // Corrección tras la prueba en Quest (antes había que tocar la puntita exacta y costaba mucho): cuenta solo la punta
+  // del índice de cada mano sobre la parte de la crayola que sobresale de la caja (sus últimos `toque.largo` m hasta la
+  // punta), a menos de su radio más `toque.alcance` m; si quedan varias cerca, la más próxima. Pasar la mano cerca no
+  // suena: el índice tiene que quedarse `toque.sostener` s sobre la misma crayola. Mientras tanto esa crayola se asoma
+  // en silencio (la señal de cuál se va a elegir); al cumplirse el tiempo suena su nota y se elige. Para volver a
+  // elegir la misma, el índice sale de ella. Pellizcando (el gesto de tomar la caja) o con la caja en uso no se elige.
+  const puntasCrayolas = caja.crayolas.map(() => new THREE.Vector3()), basesCrayolas = caja.crayolas.map(() => new THREE.Vector3());
+  const ejeCrayola = new THREE.Vector3(), aPunto = new THREE.Vector3();
+  const indices = { left: { crayola: -1, tiempo: 0, elegida: -1, cajas: 0 }, right: { crayola: -1, tiempo: 0, elegida: -1, cajas: 0 } };
+  const toque = { elecciones: 0, ultimo: null, senalada: -1, indices };
+  // Distancia (m) de un punto al tramo visible de una crayola.
+  function distanciaACrayola(i, punto) {
+    const a = basesCrayolas[i];
+    ejeCrayola.subVectors(puntasCrayolas[i], a);
+    const largo2 = ejeCrayola.lengthSq();
+    const t = largo2 > 0 ? THREE.MathUtils.clamp(aPunto.subVectors(punto, a).dot(ejeCrayola) / largo2, 0, 1) : 0;
+    return aPunto.copy(a).addScaledVector(ejeCrayola, t).distanceTo(punto);
+  }
+  // Asoma en silencio la crayola que el índice está por elegir (la elegida no se mueve: caja.senalar la ignora).
+  function senalarCrayola(i) {
+    if (i === toque.senalada) return;
+    if (toque.senalada >= 0) caja.senalar(toque.senalada, false, C);
+    toque.senalada = i;
+    if (i >= 0) caja.senalar(i, true, C);
+  }
   function revisarYemas(dt, lista, disponible) {
     const T = C.toque;
-    if (toque.pendiente) {
-      const p = toque.pendiente;
-      if (estadoCaja.sostenida || estadoCaja.bajando || estadoCaja.movimientos !== p.cajas) toque.pendiente = null;
-      else if ((p.t += dt) >= T.confirmar) { toque.pendiente = null; toque.elecciones += 1; ninez.alElegirColor?.(p.indice); }
-    }
-    if (!lista || !escena.visible) return;
-    caja.crayolas.forEach((crayola, i) => { crayola.updateWorldMatrix(true, false); crayola.localToWorld(puntasCrayolas[i].set(0, crayola.userData.puntaY, 0)); });
+    if (!lista || !escena.visible) { senalarCrayola(-1); return; }
+    caja.crayolas.forEach((crayola, i) => {
+      crayola.updateWorldMatrix(true, false);
+      crayola.localToWorld(puntasCrayolas[i].set(0, crayola.userData.puntaY, 0));
+      crayola.localToWorld(basesCrayolas[i].set(0, crayola.userData.puntaY - 1, 0));
+      ejeCrayola.subVectors(puntasCrayolas[i], basesCrayolas[i]).normalize();
+      basesCrayolas[i].copy(puntasCrayolas[i]).addScaledVector(ejeCrayola, -T.largo);
+    });
+    let senal = -1, cercania = Infinity;
     for (const lado of ['left', 'right']) {
-      const mano = lista[lado];
-      for (const nombre of PUNTAS_DEDOS) {
-        const clave = `${lado}:${nombre}`;
-        if (!yemas.has(clave)) yemas.set(clave, { armada: false });
-        const yema = yemas.get(clave), punto = mano?.seguida ? mano.puntos.get(nombre) : null;
-        if (!punto) { yema.armada = false; continue; }
-        const radio = mano.radios.get(nombre) ?? .008;
+      const mano = lista[lado], e = indices[lado];
+      const punto = mano?.seguida ? mano.puntos.get('index-finger-tip') : null;
+      if (!punto) { e.crayola = -1; e.tiempo = 0; e.elegida = -1; continue; }
+      if (mano.pellizco || !disponible || ninez.cajaOcupada) { e.crayola = -1; e.tiempo = 0; continue; }
+      const limite = (mano.radios.get('index-finger-tip') ?? .008) + T.alcance;
+      // Salir de la crayola recién elegida permite volver a elegirla.
+      if (e.elegida >= 0 && distanciaACrayola(e.elegida, punto) > limite + T.rearme) e.elegida = -1;
+      // La crayola que ya se tocaba tiene un margen extra (un temblor del seguimiento no la suelta).
+      if (!(e.crayola >= 0 && distanciaACrayola(e.crayola, punto) <= limite + T.histeresis)) {
         let cerca = -1, distancia = Infinity;
-        puntasCrayolas.forEach((p, i) => { const d = p.distanceTo(punto); if (d < distancia) { distancia = d; cerca = i; } });
-        if (distancia > radio + T.rearme) { yema.armada = true; continue; }
-        if (!yema.armada || distancia > radio + T.margen) continue;
-        // Desde arriba: la yema no queda por debajo de la base del cono de la punta.
-        const crayola = caja.crayolas[cerca];
-        crayola.worldToLocal(enCrayola.copy(punto));
-        if (enCrayola.y < crayola.userData.puntaY - M.punta) continue;
-        yema.armada = false;
-        if (!disponible || mano.pellizco || ninez.cajaOcupada || toque.pendiente) continue;
-        toque.pendiente = { indice: cerca, cajas: estadoCaja.movimientos, t: 0 };
-        toque.ultimo = { lado, nombre, indice: cerca };
+        caja.crayolas.forEach((_, i) => { const d = distanciaACrayola(i, punto); if (d < distancia) { distancia = d; cerca = i; } });
+        e.crayola = distancia <= limite ? cerca : -1;
+        e.tiempo = 0;
+        e.cajas = estadoCaja.movimientos;
+      }
+      if (e.crayola < 0 || e.crayola === e.elegida) continue;
+      const d = distanciaACrayola(e.crayola, punto);
+      if (d < cercania) { cercania = d; senal = e.crayola; }
+      // Si en medio se tomó la caja, el toque vuelve a empezar.
+      if (estadoCaja.movimientos !== e.cajas) { e.tiempo = 0; e.cajas = estadoCaja.movimientos; continue; }
+      if ((e.tiempo += dt) >= T.sostener) {
+        e.elegida = e.crayola;
+        e.tiempo = 0;
+        toque.elecciones += 1;
+        toque.ultimo = { lado, indice: e.crayola };
+        if (senal === e.crayola) senal = -1;
+        ninez.alElegirColor?.(e.crayola);
       }
     }
+    senalarCrayola(senal);
   }
 
   // Sombras de contacto sobre el piso (y sobre la hoja: quedan apenas por encima de ella).
@@ -474,6 +553,7 @@ export function crearNinez(world, espacio, base, encaje) {
     cambiadas.forEach(malla => { malla.instanceMatrix.needsUpdate = true; });
     if (capa) capa.visible = t >= piso * .8;
     ventana.visible = t >= piso;
+    canto.visible = bordeSombra.visible = t >= piso * .85;
   };
 
   // Escalas de reposo para la aparición de la hoja, los juguetes, la caja y la crayola.
@@ -546,15 +626,27 @@ export function crearNinez(world, espacio, base, encaje) {
     // Metros por unidad del escenario original, incluida la escala elegida con las manos.
     get escala() { return s * escena.scale.x; },
     // Altura de la superficie del piso (m, en el espacio de `escena`): el contorno del escalado va sobre ella.
-    superficie: (BASE_PISO + props.floorY) * s,
+    superficie: grosor,
     // Mientras se mueve o baja la caja (y un instante después de apoyarla) tocar una crayola no elige color.
     get cajaOcupada() { return estadoCaja.sostenida || estadoCaja.bajando || !!estadoCaja.retirandose || performance.now() - estadoCaja.soltadaEn < C.pausaColor * 1000; },
     // Zona de agarre de la caja (para las pruebas) y soltarla desde fuera (al salir del escenario).
     zonaCaja: enZona, soltarCaja,
-    // Elección de color con la yema (la narrativa decide con alElegirColor) y punta de cada crayola (pruebas).
+    // Elección de color con el índice (la narrativa decide con alElegirColor) y punta de cada crayola (pruebas).
     toque, alElegirColor: null,
     puntaCrayola: i => puntasCrayolas[i].clone(),
     color: app.Config.colors.green,
+    // REPETIR: la hoja sin pintar, la crayola del color inicial, ninguna crayola de la caja elegida y la caja libre.
+    reiniciar() {
+      pintura.reset();
+      ninez.setColor(app.Config.colors.green);
+      caja.reiniciar();
+      bajada?.kill();
+      bajada = null;
+      Object.assign(estadoCaja, { sostenida: false, bajando: false, lado: null, soltadaEn: -Infinity, retirandose: null });
+      Object.values(toque.indices).forEach(e => Object.assign(e, { crayola: -1, tiempo: 0, elegida: -1 }));
+      toque.senalada = -1;
+      halo.value = 0;
+    },
     alTocarTecla: null,
     // Todo oculto y encogido, listo para la transformación.
     preparar() {

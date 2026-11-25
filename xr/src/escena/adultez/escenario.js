@@ -39,20 +39,25 @@ export function progresoAdultez() {
 function ajustarObjetos(props) {
   const { models } = props;
   props.group.updateMatrixWorld(true);
-  Object.entries(AJUSTES.adultez.objetos).forEach(([nombre, { escala = 1, dx = 0, dz = 0 }]) => {
+  Object.entries(AJUSTES.adultez.objetos).forEach(([nombre, { escala = 1, dx = 0, dy = 0, dz = 0, giro = null }]) => {
     const raiz = models[nombre]?.root;
     if (!raiz) return;
     const antes = new THREE.Box3().setFromObject(raiz), centroAntes = antes.getCenter(new THREE.Vector3());
+    // La escala del escenario se calcula con el monitor de su tamaño original (crearAdultez): agrandarlo no achica
+    // el resto (las teclas conservan su tamaño).
+    if (nombre === 'monitor') props.cajaMonitorOriginal = antes.clone();
+    if (giro !== null) raiz.rotation.y = giro;
     raiz.scale.multiplyScalar(escala);
     raiz.updateMatrixWorld(true);
     const despues = new THREE.Box3().setFromObject(raiz), centroDespues = despues.getCenter(new THREE.Vector3());
     const enPared = nombre === 'wallCalendar';
     raiz.position.x += centroAntes.x - centroDespues.x + dx;
     raiz.position.z += centroAntes.z - centroDespues.z + dz;
-    raiz.position.y += enPared ? centroAntes.y - centroDespues.y : antes.min.y - despues.min.y;
+    raiz.position.y += (enPared ? centroAntes.y - centroDespues.y : antes.min.y - despues.min.y) + dy;
     raiz.updateMatrixWorld(true);
   });
   props.pen.rest.position.copy(props.pen.root.position);
+  props.pen.rest.quaternion.copy(props.pen.root.quaternion);
   props.paper.rest.position.copy(props.paper.root.position);
 }
 
@@ -74,14 +79,26 @@ export function prepararAdultez() {
     props.group.add(repisa);
     [...room.visual.children].filter(hijo => !PARED.includes(hijo.name) && hijo.position.y > props.deskTopY).forEach(hijo => repisa.attach(hijo));
     room.root.removeFromParent();
+    const { dx = 0, dy = 0, dz = 0 } = AJUSTES.adultez.repisa ?? {};
+    repisa.position.add(new THREE.Vector3(dx, dy, dz));
     const tablero = props.deskFit?.object ?? desk.visual.getObjectByName('desk-top');
     [...desk.visual.children].forEach(hijo => { if (hijo !== tablero) hijo.removeFromParent(); });
     tablero?.traverse(malla => { if (malla.isMesh) { malla.receiveShadow = true; malla.castShadow = true; } });
     ajustarObjetos(props);
     props.group.updateMatrixWorld(true);
-    const caja = new THREE.Box3();
-    ESCRITORIO.forEach(nombre => caja.union(new THREE.Box3().setFromObject(props.models[nombre].root)));
-    return { props, caja, repisa, escritorio: desk };
+    const caja = new THREE.Box3(), cajaEscala = new THREE.Box3();
+    ESCRITORIO.forEach(nombre => {
+      const b = new THREE.Box3().setFromObject(props.models[nombre].root);
+      caja.union(b);
+      cajaEscala.union(nombre === 'monitor' && props.cajaMonitorOriginal ? props.cajaMonitorOriginal : b);
+    });
+    // El escritorio también cubre la repisa y el corcho suspendidos (no cuentan para la escala).
+    [repisa, props.models.wallCalendar.root].forEach(objeto => {
+      const b = new THREE.Box3().setFromObject(objeto);
+      caja.expandByPoint(new THREE.Vector3(b.min.x, caja.min.y, (caja.min.z + caja.max.z) / 2));
+      caja.expandByPoint(new THREE.Vector3(b.max.x, caja.min.y, (caja.min.z + caja.max.z) / 2));
+    });
+    return { props, caja, cajaEscala, repisa, escritorio: desk };
   });
 }
 
@@ -94,13 +111,14 @@ export function prepararAdultez() {
  */
 export function crearAdultez(world, espacio, base, { sonido, hielo, teclado, cabeza, manos, alHito }) {
   const A = AJUSTES.adultez;
-  const { props, caja: composicion, repisa, escritorio } = base;
+  const { props, caja: composicion, cajaEscala = composicion, repisa, escritorio } = base;
   const { models } = props;
 
   // Escala para llenar el área útil de la mesa, dentro de límites cómodos para las manos.
   const { margen } = AJUSTES.mesa;
   const tam = composicion.getSize(new THREE.Vector3()), centro = composicion.getCenter(new THREE.Vector3());
-  const s = THREE.MathUtils.clamp(Math.min((espacio.ancho - 2 * margen) / tam.x, (espacio.fondo - 2 * margen) / tam.z), A.escalaMin, A.escalaMax);
+  const tamEscala = cajaEscala.getSize(new THREE.Vector3());
+  const s = THREE.MathUtils.clamp(Math.min((espacio.ancho - 2 * margen) / tamEscala.x, (espacio.fondo - 2 * margen) / tamEscala.z), A.escalaMin, A.escalaMax);
 
   // Escritorio: cubre la mesa elegida y, como mínimo, la composición con un margen; centrado en ella.
   // Su cara superior queda a la altura donde se apoyan los objetos (props.deskTopY) y su cara inferior,
@@ -276,6 +294,15 @@ export function crearAdultez(world, espacio, base, { sonido, hielo, teclado, cab
       hoja.detener();
       computador.detener();
       escena.visible = false;
+    },
+    // REPETIR: los cinco hitos sin hacer.
+    reiniciar() {
+      hechos.clear();
+      hoja.reiniciar();
+      computador.reiniciar();
+      aparatos.reiniciar();
+      termo.reiniciar();
+      calendario.reiniciar();
     }
   };
 }

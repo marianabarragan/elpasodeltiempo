@@ -146,6 +146,10 @@ export function crearGafas({ world, gafas, grupo, alPonerse }) {
   return {
     estado, extremos,
     habilitar() { estado.activo = true; },
+    // REPETIR: sobre la mesa y sin poder tomarlas hasta que el escenario termine de aparecer.
+    reiniciar() {
+      Object.assign(estado, { modo: 'mesa', activo: false, manos: { left: null, right: null }, perdida: { left: 0, right: 0 }, cercaDelRostro: false });
+    },
     // Cada cuadro: sujeción por extremos, seguimiento con las dos manos y llegada al rostro.
     update(dt) {
       if (!estado.activo || estado.modo === 'puestas') return;

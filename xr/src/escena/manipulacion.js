@@ -35,6 +35,7 @@ export function crearManipulacion({ manos, espacio, raiz, area, cabeza, superfic
   const M = AJUSTES.manipulacion, B = M.esquinas;
   // Escala con que apareció el escenario: a ella los paneles anclados tienen su tamaño de diseño.
   const escalaInicial = raiz.scale.x;
+  const poseInicial = { posicion: raiz.position.clone(), giro: raiz.quaternion.clone() };
   const estado = { modo: null, espera: 0, gracia: 0, inicio: null, movimientos: 0, escalados: 0, contorno: 0 };
   const anclas = new Map();
   const izq = new THREE.Vector3(), der = new THREE.Vector3(), medio = new THREE.Vector3(), local = new THREE.Vector3();
@@ -241,6 +242,15 @@ export function crearManipulacion({ manos, espacio, raiz, area, cabeza, superfic
       const L = pellizcos.left, R = pellizcos.right;
       if (L.activo && R.activo && L.enBorde && R.enBorde && L.cuadros >= 2 && R.cuadros >= 2 && separadas(left.pinza, right.pinza)) empezar('escalar');
     },
-    detener: terminar
+    detener: terminar,
+    // REPETIR: el escenario vuelve a donde apareció, con su tamaño inicial, y sin paneles anclados.
+    reiniciar() {
+      terminar();
+      anclas.clear();
+      raiz.position.copy(poseInicial.posicion);
+      raiz.quaternion.copy(poseInicial.giro);
+      raiz.scale.setScalar(escalaInicial);
+      estado.contorno = 0;
+    }
   };
 }

@@ -1,0 +1,22 @@
+<!-- Panel final de la sección de aportes, según el diseño: Raleway y tres botones naranja. Medidas en centímetros. -->
+<style>
+  @font-face { font-family: "Raleway"; src: url("../fuentes/Raleway-Regular.ttf"); font-weight: 400; }
+  @font-face { font-family: "Raleway"; src: url("../fuentes/Raleway-ExtraBold.ttf"); font-weight: 800; }
+  .panel { width: 60; height: 49; flex-direction: column; align-items: center; justify-content: center; padding-left: 4; padding-right: 4; border-radius: 4.5; border-width: 0.15; border-color: #f4f2d8; background-color: #fff9c9; overflow: hidden; }
+  .hojas { position-type: absolute; position-top: 0; position-left: 0; width: 60; height: 49; border-radius: 4.5; }
+  .titulo { font-family: "Raleway"; font-weight: 800; font-size: 3.25; line-height: 1.1; color: #c4561f; text-align: center; }
+  .botones { margin-top: 7; flex-direction: column; align-items: center; gap: 2.4; }
+  .boton { z-index: 2; min-width: 16; padding-top: 1; padding-bottom: 1; padding-left: 2.8; padding-right: 2.8; border-radius: 99; background-color: #c4561f; align-items: center; justify-content: center; cursor: pointer; }
+  .boton:hover { background-color: #a94617; }
+  .etiqueta { font-family: "Raleway"; font-weight: 400; font-size: 2.2; color: #fbeee0; text-align: center; }
+</style>
+<div class="panel">
+  <img id="hojas" class="hojas" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" />
+  <span id="titulo-1" class="titulo">GRACIAS POR REGALARNOS</span>
+  <span id="titulo-2" class="titulo">UN MINUTO DE TU TIEMPO</span>
+  <div class="botones">
+    <button id="aportar" class="boton"><span class="etiqueta">VER FORMAS DE APORTAR</span></button>
+    <button id="repetir" class="boton"><span class="etiqueta">REPETIR</span></button>
+    <button id="salir" class="boton"><span class="etiqueta">SALIR</span></button>
+  </div>
+</div>

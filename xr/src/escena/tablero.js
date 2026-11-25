@@ -55,6 +55,8 @@ export function crearTablero(world, espacio) {
   return {
     entidad, raiz, tablero,
     estaDesbloqueada: etapa => tablero.isPhotoUnlocked(etapa),
+    // Vuelve a poner los candados de la segunda y la tercera foto (REPETIR en la sección de aportes).
+    reiniciar: () => tablero.resetPhotoLocks(),
     desbloquear: (etapa, alTerminar) => tablero.unlockPhoto(etapa, { duration: 1.1, onComplete: alTerminar }),
     senalar: etapa => tablero.setHoveredPhoto(etapa),
     // Frente al usuario, por encima de la mesa y hacia su fondo, mirando a la cabeza.

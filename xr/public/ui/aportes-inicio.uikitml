@@ -1,0 +1,28 @@
+<!-- Inicio de la sección de aportes (después del escenario 3), según el diseño: Raleway y botones naranja. Medidas en centímetros. -->
+<style>
+  @font-face { font-family: "Raleway"; src: url("../fuentes/Raleway-Regular.ttf"); font-weight: 400; }
+  @font-face { font-family: "Raleway"; src: url("../fuentes/Raleway-SemiBold.ttf"); font-weight: 600; }
+  @font-face { font-family: "Raleway"; src: url("../fuentes/Raleway-Bold.ttf"); font-weight: 700; }
+  @font-face { font-family: "Raleway"; src: url("../fuentes/Raleway-ExtraBold.ttf"); font-weight: 800; }
+  .panel { width: 60; height: 49; flex-direction: column; align-items: flex-start; justify-content: center; padding-left: 5.5; padding-right: 4; border-radius: 4.5; border-width: 0.15; border-color: #f4f2d8; background-color: #fff9c9; overflow: hidden; }
+  .hojas { position-type: absolute; position-top: 0; position-left: 0; width: 60; height: 49; border-radius: 4.5; }
+  .titulo { font-family: "Raleway"; font-weight: 800; font-size: 3.9; line-height: 1.1; color: #c4561f; }
+  .subtitulo { font-family: "Raleway"; font-weight: 600; font-size: 2.6; line-height: 1.2; color: #c4561f; }
+  .texto { margin-top: 3.4; font-family: "Raleway"; font-weight: 400; font-size: 2.05; line-height: 1.4; color: #5c3d10; }
+  .pregunta { margin-top: 7; font-family: "Raleway"; font-weight: 600; font-size: 2.15; color: #c4561f; }
+  .fila { margin-top: 2.6; flex-direction: row; align-items: center; gap: 1.6; }
+  .boton { z-index: 2; padding-top: 0.9; padding-bottom: 0.9; padding-left: 2.6; padding-right: 2.6; border-radius: 99; background-color: #c4561f; cursor: pointer; }
+  .boton:hover { background-color: #a94617; }
+  .etiqueta { font-family: "Raleway"; font-weight: 400; font-size: 2.05; color: #fbeee0; }
+</style>
+<div class="panel">
+  <img id="hojas" class="hojas" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" />
+  <span id="titulo" class="titulo">Hay momentos que duran</span>
+  <span id="subtitulo" class="subtitulo">porque alguien decidió estar.</span>
+  <span id="texto" class="texto">Para muchas personas mayores, una conversación, una visita o una actividad compartida puede transformar un día entero.</span>
+  <span id="pregunta" class="pregunta">¿Te gustaría aprender cómo puedes aportar?</span>
+  <div class="fila">
+    <button id="aprender" class="boton"><span class="etiqueta">QUIERO APRENDER.</span></button>
+    <button id="ahora-no" class="boton"><span class="etiqueta">AHORA NO.</span></button>
+  </div>
+</div>

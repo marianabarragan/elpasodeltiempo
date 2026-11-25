@@ -2,6 +2,7 @@ import gsap from 'gsap';
 import { iconoSvg } from '../iconos.js';
 import { TEXTOS } from '../textos.js';
 import { alPulsar, colocar, crearPanel, mostrar, ocultar } from '../paneles.js';
+import { texturaHojas } from '../hojas.js';
 
 const esperar = segundos => new Promise(resolve => gsap.delayedCall(segundos, resolve));
 
@@ -15,8 +16,9 @@ export async function crearFinal(world, espacio, { alContinuar, texto = TEXTOS.f
     crearPanel(world, 'panel-flecha', { padre: espacio.entidad })
   ]);
   frase.el('texto')?.setProperties({ text: texto, ...(colorTexto ? { color: colorTexto } : {}) });
-  // Cada escenario puede usar los colores de su mensaje en la web (p. ej. .oldage-message).
+  // Mismo estilo en los tres escenarios (fondo de hojas, texto naranja); `tarjeta` solo ajusta su ancho máximo.
   if (tarjeta) frase.el('tarjeta')?.setProperties(tarjeta);
+  texturaHojas(64, 16).then(textura => frase.el('hojas')?.setProperties({ src: textura, objectFit: 'cover' }));
   iconoSvg('assets/Iconos/cafe/botón de continuar.svg').then(src => flecha.el('icono')?.setProperties({ src }));
   alPulsar(flecha, 'flecha', alContinuar);
   return {

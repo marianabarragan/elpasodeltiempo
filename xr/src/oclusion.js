@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { XRInputVisualAdapter, outlineMaterial, stencilMaterial } from '@iwsdk/core';
 import { AJUSTES } from './config.js';
 
 const LADOS = ['left', 'right'];
@@ -6,8 +8,6 @@ const DEDOS = ['index-finger', 'middle-finger', 'ring-finger', 'pinky-finger'];
 const FALANGES = ['metacarpal', 'phalanx-proximal', 'phalanx-intermediate', 'phalanx-distal', 'tip'];
 const ARTICULACIONES = ['wrist', 'thumb-metacarpal', 'thumb-phalanx-proximal', 'thumb-phalanx-distal', 'thumb-tip',
   ...DEDOS.flatMap(dedo => FALANGES.map(falange => `${dedo}-${falange}`))];
-// Articulaciones de la palma: su volumen es más ancho que grueso.
-const PALMA = new Set(['wrist', ...DEDOS.map(dedo => `${dedo}-metacarpal`)]);
 // Radio típico (m) de cada tipo de articulación en una mano de 9,5 cm de la muñeca al nudillo del medio;
 // solo se usa si el visor no entrega los radios reales (se escala con la mano medida).
 const RADIO_TIPICO = {
@@ -15,133 +15,162 @@ const RADIO_TIPICO = {
   metacarpal: .016, 'phalanx-proximal': .0105, 'phalanx-intermediate': .0092, 'phalanx-distal': .0083, tip: .0075
 };
 const MANO_TIPICA = .095;
-
-// Huesos de la mano virtual: [desde, hasta, tipo]. 'redondo' (dedos), 'palma' (aplanado según la palma),
-// 'membrana' (piel entre el pulgar y el índice, delgada). `hasta` puede ser [a, b, t]: punto entre a y b.
-const HUESOS = [
-  ['thumb-metacarpal', 'thumb-phalanx-proximal', 'redondo'],
-  ['thumb-phalanx-proximal', 'thumb-phalanx-distal', 'redondo'],
-  ['thumb-phalanx-distal', 'thumb-tip', 'redondo'],
-  ...DEDOS.flatMap(dedo => [
-    [`${dedo}-metacarpal`, `${dedo}-phalanx-proximal`, 'palma'],
-    [`${dedo}-phalanx-proximal`, `${dedo}-phalanx-intermediate`, 'redondo'],
-    [`${dedo}-phalanx-intermediate`, `${dedo}-phalanx-distal`, 'redondo'],
-    [`${dedo}-phalanx-distal`, `${dedo}-tip`, 'redondo']
-  ]),
-  // Relleno de la palma: de la muñeca a la base de cada metacarpiano y la línea de los nudillos.
-  ['wrist', 'thumb-metacarpal', 'palma'],
-  ...DEDOS.map(dedo => ['wrist', `${dedo}-metacarpal`, 'palma']),
-  ['index-finger-phalanx-proximal', 'middle-finger-phalanx-proximal', 'palma'],
-  ['middle-finger-phalanx-proximal', 'ring-finger-phalanx-proximal', 'palma'],
-  ['ring-finger-phalanx-proximal', 'pinky-finger-phalanx-proximal', 'palma'],
-  ['index-finger-metacarpal', 'pinky-finger-metacarpal', 'palma'],
-  ['thumb-phalanx-proximal', ['index-finger-metacarpal', 'index-finger-phalanx-proximal', .5], 'membrana']
-];
-// Sin contorno junto a la muñeca: ahí la mano sigue en el antebrazo y un borde la cortaría.
-const SIN_CONTORNO = new Set(['wrist']);
+// La punta no tiene piel propia en el modelo: toma el grosor de la falange distal.
+const GROSOR_DE = nombre => (nombre.endsWith('-tip') ? nombre.replace('-tip', '-phalanx-distal') : nombre);
+// La palma (muñeca y metacarpianos) solo se ajusta un poco: su ancho ya lo dan las posiciones reales de los huesos.
+const PALMA = new Set(['wrist', 'thumb-metacarpal', ...DEDOS.map(dedo => `${dedo}-metacarpal`)]);
 
 /*
- * Mano virtual al estilo de los paneles de Meta. El usuario ve su mano real (passthrough) y, encima:
+ * Mano virtual al estilo de las manos del sistema de Meta Quest 3 (corrección: la de esferas y cilindros se veía
+ * esquelética). El usuario ve su mano real (passthrough) y, encima:
  *
- * - Una silueta suave, de color oscuro translúcido, que solo se pinta sobre lo virtual (paneles, objetos,
- *   superficies): sobre la habitación real no se pinta y se ve la mano tal cual. Lo virtual nunca se recorta
- *   alrededor de la mano (ya no hay «máscara» que deje ver el passthrough a través de un panel u objeto).
- * - Un contorno blanco que marca el borde de los dedos, también sobre la habitación.
- * - Cuando la mano se hunde en la cara de un panel, del tablero, de la superficie base del escenario (piso con su
- *   hoja, escritorio, mesa pintada) o en un objeto 3D (monitor, juguetes, macetas…), la mano dibujada se detiene
- *   en su superficie en vez de atravesarla, como al pulsar un botón en Meta. Lo que se sostiene envolviéndolo (el
- *   termo) lo rodean los dedos dibujados. Solo cambia el dibujo: el rayo, el toque y los agarres siguen a la mano real.
+ * - Un modelo de mano completo y continuo (generic-hand de WebXR Input Profiles, el mismo que usa IWSDK; en
+ *   public/modelos/manos) cuyo esqueleto se coloca cada cuadro en las 25 articulaciones reales: el largo de cada
+ *   falange es el de la mano real, y el grosor de cada dedo se ajusta al radio que el visor mide en cada
+ *   articulación (XRFrame.fillJointRadii). Así el contorno coincide con el tamaño de la mano real.
+ * - Un relleno oscuro (como en las manos de Meta) que solo se pinta sobre lo virtual (paneles, objetos,
+ *   superficies) y se desvanece hacia la muñeca; sobre la habitación real no se pinta y se ve la mano tal cual.
+ *   Lo virtual nunca se recorta alrededor de la mano (no deja ver el passthrough a través de un panel u objeto).
+ * - Un contorno blanco continuo alrededor de la mano (también sobre la habitación), abierto en la muñeca.
+ * - Cuando la mano se hunde en la cara de un panel, del tablero, de la superficie base del escenario o en un objeto
+ *   3D, la mano dibujada se detiene en su superficie; lo que se sostiene envolviéndolo (el vaso, la taza) lo rodean
+ *   los dedos dibujados. Solo cambia el dibujo: el rayo, el toque y los agarres siguen a la mano real.
  *
- * La mano se arma cada cuadro con las 25 articulaciones de WebXR Hand Input y el radio que el visor mide en
- * cada una (XRFrame.fillJointRadii): una esfera por articulación y un cilindro por hueso, con la palma aplanada
- * según su normal. Así el tamaño, el largo de cada falange y el grosor de cada dedo son los de la mano real.
- * Se dibuja después de todo lo demás, en tres pasadas: su profundidad (para quedar oculta detrás de lo que
- * esté delante de ella y para que la silueta sea de una sola capa), la silueta y el contorno.
- * Son seis dibujos por mano, sin texturas. No se usa el sensor de profundidad del visor. Con controles no hay
- * articulaciones y la mano no se dibuja (se ven los controles de IWSDK).
+ * Se dibuja después de todo lo demás, en tres pasadas con el mismo cálculo de vértices: su profundidad (para quedar
+ * oculta detrás de lo que esté delante de ella y para que el relleno sea de una sola capa), el relleno y el
+ * contorno. No se usa el sensor de profundidad del visor. Con controles no hay articulaciones y la mano no se
+ * dibuja (se ven los controles de IWSDK).
  */
+
+// Vértices con piel (skinning) y la distancia de cada vértice a la muñeca en la pose de unión (para desvanecer).
+// `uEmpuje` saca cada vértice a lo largo de su normal (el contorno es la mano un poco más gruesa, por detrás).
+const VERTICES = /* glsl */`
+  #include <common>
+  #include <skinning_pars_vertex>
+  attribute float aMuneca;
+  uniform float uEmpuje;
+  varying float vMuneca;
+  void main() {
+    #include <skinbase_vertex>
+    #include <beginnormal_vertex>
+    #include <skinnormal_vertex>
+    vec3 transformed = position + normal * uEmpuje;
+    #include <skinning_vertex>
+    vec4 mvPosition = modelViewMatrix * vec4(transformed, 1.0);
+    gl_Position = projectionMatrix * mvPosition;
+    vMuneca = aMuneca;
+  }`;
+// Color con su opacidad, que aparece desde `uDesvanecer.x` hasta `uDesvanecer.y` m de la muñeca. Sale
+// premultiplicado (la mezcla del relleno lo necesita; la del contorno usa la normal de three con premultiplicado).
+const FRAGMENTOS = /* glsl */`
+  uniform vec3 uColor;
+  uniform float uOpacidad;
+  uniform vec2 uDesvanecer;
+  varying float vMuneca;
+  void main() {
+    float a = uOpacidad * smoothstep(uDesvanecer.x, uDesvanecer.y, vMuneca);
+    gl_FragColor = vec4(uColor * a, a);
+  }`;
+
 export function crearOclusion(world, manos, { superficies = () => [] } = {}) {
   const cfg = AJUSTES.manos;
-  const esfera = new THREE.SphereGeometry(1, 12, 8);
-  const cilindro = new THREE.CylinderGeometry(1, 1, 1, 12, 1, true);
-  // Pasada 1: solo profundidad (después de lo virtual), para que la silueta sea de una capa y el contorno
-  // quede solo en el borde.
-  const profundidad = new THREE.MeshBasicMaterial({ colorWrite: false, transparent: true, depthWrite: true });
-  // Pasada 2: silueta. Mezcla con la transparencia de lo ya dibujado (destino): sobre lo virtual se ve, sobre
-  // la habitación real (transparente) no.
-  const silueta = new THREE.MeshBasicMaterial({
-    color: new THREE.Color(cfg.silueta.color), opacity: cfg.silueta.opacidad, transparent: true, depthWrite: false, toneMapped: false,
-    premultipliedAlpha: true, blending: THREE.CustomBlending, blendEquation: THREE.AddEquation,
+  // Sin máscara de recorte, nunca: la mano genérica de IWSDK escribe su profundidad antes que lo virtual y recorta los
+  // paneles y objetos alrededor de la mano (se veía la realidad a través de ellos). IWSDK la descarga de internet y la
+  // vuelve a encender al terminar de cargarla, así que sus dos materiales (compartidos por las dos manos) quedan
+  // apagados desde el arranque: aunque su modelo llegue tarde o se vuelva a conectar, no se dibuja ni escribe nada.
+  [stencilMaterial, outlineMaterial].forEach(m => { if (m) { m.visible = false; m.colorWrite = false; m.depthWrite = false; } });
+  // Después de todo lo virtual, incluidas las gafas de la vejez (9100): su profundidad no oculta nada que se dibuje
+  // después (no hay nada después) y lo virtual nunca se recorta alrededor de la mano.
+  const ORDEN = 9200;
+  const material = (opciones, uniformes) => new THREE.ShaderMaterial({
+    vertexShader: VERTICES, fragmentShader: FRAGMENTOS, transparent: true, toneMapped: false,
+    uniforms: {
+      uEmpuje: { value: 0 }, uColor: { value: new THREE.Color(0xffffff) }, uOpacidad: { value: 1 }, uDesvanecer: { value: new THREE.Vector2(0, 0) },
+      ...uniformes
+    },
+    ...opciones
+  });
+  // Pasada 1: solo profundidad, para que el relleno sea de una capa y el contorno quede solo en el borde.
+  const profundidad = material({ colorWrite: false, depthWrite: true });
+  // Pasada 2: relleno. Mezcla con la transparencia de lo ya dibujado (destino): sobre lo virtual se ve, sobre la
+  // habitación real (transparente) no; la transparencia de lo dibujado no cambia.
+  const relleno = material({
+    depthWrite: false, premultipliedAlpha: true, blending: THREE.CustomBlending, blendEquation: THREE.AddEquation,
     blendSrc: THREE.DstAlphaFactor, blendDst: THREE.OneMinusSrcAlphaFactor, blendSrcAlpha: THREE.ZeroFactor, blendDstAlpha: THREE.OneFactor
+  }, {
+    uColor: { value: new THREE.Color(cfg.relleno.color) }, uOpacidad: { value: cfg.relleno.opacidad }, uDesvanecer: { value: new THREE.Vector2(...cfg.relleno.desvanecer) }
   });
-  // Pasada 3: contorno (caras traseras de una mano un poco más gruesa: solo asoma su borde).
-  const contorno = new THREE.MeshBasicMaterial({
-    color: 0xffffff, transparent: true, opacity: cfg.contorno.opacidad, side: THREE.BackSide, depthWrite: false, toneMapped: false
+  // Pasada 3: contorno (caras traseras de la mano un poco más gruesa: solo asoma su borde), también sobre lo real.
+  const contorno = material({ depthWrite: false, side: THREE.BackSide, premultipliedAlpha: true }, {
+    uEmpuje: { value: cfg.contorno.grosor }, uOpacidad: { value: cfg.contorno.opacidad }, uDesvanecer: { value: new THREE.Vector2(...cfg.contorno.desvanecer) }
   });
-  const conContorno = cfg.contorno.opacidad > 0 && cfg.contorno.grosor > 0;
-  // Después de todo lo virtual (paneles, objetos y la visión de la vejez, en 9000) y antes de las gafas (9100).
-  const ORDEN = 9010;
 
-  const instancias = (geometria, material, cantidad, orden, matrices = null) => {
-    const malla = new THREE.InstancedMesh(geometria, material, cantidad);
-    if (matrices) malla.instanceMatrix = matrices;
-    else malla.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-    malla.frustumCulled = false;
-    malla.renderOrder = orden;
-    malla.visible = false;
-    malla.raycast = () => {};
-    malla.pointerEvents = 'none';
-    return malla;
-  };
   const grupo = new THREE.Group();
   grupo.name = 'manos-virtuales';
-  const modelos = {};
-  LADOS.forEach(lado => {
-    const esferas = instancias(esfera, profundidad, ARTICULACIONES.length, ORDEN);
-    const huesos = instancias(cilindro, profundidad, HUESOS.length, ORDEN);
-    const m = {
-      esferas, huesos,
-      siluetaEsferas: instancias(esfera, silueta, ARTICULACIONES.length, ORDEN + 1, esferas.instanceMatrix),
-      siluetaHuesos: instancias(cilindro, silueta, HUESOS.length, ORDEN + 1, huesos.instanceMatrix),
-      bordeEsferas: conContorno ? instancias(esfera, contorno, ARTICULACIONES.length, ORDEN + 2) : null,
-      bordeHuesos: conContorno ? instancias(cilindro, contorno, HUESOS.length, ORDEN + 2) : null,
-      // Corrección (m, mundo) que la deja sobre la superficie en la que se hunde, suavizada.
-      apoyo: new THREE.Vector3(), objetivo: new THREE.Vector3()
-    };
-    m.todas = [m.esferas, m.huesos, m.siluetaEsferas, m.siluetaHuesos, m.bordeEsferas, m.bordeHuesos].filter(Boolean);
-    m.todas.forEach(malla => { malla.name = `mano-virtual-${lado}`; grupo.add(malla); });
-    modelos[lado] = m;
-  });
   world.scene.add(grupo);
+  const modelos = {};
+  const estado = { manos: 0, conRadios: false, apoyadas: 0, ocultas: 0, rodeadas: 0, envolturas: 0, agarres: 0, cargadas: 0, error: null };
 
-  const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), eje = new THREE.Vector3();
-  const x = new THREE.Vector3(), z = new THREE.Vector3(), d = new THREE.Vector3(), p = new THREE.Vector3(), q = new THREE.Vector3();
-  const relativo = new THREE.Vector3(), matriz = new THREE.Matrix4(), CERO = new THREE.Matrix4().makeScale(0, 0, 0);
-  const NULO = new THREE.Vector3(), segunda = new THREE.Vector3(), extra = new THREE.Vector3();
+  // Modelo de cada mano: tres mallas con piel que comparten el esqueleto, la distancia de cada vértice a la muñeca y el
+  // radio de la piel alrededor de cada hueso en la pose de unión (para ajustar el grosor a la mano real).
+  const cargador = new GLTFLoader();
+  LADOS.forEach(lado => {
+    const m = {
+      listo: false, raiz: null, huesos: new Map(), radioModelo: new Map(), manoModelo: MANO_TIPICA, mallas: [],
+      apoyo: new THREE.Vector3(), objetivo: new THREE.Vector3(), dibujados: new Map(ARTICULACIONES.map(n => [n, new THREE.Vector3()]))
+    };
+    modelos[lado] = m;
+    cargador.loadAsync(`modelos/manos/${lado}.glb`).then(gltf => {
+      const raiz = gltf.scene;
+      raiz.name = `mano-virtual-${lado}`;
+      const piel = raiz.getObjectByProperty('type', 'SkinnedMesh');
+      raiz.updateMatrixWorld(true);
+      ARTICULACIONES.forEach(nombre => { const hueso = raiz.getObjectByName(nombre); if (hueso) m.huesos.set(nombre, hueso); });
+      const geometria = piel.geometry, esqueleto = piel.skeleton;
+      // Distancia a la muñeca y radio de la piel por hueso (vértices que dependen sobre todo de ese hueso).
+      const pos = geometria.attributes.position, indices = geometria.attributes.skinIndex, pesos = geometria.attributes.skinWeight;
+      const muneca = m.huesos.get('wrist').getWorldPosition(new THREE.Vector3()).applyMatrix4(piel.matrixWorld.clone().invert());
+      const distancias = new Float32Array(pos.count), suma = esqueleto.bones.map(() => [0, 0]);
+      const v = new THREE.Vector3(), l = new THREE.Vector3();
+      for (let i = 0; i < pos.count; i++) {
+        v.fromBufferAttribute(pos, i);
+        distancias[i] = v.distanceTo(muneca);
+        let hueso = 0, peso = 0;
+        for (let k = 0; k < 4; k++) { const w = pesos.getComponent(i, k); if (w > peso) { peso = w; hueso = indices.getComponent(i, k); } }
+        if (peso < .6) continue;
+        l.copy(v).applyMatrix4(piel.bindMatrix).applyMatrix4(esqueleto.boneInverses[hueso]);
+        suma[hueso][0] += Math.hypot(l.x, l.y); suma[hueso][1] += 1;
+      }
+      geometria.setAttribute('aMuneca', new THREE.BufferAttribute(distancias, 1));
+      esqueleto.bones.forEach((hueso, i) => { if (suma[i][1]) m.radioModelo.set(hueso.name, suma[i][0] / suma[i][1]); });
+      m.manoModelo = m.huesos.get('wrist').position.distanceTo(m.huesos.get('middle-finger-phalanx-proximal').position) || MANO_TIPICA;
+      // Tres pasadas con la misma geometría y el mismo esqueleto.
+      [[profundidad, ORDEN], [relleno, ORDEN + 1], [contorno, ORDEN + 2]].forEach(([mat, orden], i) => {
+        const malla = i === 0 ? piel : new THREE.SkinnedMesh(geometria, mat);
+        if (i === 0) piel.material = mat;
+        else { piel.parent.add(malla); malla.bind(esqueleto, piel.bindMatrix); }
+        malla.renderOrder = orden;
+        malla.frustumCulled = false;
+        malla.raycast = () => {};
+        malla.pointerEvents = 'none';
+        m.mallas.push(malla);
+      });
+      raiz.visible = false;
+      grupo.add(raiz);
+      m.raiz = raiz;
+      m.listo = true;
+      estado.cargadas += 1;
+    }).catch(error => { estado.error = String(error?.message ?? error); console.warn('No cargó el modelo de la mano', lado, error); });
+  });
+
+  const relativo = new THREE.Vector3(), NULO = new THREE.Vector3(), segunda = new THREE.Vector3(), extra = new THREE.Vector3();
   const puntos = new Map(ARTICULACIONES.map(nombre => [nombre, new THREE.Vector3()]));
-  const estado = { manos: 0, conRadios: false, apoyadas: 0, ocultas: 0, rodeadas: 0, envolturas: 0 };
 
   function radio(mano, nombre, escalaMano) {
     const medido = mano.conRadios ? mano.radios.get(nombre) : 0;
     if (medido > 0) return medido * cfg.ajuste;
     const tipo = nombre.startsWith('thumb') || nombre === 'wrist' ? nombre : FALANGES.find(f => nombre.endsWith(f));
     return (RADIO_TIPICO[tipo] ?? .01) * escalaMano * cfg.ajuste;
-  }
-  function puntoDe(extremo, destino) {
-    if (typeof extremo === 'string') return destino.copy(puntos.get(extremo));
-    const [p0, q0, t] = extremo;
-    return destino.lerpVectors(puntos.get(p0), puntos.get(q0), t);
-  }
-  // Base perpendicular a `eje` (unitario): con `normal` (palma), z sigue a la normal y x al ancho.
-  function base(normal) {
-    if (normal) {
-      z.copy(normal).addScaledVector(eje, -normal.dot(eje));
-      if (z.lengthSq() > 1e-8) { z.normalize(); x.crossVectors(eje, z); return; }
-    }
-    x.set(1, 0, 0).addScaledVector(eje, -eje.x);
-    if (x.lengthSq() < 1e-6) x.set(0, 0, 1).addScaledVector(eje, -eje.z);
-    x.normalize();
-    z.crossVectors(x, eje);
   }
 
   /*
@@ -214,11 +243,12 @@ export function crearOclusion(world, manos, { superficies = () => [] } = {}) {
     return mayor > 0 ? 'apoyada' : null;
   }
 
-  // Lo que se sostiene envolviéndolo (el termo): las articulaciones que quedan dentro de su cilindro salen hacia
-  // su superficie, así los dedos dibujados lo rodean (el pulgar por fuera) en vez de atravesarlo.
+  // Lo que se sostiene con un pellizco (la taza por el asa): las articulaciones que quedan dentro de su cilindro salen
+  // hacia su superficie. Lo que se sostiene con toda la mano usa la postura de agarre (más abajo).
   const radial = new THREE.Vector3();
   function rodear(mano, escalaMano) {
     for (const cil of superficies.envolturas?.() ?? []) {
+      if (cil.envolvente && cil.lado === mano.lado) continue;
       for (const nombre of ARTICULACIONES) {
         const p = puntos.get(nombre), r = radio(mano, nombre, escalaMano);
         relativo.subVectors(p, cil.centro);
@@ -234,74 +264,128 @@ export function crearOclusion(world, manos, { superficies = () => [] } = {}) {
     }
   }
 
+// ---------- Postura de agarre (corrección: el vaso y la taza rodeados con toda la mano) ----------
+  // Mientras una mano sostiene un cilindro con el agarre envolvente, sus dedos dibujados no copian a los reales (que se
+  // cierran más que el objeto virtual y lo atraviesan): cada dedo parte de su nudillo real y se enrolla alrededor del
+  // cilindro, en el plano perpendicular a su eje, con el largo real de cada falange (la piel no se estira) y del lado
+  // hacia el que el dedo real apunta. La muñeca, la palma y los nudillos siguen a la mano real. La postura entra y sale
+  // con una mezcla suave.
+  const DIGITOS = [['thumb-phalanx-proximal', 'thumb-phalanx-distal', 'thumb-tip'], ...DEDOS.map(d => FALANGES.slice(1).map(f => `${d}-${f}`))];
+  const agarreP = new Map(ARTICULACIONES.map(n => [n, new THREE.Vector3()])), agarreQ = new Map(ARTICULACIONES.map(n => [n, new THREE.Quaternion()]));
+  const eu = new THREE.Vector3(), ew = new THREE.Vector3(), base2 = new THREE.Vector3(), real = new THREE.Vector3(), adelanteReal = new THREE.Vector3(), haciaSiguiente = new THREE.Vector3();
+  const giroExtra = new THREE.Quaternion(), ADELANTE = new THREE.Vector3(0, 0, -1);
+  function posturaDeAgarre(mano, cil, escalaMano) {
+    for (const cadena of DIGITOS) {
+      const inicio = puntos.get(cadena[0]);
+      base2.copy(cil.centro).addScaledVector(cil.eje, relativo.subVectors(inicio, cil.centro).dot(cil.eje));
+      eu.subVectors(inicio, base2);
+      let rho = eu.length();
+      if (rho < 1e-5) eu.copy(mano.palma).negate(); else eu.divideScalar(rho);
+      ew.crossVectors(cil.eje, eu);
+      // Hacia dónde se enrolla: hacia donde apunta la primera falange real (o los dedos de la mano).
+      real.subVectors(mano.puntos.get(cadena[1]), mano.puntos.get(cadena[0]));
+      const sentido = (Math.abs(real.dot(ew)) > 1e-4 ? real.dot(ew) : mano.dedos.dot(ew)) >= 0 ? 1 : -1;
+      const piel = radio(mano, cadena[1], escalaMano) + cfg.agarre.holgura;
+      const Rf = cil.radio + piel;
+      rho = Math.max(rho, Rf);
+      let fi = 0;
+      agarreP.get(cadena[0]).copy(base2).addScaledVector(eu, rho);
+      for (let i = 1; i < cadena.length; i++) {
+        const largo = mano.puntos.get(cadena[i]).distanceTo(mano.puntos.get(cadena[i - 1]));
+        if (rho > Rf + 1e-4) {
+          const c = (rho * rho + Rf * Rf - largo * largo) / (2 * rho * Rf);
+          if (c <= 1) { fi += sentido * Math.acos(Math.max(-1, c)); rho = Rf; }
+          else {
+            // No alcanza el cilindro: avanza hacia el punto de tangencia.
+            const dt = Math.acos(Rf / rho), tx = Rf * Math.cos(fi + sentido * dt), ty = Rf * Math.sin(fi + sentido * dt);
+            const px = rho * Math.cos(fi), py = rho * Math.sin(fi), dx = tx - px, dy = ty - py, l = Math.hypot(dx, dy) || 1;
+            const nx = px + dx / l * largo, ny = py + dy / l * largo;
+            rho = Math.hypot(nx, ny); fi = Math.atan2(ny, nx);
+          }
+        } else {
+          fi += sentido * 2 * Math.asin(Math.min(1, largo / (2 * Rf)));
+        }
+        fi = THREE.MathUtils.clamp(fi, -cfg.agarre.vueltaMax, cfg.agarre.vueltaMax);
+        agarreP.get(cadena[i]).copy(base2).addScaledVector(eu, rho * Math.cos(fi)).addScaledVector(ew, rho * Math.sin(fi));
+      }
+      // Giro de cada hueso: el de la articulación real, girado lo justo para apuntar a la articulación siguiente.
+      cadena.forEach((nombre, i) => {
+        const siguiente = i < cadena.length - 1 ? agarreP.get(cadena[i + 1]) : null;
+        if (siguiente) haciaSiguiente.subVectors(siguiente, agarreP.get(nombre)).normalize();
+        else haciaSiguiente.subVectors(agarreP.get(nombre), agarreP.get(cadena[i - 1])).normalize();
+        const q = mano.giros.get(nombre);
+        adelanteReal.copy(ADELANTE).applyQuaternion(q);
+        agarreQ.get(nombre).copy(giroExtra.setFromUnitVectors(adelanteReal, haciaSiguiente)).multiply(q);
+      });
+    }
+  }
+
+  // Grosor de cada hueso: radio real de su articulación sobre el radio de la piel del modelo (la palma, poco).
+  function grosor(mano, m, nombre, escalaMano) {
+    const fuente = GROSOR_DE(nombre), modelo = m.radioModelo.get(fuente);
+    const [min, max] = PALMA.has(nombre) ? cfg.grosor.palma : cfg.grosor.dedos;
+    if (!modelo || !mano.conRadios) return THREE.MathUtils.clamp(escalaMano * MANO_TIPICA / m.manoModelo * cfg.ajuste, min, max);
+    return THREE.MathUtils.clamp(radio(mano, fuente, escalaMano) / modelo, min, max);
+  }
+
   function armar(lado, dt) {
     const mano = manos[lado], m = modelos[lado];
-    const seguida = mano.seguida && ARTICULACIONES.every(nombre => mano.puntos.has(nombre));
-    m.todas.forEach(malla => { malla.visible = seguida; });
+    if (!m.listo) return false;
+    const seguida = mano.seguida && ARTICULACIONES.every(nombre => mano.puntos.has(nombre) && mano.giros.has(nombre));
+    m.raiz.visible = seguida;
     if (!seguida) { m.apoyo.set(0, 0, 0); return false; }
     const escalaMano = mano.puntos.get('wrist').distanceTo(mano.puntos.get('middle-finger-phalanx-proximal')) / MANO_TIPICA;
     // Detenida en la superficie: la corrección crece de inmediato (no se ve hundida) y se suelta con suavidad.
     const caso = hundimiento(mano, escalaMano, NULO, m.objetivo, true);
-    if (caso === 'oculta') { m.todas.forEach(malla => { malla.visible = false; }); m.apoyo.set(0, 0, 0); estado.ocultas += 1; return true; }
+    if (caso === 'oculta') { m.raiz.visible = false; m.apoyo.set(0, 0, 0); estado.ocultas += 1; return true; }
     // Segunda pasada con la mano ya corregida: que al salir de un cuerpo no quede metida en otro.
     if (caso && hundimiento(mano, escalaMano, segunda.copy(m.objetivo), extra, false)) m.objetivo.add(extra);
     if (m.objetivo.lengthSq() >= m.apoyo.lengthSq()) m.apoyo.copy(m.objetivo);
     else m.apoyo.lerp(m.objetivo, 1 - Math.exp(-cfg.superficie.suavizado * dt));
     ARTICULACIONES.forEach(nombre => puntos.get(nombre).copy(mano.puntos.get(nombre)).add(m.apoyo));
     rodear(mano, escalaMano);
-    const grosor = cfg.contorno.grosor;
-    // Articulaciones: esferas (aplanadas en la palma, con el grosor según su normal).
-    ARTICULACIONES.forEach((nombre, i) => {
-      const r = radio(mano, nombre, escalaMano), plana = PALMA.has(nombre), punto = puntos.get(nombre);
-      eje.copy(mano.dedos);
-      base(plana ? mano.palma : null);
-      const k = plana ? cfg.aplanado : 1;
-      m.esferas.setMatrixAt(i, matriz.makeBasis(a.copy(x).multiplyScalar(r), b.copy(eje).multiplyScalar(r), c.copy(z).multiplyScalar(r * k)).setPosition(punto));
-      if (!m.bordeEsferas) return;
-      if (SIN_CONTORNO.has(nombre)) { m.bordeEsferas.setMatrixAt(i, CERO); return; }
-      const rb = r + grosor;
-      m.bordeEsferas.setMatrixAt(i, matriz.makeBasis(a.copy(x).multiplyScalar(rb), b.copy(eje).multiplyScalar(rb), c.copy(z).multiplyScalar(r * k + grosor)).setPosition(punto));
+    // Postura de agarre: con un cilindro rodeado por esta mano, los dedos lo envuelven (mezcla suave al entrar y salir).
+    const cil = (superficies.envolturas?.() ?? []).find(c => c.envolvente && c.lado === lado);
+    if (cil) m.cilindro = { centro: cil.centro.clone(), eje: cil.eje.clone(), radio: cil.radio, mitad: cil.mitad };
+    m.agarre = THREE.MathUtils.clamp((m.agarre ?? 0) + (cil ? 1 : -1) * dt * cfg.agarre.rapidez, 0, 1);
+    if (cil && m.agarre < .02) m.agarre = .02;
+    const mezcla = THREE.MathUtils.smoothstep(m.agarre, 0, 1);
+    if (mezcla > 0 && m.cilindro) { posturaDeAgarre(mano, m.cilindro, escalaMano); estado.agarres += 1; }
+    // Esqueleto del modelo en las articulaciones (el modelo cuelga de la escena sin giro ni escala): posición
+    // corregida, giro de la articulación real y grosor a lo ancho de cada hueso (su eje largo es −Z).
+    ARTICULACIONES.forEach(nombre => {
+      const hueso = m.huesos.get(nombre);
+      if (!hueso) return;
+      const p = puntos.get(nombre);
+      hueso.quaternion.copy(mano.giros.get(nombre));
+      if (mezcla > 0 && m.cilindro && !PALMA.has(nombre) && nombre !== 'wrist') {
+        p.lerp(agarreP.get(nombre), mezcla);
+        hueso.quaternion.slerp(agarreQ.get(nombre), mezcla);
+      }
+      hueso.position.copy(p);
+      const k = grosor(mano, m, nombre, escalaMano);
+      hueso.scale.set(k, k, 1);
+      m.dibujados.get(nombre).copy(p);
     });
-    // Huesos: cilindros de una articulación a la otra con el radio menor de las dos.
-    HUESOS.forEach(([desde, hasta, tipo], i) => {
-      puntoDe(desde, p);
-      puntoDe(hasta, q);
-      eje.subVectors(q, p);
-      const largo = eje.length();
-      if (largo < 1e-5) { m.huesos.setMatrixAt(i, CERO); m.bordeHuesos?.setMatrixAt(i, CERO); return; }
-      eje.divideScalar(largo);
-      const nombreHasta = typeof hasta === 'string' ? hasta : hasta[1];
-      let r = Math.min(radio(mano, desde, escalaMano), radio(mano, nombreHasta, escalaMano));
-      if (tipo === 'membrana') r = radio(mano, desde, escalaMano) * cfg.membrana;
-      base(tipo === 'redondo' ? null : mano.palma);
-      const k = tipo === 'redondo' ? 1 : cfg.aplanado;
-      const centro = c.addVectors(p, q).multiplyScalar(.5);
-      m.huesos.setMatrixAt(i, matriz.makeBasis(a.copy(x).multiplyScalar(r), b.copy(eje).multiplyScalar(largo), d.copy(z).multiplyScalar(r * k)).setPosition(centro));
-      if (!m.bordeHuesos) return;
-      if (SIN_CONTORNO.has(desde)) { m.bordeHuesos.setMatrixAt(i, CERO); return; }
-      const rb = r + grosor;
-      m.bordeHuesos.setMatrixAt(i, matriz.makeBasis(a.copy(x).multiplyScalar(rb), b.copy(eje).multiplyScalar(largo), d.copy(z).multiplyScalar(r * k + grosor)).setPosition(centro));
-    });
-    [m.esferas, m.huesos, m.bordeEsferas, m.bordeHuesos].forEach(malla => { if (malla) malla.instanceMatrix.needsUpdate = true; });
     if (caso === 'apoyada') estado.apoyadas += 1;
     return true;
   }
 
-  // La mano genérica de IWSDK queda apagada (su modelo fijo no coincide con la mano real). IWSDK vuelve a
-  // mostrar su modelo cada cuadro (model.visible), así que se ocultan sus mallas; toggleVisual(false) además
-  // evita que mueva su esqueleto.
-  const apagadas = new WeakSet();
+  // Además, cada cuadro: el adaptador de IWSDK no muestra su mano (toggleVisual) y se ocultan las mallas de toda mano
+  // genérica que IWSDK tenga cargada (la del adaptador y las de su caché, que reutiliza al volver a conectar la mano).
+  const ocultarModelo = modelo => {
+    if (!modelo) return;
+    modelo.visible = false;
+    modelo.traverse(o => { if (o.isMesh) o.visible = false; });
+  };
   function apagarManoGenerica() {
     for (const lado of LADOS) {
       const adaptador = world.input?.xr?.visualAdapters?.hand?.[lado];
       if (!adaptador) continue;
       if (adaptador.visualsEnabled !== false) adaptador.toggleVisual?.(false);
-      const modelo = adaptador.visual?.model;
-      if (modelo && !apagadas.has(modelo)) {
-        modelo.traverse(o => { if (o.isMesh) o.visible = false; });
-        apagadas.add(modelo);
-      }
+      ocultarModelo(adaptador.visual?.model);
     }
+    XRInputVisualAdapter?.visualCache?.forEach((visual, clave) => { if (String(clave).startsWith('hand')) ocultarModelo(visual?.model); });
   }
 
   return {
@@ -311,6 +395,7 @@ export function crearOclusion(world, manos, { superficies = () => [] } = {}) {
       estado.apoyadas = 0;
       estado.ocultas = 0;
       estado.rodeadas = 0;
+      estado.agarres = 0;
       estado.envolturas = superficies.envolturas?.().length ?? 0;
       estado.manos = LADOS.filter(lado => armar(lado, dt)).length;
       estado.conRadios = LADOS.some(lado => manos[lado].seguida && manos[lado].conRadios);

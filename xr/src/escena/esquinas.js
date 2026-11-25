@@ -52,7 +52,7 @@ export function crearEsquinas({ renderOrder = 5, encima = false } = {}) {
     grupo.add(pieza);
     return pieza;
   });
-  return {
+  const esquinas = {
     grupo, material, piezas,
     colocar(ancho, alto, metro = 1) {
       const b = brazo * metro, d = separacion * metro;
@@ -65,4 +65,7 @@ export function crearEsquinas({ renderOrder = 5, encima = false } = {}) {
     set opacidad(valor) { material.opacity = valor; grupo.visible = valor > .01; },
     get opacidad() { return material.opacity; }
   };
+  // Tamaño inicial de las piezas (las L miden su brazo desde el principio, aun ocultas).
+  esquinas.colocar(0, 0, 1);
+  return esquinas;
 }
