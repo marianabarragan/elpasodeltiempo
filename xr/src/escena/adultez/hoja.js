@@ -68,7 +68,8 @@ export function crearHoja({ world, props, entidadLapicero, escala, sonido, manos
   }
   function escribirTareas() {
     if (!paper.sheet || !uv) return; // la hoja provisional ya dibuja título y tareas
-    textosModelo.forEach(o => { o.visible = false; });
+    // Ocultos para siempre (también tras REPETIR, ver instantanea.js): solo queda la escritura de la textura.
+    textosModelo.forEach(o => { o.visible = false; o.userData.ocultoFijo = true; });
     const W = checklist.width, H = checklist.height;
     const compresion = ((u1 - u0) * W / paper.width) / ((v1 - v0) * H / paper.height);
     const borde = u1 * W - .035 * W;

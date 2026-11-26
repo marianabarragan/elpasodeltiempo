@@ -61,9 +61,10 @@ export async function iniciarExperiencia(world) {
       tablero: () => e.tablero?.raiz ?? null,
       escenario: () => ({ ninez: e.manipNinez, adultez: e.manipAdultez, vejez: e.manipVejez })[e.fase] ?? null,
       cuerpos: () => cuerposActivos(),
-      // El vaso de la adultez o la taza de la vejez en la mano: los dedos dibujados los rodean según su diámetro.
+      // El vaso de la adultez o la taza de la vejez en la mano: los dedos dibujados los rodean según su diámetro. El vaso
+      // cuenta también suelto (corrección del PDF 4): la mano dibujada lo rodea en vez de atravesarlo antes de tomarlo.
       envolturas: () => {
-        if (e.fase === 'adultez' && e.adultez?.termo.sostenido) return [e.adultez.termo.cilindroMundo(cilindroTermo)];
+        if (e.fase === 'adultez' && e.adultez?.escena.visible) return [e.adultez.termo.cilindroMundo(cilindroTermo)];
         if (e.fase === 'vejez' && e.vejez?.taza.sostenido) return [e.vejez.taza.cilindroMundo(cilindroTaza)];
         return [];
       }

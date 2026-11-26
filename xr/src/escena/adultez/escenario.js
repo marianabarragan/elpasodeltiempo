@@ -189,22 +189,59 @@ export function crearAdultez(world, espacio, base, { sonido, hielo, teclado, cab
     .forEach(({ root }) => sombras.agregar(root));
 
   // Lo sostenido no atraviesa el escritorio: si su punto más bajo queda bajo la cara superior (estando
-  // sobre el escritorio), sube lo necesario.
+  // sobre el escritorio), sube lo necesario. Devuelve cuánto subió (m; 0 si no hizo falta).
   const enGrupo = new THREE.Vector3(), cajaMundo = new THREE.Box3(), superficie = new THREE.Vector3(), escalaGrupo = new THREE.Vector3();
   function apoyar(raiz, visual) {
     props.group.updateWorldMatrix(true, false);
     raiz.updateWorldMatrix(true, true);
     cajaMundo.setFromObject(visual);
     props.group.worldToLocal(cajaMundo.getCenter(enGrupo));
-    if (enGrupo.x < limites.minX || enGrupo.x > limites.maxX || enGrupo.z < limites.minZ || enGrupo.z > limites.maxZ) return;
+    if (enGrupo.x < limites.minX || enGrupo.x > limites.maxX || enGrupo.z < limites.minZ || enGrupo.z > limites.maxZ) return 0;
     props.group.localToWorld(superficie.set(enGrupo.x, props.deskTopY, enGrupo.z));
     const falta = superficie.y - cajaMundo.min.y;
     if (falta > 0) raiz.position.y += falta / props.group.getWorldScale(escalaGrupo).y;
+    return Math.max(falta, 0);
   }
 
   // Lugares que la hoja no puede invadir al deslizarla o ampliarla (unidades del escenario).
   const huella = objeto => { const b = cajaLocal(props.group, objeto); return { minX: b.min.x, maxX: b.max.x, minZ: b.min.z, maxZ: b.max.z }; };
   const obstaculos = [models.monitor, models.keyboard, models.clockDigital, models.coffeeThermos, models.plant, models.pen].map(({ root }) => huella(root));
+  const huellaTermoInicial = { ...obstaculos[3] };
+
+  // Cuerpo del termo (sin el halo) en el espacio del grupo del escenario, en unidades.
+  const cuerpoTermo = () => {
+    const b = new THREE.Box3(), parte = new THREE.Box3(), m = new THREE.Matrix4();
+    props.group.updateWorldMatrix(true, false);
+    models.coffeeThermos.root.updateWorldMatrix(true, true);
+    const inversa = props.group.matrixWorld.clone().invert();
+    models.coffeeThermos.root.traverse(o => {
+      if (!o.isMesh || o.userData.glowShell || o.userData.sombraContacto) return;
+      o.geometry.computeBoundingBox();
+      b.union(parte.copy(o.geometry.boundingBox).applyMatrix4(m.multiplyMatrices(inversa, o.matrixWorld)));
+    });
+    return b;
+  };
+  // Altura (m) de la base del termo sobre la cara superior del escritorio (Infinity si no está sobre él).
+  function alturaSobreEscritorio() {
+    const b = cuerpoTermo(), c = b.getCenter(new THREE.Vector3());
+    if (c.x < limites.minX || c.x > limites.maxX || c.z < limites.minZ || c.z > limites.maxZ) return Infinity;
+    return (b.min.y - props.deskTopY) * props.group.getWorldScale(escalaGrupo).y;
+  }
+  /*
+   * El termo soltado junto al escritorio (corrección: se queda donde se deja). Su base se asienta en la cara superior;
+   * vale si queda dentro del escritorio y sin cruzar otros objetos (la hoja incluida). Si vale, la hoja lo esquiva en
+   * su nuevo lugar; si no, devuelve false y el termo vuelve a su sitio. El termo debe estar ya derecho.
+   */
+  function dejarTermo() {
+    const raiz = models.coffeeThermos.root;
+    raiz.position.y += props.deskTopY + .0005 / s - cuerpoTermo().min.y;
+    const b = cuerpoTermo(), h = A.hoja.holgura ?? 0;
+    if (b.min.x < limites.minX || b.max.x > limites.maxX || b.min.z < limites.minZ || b.max.z > limites.maxZ) return false;
+    const otros = [models.monitor, models.keyboard, models.clockDigital, models.plant, models.pen, models.checklistPaper].map(({ root }) => huella(root));
+    if (otros.some(o => !(b.max.x <= o.minX - h || b.min.x >= o.maxX + h || b.max.z <= o.minZ - h || b.min.z >= o.maxZ + h))) return false;
+    Object.assign(obstaculos[3], huella(raiz));
+    return true;
+  }
 
   const hechos = new Set();
   const hito = paso => { if (hechos.has(paso)) return; hechos.add(paso); alHito(paso); };
@@ -219,7 +256,7 @@ export function crearAdultez(world, espacio, base, { sonido, hielo, teclado, cab
     world, props, entidadLapicero: entidades.lapicero, escala: escalaActual, sonido, manos, limites, obstaculos, apoyar, alCompletar: () => hito('hoja')
   });
   const termo = crearTermo({
-    world, manos, termo: models.coffeeThermos, entidad: entidades.vaso, hielo, sonido, cabeza, apoyar, alBeber: () => hito('vaso')
+    world, manos, termo: models.coffeeThermos, entidad: entidades.vaso, hielo, sonido, cabeza, apoyar, alturaSobreEscritorio, dejarTermo, alBeber: () => hito('vaso')
   });
   const calendario = crearCalendario({ calendario: props.calendar, dedos, sonido, alArrancar: () => hito('calendario') });
 
@@ -242,7 +279,7 @@ export function crearAdultez(world, espacio, base, { sonido, hielo, teclado, cab
     }
   };
   // Manos que sostienen el lapicero o el termo.
-  const manoDelTermo = () => (termo.estado.modo === 'envolvente' ? termo.estado.lado : termo.estado.modo ? world.getSystem(GrabSystem)?.getHolderHand(entidades.vaso) : null);
+  const manoDelTermo = () => (termo.envuelto ? termo.estado.lado : termo.estado.modo ? world.getSystem(GrabSystem)?.getHolderHand(entidades.vaso) : null);
 
   return {
     escena, props, entidades, sombras, hechos, dedos, aparatos, computador, hoja, termo, calendario, estado, paneles, limites, area,
@@ -302,6 +339,7 @@ export function crearAdultez(world, espacio, base, { sonido, hielo, teclado, cab
       computador.reiniciar();
       aparatos.reiniciar();
       termo.reiniciar();
+      Object.assign(obstaculos[3], huellaTermoInicial);
       calendario.reiniciar();
     }
   };

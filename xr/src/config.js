@@ -208,8 +208,10 @@ export const AJUSTES = {
   // altura de las tarjetas respecto del centro del marco y separación por delante de él. Una punta de dedo cuenta como
   // apoyada a menos de su radio más `contacto` m delante de la cara del marco (o hasta `detras` m por detrás); durante el
   // arrastre se tolera `holgura` m más. Un gesto que se mueve menos de `toqueMax` m es un toque. `ajustar`: segundos que
-  // tarda en acomodarse en una tarjeta.
-  aportes: { paso: .294, alturaTarjetas: -.037, delante: .006, contacto: .012, detras: .03, holgura: .01, toqueMax: .015, ajustar: .35 },
+  // tarda en acomodarse en una tarjeta. Marco de `marco` m (ancho, alto) y tarjeta central de `central` m (corrección
+  // del PDF 4: ambos más altos). Las tarjetas se dibujan siempre después del marco (`orden`, renderOrder de UIKit): antes
+  // dependía de la distancia a la cabeza y el marco tapaba una lateral según hacia dónde se mirara.
+  aportes: { marco: [.96, .565], central: [.31, .40], lateral: [.24, .164], orden: 1, paso: .294, alturaTarjetas: -.0425, delante: .006, contacto: .012, detras: .03, holgura: .01, toqueMax: .015, ajustar: .35 },
   // Barra de progreso, frase y flecha de cada escenario: la barra arriba, la frase debajo con `separacion` m entre
   // ellas, y la flecha a la derecha de la frase con `separacionFlecha` m (medidas al tamaño original del escenario;
   // crecen y se reducen con él).
@@ -291,13 +293,22 @@ export const AJUSTES = {
       correo: { crecer: .18, pausa: .35, ocultar: .35, mostrar: .5, texto: 'Correo recibido. Muchas gracias.' }
     },
     termo: {
-      // Agarre envolvente: la palma a menos de `palma` m del eje del termo (además de su radio) y al menos
-      // `dedos` puntas de dedo a menos de `puntas` m de su superficie, durante `confirmar` s. Con las manos el pellizco
-      // no lo toma (solo rodeándolo); con controles, el botón lateral.
-      palma: .05, puntas: .03, dedos: 3, confirmar: .1, soltar: .25,
-      // Se suelta solo al abrir la mano: `dedosAbiertos` dedos con la punta a más de `abrir` veces la distancia de su
-      // nudillo a la muñeca, durante `soltar` s (o si el visor pierde la mano más de `perdida` s).
-      abrir: 1.75, dedosAbiertos: 3, perdida: .8,
+      // Agarre con la mano en C (corrección: sin cerrar el puño): el centro de la palma a menos de `palma` m de la
+      // superficie del termo, mirándolo (coseno ≥ `mirar`), entre las fracciones `altura` de su alto, y al menos
+      // `dedos` dedos con alguna falange a menos de `puntas` m de su superficie, durante `confirmar` s. Con las manos
+      // el pellizco no lo toma (tampoco la mano lista para pellizcar: puntas del pulgar y del índice a menos de
+      // `pinzaMin` m; en la C quedan separadas casi el ancho del vaso); con controles, el botón lateral.
+      palma: .055, mirar: .3, altura: [-.05, 1.05], puntas: .035, dedos: 2, pinzaMin: .025, confirmar: .15, soltar: .25,
+      // Soltar (dos formas): estirar los dedos o apoyarlo en el escritorio y retirar la mano.
+      // - Estirar: `dedosAbiertos` dedos con la punta a más de `abrir` veces la distancia de su nudillo a la muñeca y
+      //   al menos `margenAbrir` más estirados que al tomarlo (la C no cuenta como abrir), sin pasar de `abrirMax`;
+      //   durante `soltar` s. En el aire vuelve a su lugar; junto al escritorio (base a menos de `cercaMesa` m) se queda.
+      // - Apoyar: al bajarlo hasta el escritorio (la mano lo empuja más de `posar` m contra él, después de haberlo
+      //   levantado `levantado` m) queda posado; retirar la palma más de `retirar` m de la zona de agarre durante
+      //   `soltar` s lo deja ahí. Subir la palma `levantar` m con la mano en C lo vuelve a levantar.
+      // - Si el visor pierde la mano más de `perdida` s también se suelta.
+      abrir: 1.75, margenAbrir: .12, abrirMax: 1.92, dedosAbiertos: 3, perdida: .8,
+      cercaMesa: .015, posar: .004, levantado: .015, retirar: .03, levantar: .025,
       // En la mano (perfil 'envolvente' de agarre.js): el eje del termo sigue los nudillos (la tapa hacia el
       // pulgar) y queda `holgura` m delante de la palma, `haciaDedos` fracción del radio hacia los dedos;
       // la mano lo sujeta a `sujecion` de su altura desde la base. Ajuste fino por mano en metros.

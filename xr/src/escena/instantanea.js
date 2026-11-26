@@ -11,12 +11,14 @@ export function tomarInstantanea(raiz) {
   return lista;
 }
 
+// Lo marcado con `userData.ocultoFijo` (p. ej. los textos del modelo de la hoja, que se ocultan después de tomar la
+// instantánea, cuando carga la letra) sigue oculto: si volviera a verse, la hoja mostraría dos escrituras.
 export function restaurarInstantanea(lista) {
   lista.forEach(({ o, p, q, s, v }) => {
     gsap.killTweensOf([o, o.position, o.quaternion, o.rotation, o.scale]);
     o.position.copy(p);
     o.quaternion.copy(q);
     o.scale.copy(s);
-    o.visible = v;
+    o.visible = o.userData.ocultoFijo ? false : v;
   });
 }

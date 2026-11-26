@@ -2,28 +2,36 @@ import * as THREE from 'three';
 import gsap from 'gsap';
 import { GrabSystem, OneHandGrabbable } from '@iwsdk/core';
 import { AJUSTES } from '../../config.js';
-import { crearAgarre, seSuelta } from '../agarre.js';
+import { crearAgarre, estiramientos, seSuelta } from '../agarre.js';
 
-const PUNTAS = ['thumb-tip', 'index-finger-tip', 'middle-finger-tip', 'ring-finger-tip', 'pinky-finger-tip'];
+// Falanges que cuentan como «dedo junto al vaso» (de cada dedo, cualquiera de ellas).
+const FALANGES_DEDOS = [
+  ['thumb-phalanx-distal', 'thumb-tip'],
+  ...['index', 'middle', 'ring', 'pinky'].map(d => [`${d}-finger-phalanx-intermediate`, `${d}-finger-phalanx-distal`, `${d}-finger-tip`])
+];
 const ARRIBA = new THREE.Vector3(0, 1, 0);
 
 /*
  * Termo de café (storyboard 8, corregido tras las pruebas en Quest 3).
  *
- * Agarre con toda la mano (corrección): con las manos el vaso solo se toma rodeándolo; el pellizco ya no lo
- * levanta (la mano lo atravesaba). Se detecta el contacto de la mano con el cuerpo del termo: la palma junto a su
- * eje y al menos tres puntas de dedo alrededor de su superficie durante un instante. No es un reconocedor de
- * posturas: mide distancias entre las articulaciones (las que IWSDK ya lee) y el cilindro. Se suelta solo al abrir
- * la mano con claridad (agarre.js, seSuelta), no cuando el visor pierde de vista un dedo. Sostenido, el termo se coloca
- * en la mano con el perfil 'envolvente' de agarre.js (igual en las dos manos) y la mano dibujada toma la postura de
- * agarre (oclusion.js): sus dedos lo envuelven según su diámetro, sin atravesarlo ni deformarse.
+ * Agarre con la mano en C (corrección del PDF 4: sin cerrar el puño). Con las manos el vaso se toma acercando la mano
+ * como se toma un vaso de verdad: la palma pegada a él y mirándolo, a la altura del cuerpo, con al menos dos dedos
+ * junto a su superficie, durante un instante. El pellizco no lo toma. No es un reconocedor de posturas: mide
+ * distancias entre las articulaciones (las que IWSDK ya lee) y el cilindro. Sostenido, el termo se coloca en la mano con
+ * el perfil 'envolvente' de agarre.js y la mano dibujada toma la postura de agarre (oclusion.js): sus dedos lo envuelven
+ * según su diámetro. Antes de tomarlo, la mano dibujada lo rodea en vez de atravesarlo (narrativa.js, envolturas).
+ * Se suelta de dos formas:
+ * - estirando los dedos (más que en la C con que se tomó): en el aire vuelve a su lugar; junto al escritorio se queda;
+ * - bajándolo hasta el escritorio (queda posado) y retirando la mano: se queda donde se dejó, derecho, si ahí cabe
+ *   (dentro del escritorio y sin cruzar otros objetos); si no, vuelve a su lugar. Subir la mano en C lo levanta otra vez.
  * Con controles (sin manos) se toma con el botón lateral (agarre de IWSDK).
  *
  * Sacudirlo hace sonar el hielo (sonido-hielo.js) según la fuerza del movimiento; es opcional y no suma.
  * Beber (el hito): acercar la tapa a la boca, estimada desde la pose del visor, e inclinar el termo; suena
  * el sorbo una vez por gesto y el hito se suma solo la primera vez.
  */
-export function crearTermo({ world, manos, termo, entidad, hielo, sonido, cabeza, apoyar, alBeber }) {
+// `alturaSobreEscritorio()`: m de la base sobre el escritorio; `dejarTermo()`: lo asienta donde está (true si cabe).
+export function crearTermo({ world, manos, termo, entidad, hielo, sonido, cabeza, apoyar, alturaSobreEscritorio, dejarTermo, alBeber }) {
   const A = AJUSTES.adultez.termo;
   const { root, visual } = termo;
 
@@ -42,9 +50,12 @@ export function crearTermo({ world, manos, termo, entidad, hielo, sonido, cabeza
   });
 
   const reposo = { posicion: root.position.clone(), giro: root.quaternion.clone() };
+  // `modo`: null, 'iwsdk' (controles), 'envolvente' (en la mano) o 'posado' (apoyado en el escritorio, aún con la
+  // mano alrededor). `rearmar`: tras dejarlo, la mano debe alejarse antes de poder tomarlo de nuevo.
   const estado = {
-    habilitado: false, modo: null, lado: null, candidato: null, espera: 0, suelto: 0,
-    bebido: false, sorbos: 0, listoParaBeber: true, choques: 0, envolturas: 0
+    habilitado: false, modo: null, lado: null, candidato: null, espera: 0, suelto: 0, fuera: 0,
+    levantado: false, alturaPosado: 0, rearmar: false, inicial: null,
+    bebido: false, sorbos: 0, listoParaBeber: true, choques: 0, envolturas: 0, posados: 0, dejados: 0, regresos: 0
   };
   let regreso = null;
 
@@ -70,25 +81,40 @@ export function crearTermo({ world, manos, termo, entidad, hielo, sonido, cabeza
     eje.copy(ARRIBA).applyQuaternion(root.getWorldQuaternion(new THREE.Quaternion()));
     return { radio: radioLocal * metros(), alto: altoLocal * metros() };
   }
-  // Distancia (m) de un punto al eje y altura relativa a lo largo de él (0 base, 1 tapa).
+  // Distancia (m) de un punto al eje y altura relativa a lo largo de él (0 base, 1 tapa). Deja en `v` la dirección
+  // del eje hacia el punto (sin normalizar).
   function respectoDelEje(punto, alto) {
     v.subVectors(punto, base);
     const t = v.dot(eje);
     return { d: v.addScaledVector(eje, -t).length(), h: t / alto };
   }
-  // Cuántas puntas de dedo rodean el cilindro (cerca de su superficie, a la altura del cuerpo) y si la palma está junto a él.
-  function envoltura(mano, holguraPuntas) {
+  // ¿La palma está junto al vaso (a menos de `extra` m de su superficie, a la altura del cuerpo)? Con `mirando`, además
+  // la palma lo mira.
+  function palmaJunto(mano, extra, mirando) {
     const { radio, alto } = cilindro();
     const palma = respectoDelEje(mano.centro, alto);
-    const palmaJunto = palma.d <= radio + A.palma && palma.h > -.1 && palma.h < 1.1;
-    let puntas = 0;
-    for (const nombre of PUNTAS) {
-      const p = mano.puntos.get(nombre);
-      if (!p) continue;
-      const r = respectoDelEje(p, alto);
-      if (r.d <= radio + holguraPuntas && r.h > -.05 && r.h < 1.05) puntas += 1;
+    if (palma.d > radio + extra || palma.h < A.altura[0] || palma.h > A.altura[1]) return false;
+    // Muy cerca del eje la dirección no está definida: cuenta como junto.
+    return !mirando || palma.d < radio * .6 || -mano.palma.dot(v.normalize()) >= A.mirar;
+  }
+  // Mano en C junto al vaso: la palma pegada a él y mirándolo, y al menos `A.dedos` dedos con alguna falange cerca de
+  // su superficie (o dentro: la mano real no tiene nada que la detenga). No hace falta cerrar el puño.
+  function enC(mano) {
+    if (!palmaJunto(mano, A.palma, true)) return false;
+    // Pulgar e índice juntos: es (o va a ser) un pellizco, no una C.
+    const pulgar = mano.puntos.get('thumb-tip'), indice = mano.puntos.get('index-finger-tip');
+    if (pulgar && indice && pulgar.distanceTo(indice) < A.pinzaMin) return false;
+    const { radio, alto } = cilindro();
+    let dedos = 0;
+    for (const falanges of FALANGES_DEDOS) {
+      if (falanges.some(nombre => {
+        const p = mano.puntos.get(nombre);
+        if (!p) return false;
+        const r = respectoDelEje(p, alto);
+        return r.d <= radio + A.puntas && r.h > -.05 && r.h < 1.05;
+      })) dedos += 1;
     }
-    return { palmaJunto, puntas };
+    return dedos >= A.dedos;
   }
 
   // ---------- Beber ----------
@@ -141,22 +167,48 @@ export function crearTermo({ world, manos, termo, entidad, hielo, sonido, cabeza
   function tomar(modo, lado) {
     regreso?.kill();
     regreso = null;
-    Object.assign(estado, { modo, lado, suelto: 0 });
+    Object.assign(estado, { modo, lado, suelto: 0, fuera: 0, sinMano: 0, levantado: false });
+    // Estiramiento de los dedos al tomarlo: soltar exige estirarlos más que en esta C.
+    estado.inicial = lado ? estiramientos(manos[lado]) : null;
     conPrevia = false;
     rumbo.set(0, 0, 0);
     agarre.tomar();
   }
+  // Suelta y vuelve a su lugar.
   function soltar() {
     if (!estado.modo) return;
-    Object.assign(estado, { modo: null, lado: null, candidato: null, espera: 0 });
+    const conMano = !!estado.lado;
+    Object.assign(estado, { modo: null, lado: null, candidato: null, espera: 0, rearmar: conMano });
+    estado.regresos += 1;
     agarre.soltar();
     volver();
+  }
+  // Suelta y se queda donde está, derecho sobre el escritorio; si ahí no cabe, vuelve a su lugar.
+  function dejar() {
+    if (!estado.modo) return;
+    const desde = root.position.clone(), giroDesde = root.quaternion.clone();
+    root.quaternion.copy(reposo.giro);
+    const cabe = dejarTermo();
+    const hasta = root.position.clone();
+    root.position.copy(desde);
+    if (!cabe) { root.quaternion.copy(giroDesde); soltar(); return; }
+    root.quaternion.copy(giroDesde);
+    Object.assign(estado, { modo: null, lado: null, candidato: null, espera: 0, rearmar: true });
+    estado.dejados += 1;
+    agarre.soltar();
+    regreso?.kill();
+    const k = { v: 0 };
+    regreso = gsap.to(k, {
+      v: 1, duration: .2, ease: 'power2.out',
+      onUpdate: () => { root.position.lerpVectors(desde, hasta, k.v); root.quaternion.slerpQuaternions(giroDesde, reposo.giro, k.v); },
+      onComplete: () => { regreso = null; }
+    });
   }
 
   return {
     estado, agarre,
-    // Sostenido con el agarre envolvente (IWSDK no lo marca como Grabbed): bloquea el gesto del escenario.
-    get envuelto() { return estado.modo === 'envolvente'; },
+    // Sostenido con la mano (o posado con la mano alrededor; IWSDK no lo marca como Grabbed): bloquea el gesto del escenario.
+    get envuelto() { return estado.modo === 'envolvente' || estado.modo === 'posado'; },
     get sostenido() { return !!estado.modo; },
     habilitar() { estado.habilitado = true; },
     // REPETIR: en su lugar (la instantánea), sin haber bebido.
@@ -164,7 +216,7 @@ export function crearTermo({ world, manos, termo, entidad, hielo, sonido, cabeza
       regreso?.kill();
       regreso = null;
       if (estado.modo) agarre.soltar();
-      Object.assign(estado, { modo: null, lado: null, candidato: null, espera: 0, suelto: 0, bebido: false, sorbos: 0, listoParaBeber: true });
+      Object.assign(estado, { modo: null, lado: null, candidato: null, espera: 0, suelto: 0, fuera: 0, rearmar: false, levantado: false, bebido: false, sorbos: 0, listoParaBeber: true });
     },
     deshabilitar() {
       estado.habilitado = false;
@@ -174,7 +226,7 @@ export function crearTermo({ world, manos, termo, entidad, hielo, sonido, cabeza
     },
     // Agarre de IWSDK (pellizco o botón lateral).
     sostener(activo) {
-      if (activo) { if (estado.habilitado && estado.modo !== 'envolvente') tomar('iwsdk', null); return; }
+      if (activo) { if (estado.habilitado && estado.modo !== 'envolvente' && estado.modo !== 'posado') tomar('iwsdk', null); return; }
       if (estado.modo === 'iwsdk') soltar();
     },
     // `ocupadas`: manos que sostienen otra cosa (no pueden envolver el termo).
@@ -184,19 +236,46 @@ export function crearTermo({ world, manos, termo, entidad, hielo, sonido, cabeza
       const conControl = manos.left.control || manos.right.control;
       if (conControl && !entidad.hasComponent(OneHandGrabbable)) entidad.addComponent(OneHandGrabbable, { rotate: false, translate: false });
       if (!conControl && estado.modo !== 'iwsdk' && entidad.hasComponent(OneHandGrabbable)) entidad.removeComponent(OneHandGrabbable);
-      if (!estado.modo && habilitado) {
-        // Una mano libre que envuelve el termo durante `confirmar` s lo toma.
-        // Pellizcando no cuenta como rodearlo (solo la mano completa lo toma).
-        const lado = manos.lados.find(l => manos[l].seguida && !manos[l].pellizco && !ocupadas.includes(l) && (() => { const e = envoltura(manos[l], A.puntas); return e.palmaJunto && e.puntas >= A.dedos; })());
+      // Tras dejarlo, ninguna mano lo vuelve a tomar hasta que todas se alejen de él.
+      if (estado.rearmar && !manos.lados.some(l => manos[l].seguida && palmaJunto(manos[l], A.palma + A.retirar, false))) estado.rearmar = false;
+      if (!estado.modo && habilitado && !estado.rearmar) {
+        // Una mano libre en C junto al termo durante `confirmar` s lo toma. Pellizcando no cuenta.
+        const lado = manos.lados.find(l => manos[l].seguida && !manos[l].pellizco && !ocupadas.includes(l) && enC(manos[l]));
         if (lado && lado === estado.candidato) {
           if ((estado.espera += dt) >= A.confirmar) { estado.envolturas += 1; tomar('envolvente', lado); }
         } else { estado.candidato = lado ?? null; estado.espera = 0; }
       }
       if (!estado.modo) return;
+
+      // Posado en el escritorio con la mano alrededor: no se mueve. Retirar la mano o estirar los dedos lo deja ahí;
+      // subir la mano en C lo levanta de nuevo.
+      if (estado.modo === 'posado') {
+        const mano = manos[estado.lado];
+        if (seSuelta(mano, estado, dt, A, estado.inicial)) { dejar(); return; }
+        if (mano.seguida && mano.centro.y - estado.alturaPosado >= A.levantar && enC(mano)) { tomar('envolvente', estado.lado); estado.levantado = true; return; }
+        estado.fuera = mano.seguida && !palmaJunto(mano, A.palma + A.retirar, false) ? estado.fuera + dt : 0;
+        if (estado.fuera >= A.soltar) dejar();
+        return;
+      }
+
       // Primero sigue a la mano; después se comprueba si la mano lo sigue envolviendo (con el termo ya en ella).
       agarre.update(dt, entidad, estado.modo === 'envolvente' ? estado.lado : null);
-      apoyar(root, visual);
-      if (estado.modo === 'envolvente' && seSuelta(manos[estado.lado], estado, dt, A)) { soltar(); return; }
+      const empuje = apoyar(root, visual);
+      if (estado.modo === 'envolvente') {
+        const altura = alturaSobreEscritorio();
+        if (altura > A.levantado) estado.levantado = true;
+        // Bajado hasta el escritorio (la mano lo empuja contra él): queda posado.
+        if (estado.levantado && empuje > A.posar) {
+          Object.assign(estado, { modo: 'posado', fuera: 0, suelto: 0, alturaPosado: manos[estado.lado].centro.y });
+          estado.posados += 1;
+          return;
+        }
+        if (seSuelta(manos[estado.lado], estado, dt, A, estado.inicial)) {
+          // Dedos estirados: junto al escritorio se queda; en el aire vuelve a su lugar.
+          if (altura <= A.cercaMesa) dejar(); else soltar();
+          return;
+        }
+      }
       revisarHielo(dt);
       if (habilitado) revisarSorbo();
     },
@@ -211,8 +290,9 @@ export function crearTermo({ world, manos, termo, entidad, hielo, sonido, cabeza
       destino.eje = (destino.eje ?? new THREE.Vector3()).copy(eje);
       destino.radio = radio;
       destino.mitad = alto / 2;
-      // Con el agarre envolvente, la mano que lo rodea dibuja la postura de agarre (oclusion.js).
-      destino.envolvente = estado.modo === 'envolvente';
+      // Con el agarre envolvente (o posado con la mano alrededor), la mano que lo rodea dibuja la postura de agarre
+      // (oclusion.js); suelto, la mano dibujada lo rodea sin atravesarlo.
+      destino.envolvente = estado.modo === 'envolvente' || (estado.modo === 'posado' && estado.fuera === 0);
       destino.lado = estado.lado;
       return destino;
     }

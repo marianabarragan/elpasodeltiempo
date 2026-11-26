@@ -15,8 +15,9 @@ const envolver = p => modulo(p + 1.5, 3) - 1.5;
 const suave = (x, a, b) => THREE.MathUtils.smoothstep(x, a, b);
 
 // Fondo del marco del carrusel (diseño): gris más oscuro al centro y claro hacia los bordes, con borde blanco.
-function texturaFondo() {
-  const ancho = 960, alto = 466, radio = 45;
+// `ancho` y `alto` en metros (10 px por cm).
+function texturaFondo(anchoM, altoM) {
+  const ancho = Math.round(anchoM * 1000), alto = Math.round(altoM * 1000), radio = 45;
   const lienzo = document.createElement('canvas');
   lienzo.width = ancho; lienzo.height = alto;
   const ctx = lienzo.getContext('2d');
@@ -56,9 +57,9 @@ export async function crearAportes(world, espacio, { manos, movilidad, reloj, al
     crearPanel(world, 'panel-aportes-final', { padre: espacio.entidad, hojas: [60, 49] })
   ]);
   movilidad.registrar(inicio, { alto: .49, ancho: .6 });
-  movilidad.registrar(marco, { alto: .466, ancho: .96 });
+  movilidad.registrar(marco, { alto: C.marco[1], ancho: C.marco[0] });
   movilidad.registrar(final, { alto: .49, ancho: .6 });
-  marco.el('fondo')?.setProperties({ src: texturaFondo() });
+  marco.el('fondo')?.setProperties({ src: texturaFondo(...C.marco) });
 
   // ---------- Tarjetas ----------
   const tarjetas = await Promise.all(APORTES.tarjetas.map(async (datos, i) => {
@@ -71,12 +72,20 @@ export async function crearAportes(world, espacio, { manos, movilidad, reloj, al
     central.getElementById('titulo')?.setProperties({ text: datos.titulo });
     central.getElementById('resumen')?.setProperties({ text: datos.resumen });
     central.getElementById('detalle')?.setProperties({ text: datos.detalle });
-    central.getElementById('foto')?.setProperties({ src: url(datos.foto), objectFit: 'cover' });
+    // La foto ocupa todo el ancho de la tarjeta (sin ajustarse a la proporción de la imagen: se recorta, no se encoge).
+    central.getElementById('foto')?.setProperties({ src: url(datos.foto), objectFit: 'cover', keepAspectRatio: false });
+    central.getElementById('hojas')?.setProperties({ keepAspectRatio: false });
+    lateral.getElementById('hojas')?.setProperties({ keepAspectRatio: false });
     lateral.getElementById('titulo')?.setProperties({ text: datos.titulo });
     lateral.getElementById('resumen')?.setProperties({ text: datos.resumen });
-    texturaHojas(31, 35.3).then(t => central.getElementById('hojas')?.setProperties({ src: t }));
-    texturaHojas(24, 16.4, { opacidad: .08 }).then(t => lateral.getElementById('hojas')?.setProperties({ src: t }));
-    return { datos, grupo, central, lateral, raizCentral: central.getElementById('tarjeta'), raizLateral: lateral.getElementById('tarjeta') };
+    // Las hojas cubren la tarjeta entera (dentro de su borde de 1,2 mm), sin recortarse.
+    texturaHojas(C.central[0] * 100 - .24, C.central[1] * 100 - .24).then(t => central.getElementById('hojas')?.setProperties({ src: t }));
+    texturaHojas(C.lateral[0] * 100, C.lateral[1] * 100, { opacidad: .08 }).then(t => lateral.getElementById('hojas')?.setProperties({ src: t }));
+    const raizCentral = central.getElementById('tarjeta'), raizLateral = lateral.getElementById('tarjeta');
+    // Siempre delante del marco, mire donde mire el usuario.
+    raizCentral?.setProperties({ renderOrder: C.orden });
+    raizLateral?.setProperties({ renderOrder: C.orden });
+    return { datos, grupo, central, lateral, raizCentral, raizLateral };
   }));
 
   const estado = { pantalla: null, indice: 0, desplazamiento: 0, arrastres: 0, toques: 0, ajuste: null, lugar: null };
@@ -115,8 +124,8 @@ export async function crearAportes(world, espacio, { manos, movilidad, reloj, al
   // ¿El punto (en el espacio del marco) cae sobre alguna tarjeta? Devuelve su posición relativa (−1, 0, 1) o null.
   function tarjetaEn(x, y) {
     const yc = y - C.alturaTarjetas;
-    if (Math.abs(x) <= .155 && Math.abs(yc) <= .1765) return 0;
-    for (const lado of [-1, 1]) if (Math.abs(x - lado * C.paso) <= .12 && Math.abs(yc) <= .082) return lado;
+    if (Math.abs(x) <= C.central[0] / 2 && Math.abs(yc) <= C.central[1] / 2) return 0;
+    for (const lado of [-1, 1]) if (Math.abs(x - lado * C.paso) <= C.lateral[0] / 2 && Math.abs(yc) <= C.lateral[1] / 2) return lado;
     return null;
   }
   function empezarArrastre(x, y) {
@@ -162,7 +171,7 @@ export async function crearAportes(world, espacio, { manos, movilidad, reloj, al
         marco.objeto.worldToLocal(local.copy(punto));
         const radio = (mano.radios.get(nombre) ?? .008) / k;
         if (local.z > radio + (C.contacto + holgura) / k || local.z < -C.detras / k) continue;
-        if (Math.abs(local.x) > .48 || Math.abs(local.y - C.alturaTarjetas) > .2) continue;
+        if (Math.abs(local.x) > C.marco[0] / 2 || Math.abs(local.y - C.alturaTarjetas) > C.central[1] / 2 + .01) continue;
         if (!mejor || local.z < mejor.z) mejor = { lado, x: local.x, y: local.y, z: local.z };
       }
     }

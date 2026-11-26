@@ -11,21 +11,31 @@ const DEDOS_LARGOS = ['index', 'middle', 'ring', 'pinky'];
  * quedan cerca de su superficie (con la mano cerrada el visor pierde de vista algunos dedos y el objeto se caía).
  * Devuelve true si debe soltarse; `estado.suelto` y `estado.sinMano` llevan los tiempos.
  */
-export function seSuelta(mano, estado, dt, A) {
+// `inicial` (opcional, vaso): estiramiento de cada dedo largo al tomarlo (estiramientos()); un dedo cuenta como abierto
+// solo si además se estiró `A.margenAbrir` más que entonces (sin exigir más de `A.abrirMax`): agarrado con la mano en C,
+// la C no lo suelta.
+export function seSuelta(mano, estado, dt, A, inicial = null) {
   if (!mano?.seguida) {
     estado.suelto = 0;
     estado.sinMano = (estado.sinMano ?? 0) + dt;
     return estado.sinMano >= A.perdida;
   }
   estado.sinMano = 0;
-  const muneca = mano.puntos.get('wrist');
-  const abiertos = muneca ? DEDOS_LARGOS.filter(dedo => {
-    const nudillo = mano.puntos.get(`${dedo}-finger-phalanx-proximal`), punta = mano.puntos.get(`${dedo}-finger-tip`);
-    return nudillo && punta && punta.distanceTo(muneca) > A.abrir * nudillo.distanceTo(muneca);
-  }).length : 0;
+  const actual = estiramientos(mano);
+  const abiertos = actual.filter((r, i) => r !== null && r > (inicial?.[i] != null ? Math.min(Math.max(A.abrir, inicial[i] + A.margenAbrir), A.abrirMax) : A.abrir)).length;
   if (abiertos >= A.dedosAbiertos) { estado.suelto += dt; return estado.suelto >= A.soltar; }
   estado.suelto = 0;
   return false;
+}
+
+// Estiramiento de cada dedo largo (índice a meñique): distancia de la punta a la muñeca / del nudillo a la muñeca
+// (≈ 2 estirado, ≈ 1,4 cerrado alrededor de un vaso). null si falta alguna articulación.
+export function estiramientos(mano) {
+  const muneca = mano.puntos.get('wrist');
+  return DEDOS_LARGOS.map(dedo => {
+    const nudillo = mano.puntos.get(`${dedo}-finger-phalanx-proximal`), punta = mano.puntos.get(`${dedo}-finger-tip`);
+    return muneca && nudillo && punta ? punta.distanceTo(muneca) / Math.max(nudillo.distanceTo(muneca), 1e-4) : null;
+  });
 }
 
 /*
